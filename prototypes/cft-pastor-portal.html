@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pastor Portal - Church for Truckers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#EC5D1B; --brand-deep:#C2440C; --brand-night:#241004;
+  --accent:#161311; --accent-soft:#FFB27E;
+  --paper:#FAF7F0; --paper-dim:#F3EADF; --surface:#FFFFFF;
+  --ink:#221B15; --ink-soft:#6B5D51; --line:#E3D5C6;
+  --good:#2E7D4F; --good-soft:#E4F3EA;
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'Source Sans 3',system-ui,sans-serif;
+  --font-utility:'IBM Plex Mono',monospace;
+  --radius:12px;
+  --shadow:0 2px 6px rgba(60,24,8,.07),0 10px 28px rgba(60,24,8,.09);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+body{font-family:var(--font-body);background:var(--paper);color:var(--ink);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--font-display);font-weight:500;letter-spacing:-.01em;line-height:1.15}
+button{font-family:var(--font-body)}
+
+/* ---------- Shell ---------- */
+.shell{display:grid;grid-template-columns:264px 1fr;min-height:100vh}
+.sidebar{background:var(--brand-night);color:#EDD7C5;padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side-logo{display:flex;align-items:center;gap:10px;padding:6px 10px 18px;border-bottom:1px solid rgba(255,255,255,.12);margin-bottom:14px}
+.logo-mark{flex:none;background:var(--brand);color:#0E0A07;font-family:'Archivo Black';font-size:8.5px;line-height:1.1;text-transform:uppercase;padding:7px 9px;border-radius:5px}
+.side-logo .t{line-height:1.2}
+.side-logo .t b{display:block;font-family:var(--font-display);font-size:15px;color:#FFF3E8}
+.side-logo .t span{font-family:var(--font-utility);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#C99A7E}
+.ngroup{font-family:var(--font-utility);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#A97350;padding:14px 12px 6px}
+.nitem{display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;border-radius:9px;background:none;border:0;color:#EDD7C5;font-size:14.5px;font-weight:600;cursor:pointer;text-align:left;transition:background .14s}
+.nitem:hover{background:rgba(255,255,255,.07)}
+.nitem.active{background:var(--brand);color:#FFF6EF}
+.nitem .ic{width:20px;text-align:center;font-size:15px}
+.side-foot{margin-top:18px;padding:14px 12px;border-top:1px solid rgba(255,255,255,.12);font-family:var(--font-utility);font-size:11px;color:#C99A7E;line-height:1.7}
+.side-foot b{color:#FFB27E}
+
+/* ---------- Top bar ---------- */
+.main{display:flex;flex-direction:column;min-width:0}
+.topbar{display:flex;align-items:center;gap:18px;padding:14px 30px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30}
+.verse{font-family:var(--font-display);font-style:italic;font-size:14.5px;color:var(--ink-soft);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.verse b{font-family:var(--font-utility);font-style:normal;font-size:10.5px;letter-spacing:.12em;color:var(--brand);margin-left:8px}
+.viewsite{font-size:13.5px;font-weight:700;color:var(--brand);text-decoration:none;white-space:nowrap}
+.avatar{width:36px;height:36px;border-radius:50%;background:var(--brand);color:#FFF;display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.conn{display:flex;align-items:center;gap:6px;font-family:var(--font-utility);font-size:11px;color:var(--good);white-space:nowrap}
+.conn::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+
+/* ---------- Pages ---------- */
+.content{padding:30px;max-width:1180px;width:100%}
+.page{display:none}
+.page.current{display:block;animation:pin .3s ease}
+@keyframes pin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.phead{margin-bottom:22px}
+.phead h1{font-size:30px}
+.phead .sub{color:var(--ink-soft);font-size:15.5px;margin-top:4px;max-width:70ch}
+.helper{display:inline-flex;align-items:center;gap:8px;background:var(--paper-dim);border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:13px;color:var(--ink-soft);margin-top:10px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(60,24,8,.05)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid31{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start}
+.stack{display:grid;gap:20px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:15px;padding:12px 22px;border-radius:999px;border:1.5px solid transparent;cursor:pointer;transition:transform .15s,box-shadow .15s,background .15s;text-decoration:none}
+.btn:focus-visible{outline:3px solid var(--accent-soft);outline-offset:2px}
+.btn-solid{background:var(--brand);color:#FFF6EF}
+.btn-solid:hover{background:var(--brand-deep);transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn-dark{background:var(--accent);color:#FFF6EF}
+.btn-dark:hover{background:#2E2622;transform:translateY(-1px)}
+.btn-ghost{border-color:var(--brand);color:var(--brand);background:transparent}
+.btn-ghost:hover{background:var(--brand);color:#FFF6EF}
+.btn-sm{padding:8px 16px;font-size:13.5px}
+.btn-big{padding:16px 30px;font-size:17px}
+
+.field{margin-bottom:16px}
+.field label{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+.field .why{font-weight:400;color:var(--ink-soft);font-size:12.5px;margin-left:6px}
+.field input,.field select,.field textarea{width:100%;font-family:var(--font-body);font-size:15.5px;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--paper);color:var(--ink)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:3px solid var(--accent-soft);outline-offset:1px;border-color:var(--brand)}
+
+.pill{font-family:var(--font-utility);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.pill-draft{background:#FDEBD7;color:#9A5510;border:1px solid #F2CFA8}
+.pill-live{background:var(--good-soft);color:var(--good);border:1px solid #BCE0C8}
+.pill-soft{background:var(--paper-dim);color:var(--ink-soft);border:1px solid var(--line)}
+
+.saved{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-utility);font-size:11.5px;color:var(--good);opacity:0;transition:opacity .3s}
+.saved.show{opacity:1}
+
+.rowlist{display:grid;gap:10px}
+.row{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 20px;transition:box-shadow .15s,transform .15s}
+.row:hover{box-shadow:var(--shadow);transform:translateY(-1px)}
+.row .grow{flex:1;min-width:0}
+.row h3{font-size:17px;font-family:var(--font-body);font-weight:700}
+.row .meta{font-family:var(--font-utility);font-size:12px;color:var(--ink-soft);margin-top:3px}
+.row .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+.checkrow{display:flex;gap:10px;flex-wrap:wrap}
+.check{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;background:var(--paper);user-select:none}
+.check input{accent-color:var(--brand);width:16px;height:16px}
+.check.on{border-color:var(--brand);background:#FDF0E8;color:var(--brand-deep)}
+
+.toggle{position:relative;width:46px;height:26px;flex:none;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.toggle .tr{position:absolute;inset:0;background:#D8CCBB;border-radius:999px;transition:background .18s}
+.toggle .tr::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#FFF;transition:left .18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.toggle input:checked + .tr{background:var(--good)}
+.toggle input:checked + .tr::after{left:23px}
+
+/* Dashboard */
+.hello h1{font-size:34px}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:22px 0 26px}
+.qcard{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:22px 20px;cursor:pointer;text-align:left;transition:transform .15s,box-shadow .15s,border-color .15s}
+.qcard:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--brand)}
+.qcard .qi{width:44px;height:44px;border-radius:11px;background:#FDF0E8;display:grid;place-items:center;font-size:21px;margin-bottom:12px}
+.qcard b{display:block;font-size:16px}
+.qcard span{font-size:13px;color:var(--ink-soft)}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.stat b{font-family:var(--font-display);font-size:30px;color:var(--brand);display:block;line-height:1.1}
+.stat span{font-size:13px;color:var(--ink-soft)}
+
+/* Sermon output stream */
+.stream{background:var(--paper);border:1.5px dashed var(--line);border-radius:var(--radius);padding:24px;min-height:220px;font-family:var(--font-display);font-size:16.5px;line-height:1.7;white-space:pre-wrap}
+.stream.live{border-color:var(--brand);border-style:solid;background:#FFFDF9}
+.cursor{display:inline-block;width:9px;height:18px;background:var(--brand);vertical-align:-3px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* Site editor */
+.sec-item{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 18px}
+.drag{color:#C9B8A4;cursor:grab;font-size:17px}
+.sec-item .nm{flex:1;font-weight:700;font-size:15px}
+.sec-item .nm span{display:block;font-weight:400;font-size:12.5px;color:var(--ink-soft)}
+.preview{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;position:sticky;top:86px}
+.pv-head{padding:10px 16px;background:var(--paper-dim);border-bottom:1px solid var(--line);font-family:var(--font-utility);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);display:flex;justify-content:space-between;align-items:center}
+.pv-body{padding:18px;background:#FAF7F0}
+.pv-banner{background:linear-gradient(135deg,#241004,#7A2E0E 55%,#E4924A);border-radius:8px;height:74px;display:flex;align-items:center;padding:0 16px;gap:10px}
+.pv-banner .m{background:var(--brand);color:#131313;font-family:'Archivo Black';font-size:6.5px;line-height:1.1;text-transform:uppercase;padding:5px 6px;border-radius:3px}
+.pv-banner .h{color:#FFF3E8;font-family:var(--font-display);font-style:italic;font-size:13px}
+.pv-line{height:8px;border-radius:4px;background:#E9DDCB;margin:10px 0}
+.pv-line.short{width:60%}
+.pv-cta{display:inline-block;background:var(--accent);color:#FFF;border-radius:999px;font-size:9px;font-weight:700;padding:5px 12px}
+
+/* Giving */
+.mode{display:flex;gap:10px;margin-bottom:18px}
+.mode button{flex:1;padding:14px;border-radius:12px;border:1.5px solid var(--line);background:var(--paper);font-weight:700;font-size:15px;cursor:pointer}
+.mode button.sel{border-color:var(--brand);background:#FDF0E8;color:var(--brand-deep)}
+table.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font-family:var(--font-utility);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);text-align:left;padding:10px 12px;border-bottom:1.5px solid var(--line)}
+.tbl td{padding:12px;border-bottom:1px solid var(--paper-dim)}
+
+/* Ops */
+.doccard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.doccard h3{font-size:17px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.doccard ul{list-style:none;margin:0 0 14px}
+.doccard li{font-size:13.5px;color:var(--ink-soft);padding:5px 0;border-bottom:1px dashed var(--paper-dim);display:flex;justify-content:space-between;gap:8px}
+.doccard li em{font-family:var(--font-utility);font-style:normal;font-size:10.5px;color:#B08B62}
+
+/* Upload zone */
+.upzone{border:2px dashed var(--line);border-radius:var(--radius);padding:26px;text-align:center;color:var(--ink-soft);font-size:14.5px;cursor:pointer;transition:border-color .15s,background .15s;background:var(--paper)}
+.upzone:hover{border-color:var(--brand);background:#FDF6EF}
+.upzone b{color:var(--brand)}
+
+/* Calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal .dh{font-family:var(--font-utility);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);text-align:center;padding:6px 0}
+.cal .d{aspect-ratio:1.15/1;border:1px solid var(--paper-dim);border-radius:9px;padding:7px;font-size:12.5px;color:var(--ink-soft);position:relative;background:var(--surface)}
+.cal .d.ev{border-color:var(--brand);background:#FDF6EF}
+.cal .d .dot{position:absolute;bottom:7px;left:7px;right:7px;background:var(--brand);color:#FFF;font-size:9px;font-weight:700;border-radius:5px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--brand-night);color:#F7EBE1;font-size:14.5px;font-weight:600;padding:14px 22px;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;z-index:200;display:flex;gap:10px;align-items:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast .tick{color:var(--accent-soft)}
+
+@media (max-width:1020px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:-280px;width:264px;z-index:60;transition:left .25s}
+  .sidebar.open{left:0;box-shadow:0 0 60px rgba(0,0,0,.4)}
+  .menu-btn{display:inline-flex}
+  .grid2,.grid31,.grid3,.quick{grid-template-columns:1fr}
+  .content{padding:20px 16px}
+  .verse{display:none}
+}
+.menu-btn{display:none;background:var(--surface);border:1.5px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer;font-size:17px}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ================= SIDEBAR ================= -->
+<nav class="sidebar" id="sidebar" aria-label="Portal navigation">
+  <div class="side-logo">
+    <span class="logo-mark">Church<br>for<br>Truckers</span>
+    <span class="t"><b>Pastor Portal</b><span>Kingdom Creatives</span></span>
+  </div>
+
+  <div class="ngroup">This week</div>
+  <button class="nitem active" data-nav="home"><span class="ic">🏠</span> Home</button>
+
+  <div class="ngroup">Preach</div>
+  <button class="nitem" data-nav="builder"><span class="ic">✍️</span> Sermon Builder</button>
+  <button class="nitem" data-nav="sermons"><span class="ic">📚</span> Sermon Library</button>
+  <button class="nitem" data-nav="notes"><span class="ic">🔒</span> My Notes</button>
+
+  <div class="ngroup">Your website</div>
+  <button class="nitem" data-nav="site"><span class="ic">🖥️</span> Edit My Website</button>
+  <button class="nitem" data-nav="gallery"><span class="ic">📷</span> Photos</button>
+  <button class="nitem" data-nav="videos"><span class="ic">🎬</span> Videos</button>
+  <button class="nitem" data-nav="announce"><span class="ic">📣</span> Announcements</button>
+  <button class="nitem" data-nav="prayer"><span class="ic">🙏</span> Prayer Wall</button>
+  <button class="nitem" data-nav="groups"><span class="ic">🧭</span> Groups &amp; Studies</button>
+  <button class="nitem" data-nav="ministries"><span class="ic">🤲</span> Ministries</button>
+
+  <div class="ngroup">People</div>
+  <button class="nitem" data-nav="comms"><span class="ic">✉️</span> Send Emails</button>
+  <button class="nitem" data-nav="events"><span class="ic">📅</span> Events</button>
+  <button class="nitem" data-nav="calendar"><span class="ic">🗓️</span> Calendar</button>
+  <button class="nitem" data-nav="staff"><span class="ic">👥</span> Our Team</button>
+
+  <div class="ngroup">Church office</div>
+  <button class="nitem" data-nav="giving"><span class="ic">💛</span> Giving</button>
+  <button class="nitem" data-nav="ops"><span class="ic">🗄️</span> Documents</button>
+  <button class="nitem" data-nav="account"><span class="ic">🛟</span> Help &amp; Account</button>
+
+  <div class="side-foot">
+    Your website is<br><b>100% sponsor-funded</b><br>$0.00 / month
+  </div>
+</nav>
+
+<!-- ================= MAIN ================= -->
+<div class="main">
+  <header class="topbar">
+    <button class="menu-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menu">≡</button>
+    <div class="verse">"As iron sharpens iron, so one person sharpens another." <b>PROVERBS 27:17</b></div>
+    <span class="conn">Connected</span>
+    <a class="viewsite" href="#" onclick="toast('Opens churchfortruckers.org in a new tab');return false">View my website →</a>
+    <div class="avatar">JV</div>
+  </header>
+
+  <main class="content">
+
+  <!-- ============ HOME ============ -->
+  <section class="page current" data-page="home">
+    <div class="hello phead">
+      <h1>Good afternoon, Pastor.</h1>
+      <p class="sub">Here's your church at a glance. Pick what you want to do — everything saves automatically.</p>
+    </div>
+    <div class="quick">
+      <button class="qcard" onclick="go('builder')"><span class="qi">✍️</span><b>Write this week's sermon</b><span>Start from a Bible passage</span></button>
+      <button class="qcard" onclick="go('site')"><span class="qi">🖥️</span><b>Update the website</b><span>Change words or photos</span></button>
+      <button class="qcard" onclick="go('events')"><span class="qi">📅</span><b>Add an event</b><span>It shows on the site instantly</span></button>
+      <button class="qcard" onclick="go('comms')"><span class="qi">✉️</span><b>Email the congregation</b><span>Announcements and updates</span></button>
+    </div>
+    <div class="grid31">
+      <div class="card">
+        <h2 style="font-size:21px;margin-bottom:14px">Coming up</h2>
+        <div class="rowlist">
+          <div class="row"><div class="grow"><h3>The Reset</h3><div class="meta">SEP 11–18 · Kinsey's Place, Kentucky</div></div><span class="pill pill-live">On the website</span></div>
+          <div class="row"><div class="grow"><h3>In-Person Church Service</h3><div class="meta">SEP 13 · 10:00 AM · Kinsey's Place</div></div><span class="pill pill-live">On the website</span></div>
+          <div class="row"><div class="grow"><h3>Water Baptism</h3><div class="meta">SEP 13 · after service · bring a towel</div></div><span class="pill pill-live">On the website</span></div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="stat"><b>312</b><span>people visited your website this week</span></div>
+        <div class="stat"><b>4</b><span>new prayer requests waiting</span></div>
+        <div class="stat"><b>$1,240</b><span>given this month</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERMON BUILDER ============ -->
+  <section class="page" data-page="builder">
+    <div class="phead">
+      <h1>Sermon Builder</h1>
+      <p class="sub">Tell it the passage and how you like to preach. It writes a first draft — you make it yours. The Spirit leads; this just saves you hours.</p>
+      <span class="helper">💡 Everything it writes is a starting point. You can edit every word before anyone sees it.</span>
+    </div>
+    <div class="grid31">
+      <div class="card">
+        <div class="grid2" style="gap:14px">
+          <div class="field"><label>Sermon title <span class="why">(you can change it later)</span></label><input placeholder="e.g., Faith in the Storm"></div>
+          <div class="field"><label>Preaching date</label><input type="date"></div>
+        </div>
+        <div class="field"><label>Bible passage</label>
+          <div style="display:grid;grid-template-columns:1.4fr .7fr .9fr;gap:10px">
+            <select><option>Choose a book...</option><option>Genesis</option><option>Psalms</option><option>Proverbs</option><option>Matthew</option><option>John</option><option>Romans</option><option>Ecclesiastes</option></select>
+            <input placeholder="Chapter">
+            <input placeholder="Verses (e.g., 1-10)">
+          </div>
+        </div>
+        <div class="field"><label>How do you want it to sound?</label>
+          <select><option>Warm and conversational</option><option>Traditional and reverent</option><option>Bold and evangelistic</option><option>Simple, for new believers</option></select>
+        </div>
+        <div class="field"><label>What should it include?</label>
+          <div class="checkrow">
+            <label class="check on"><input type="checkbox" checked onchange="chk(this)">Scripture text</label>
+            <label class="check on"><input type="checkbox" checked onchange="chk(this)">Real-life applications</label>
+            <label class="check on"><input type="checkbox" checked onchange="chk(this)">Illustrations</label>
+            <label class="check"><input type="checkbox" onchange="chk(this)">A little humor</label>
+            <label class="check"><input type="checkbox" onchange="chk(this)">Quotes</label>
+            <label class="check on"><input type="checkbox" checked onchange="chk(this)">Call to action</label>
+          </div>
+        </div>
+        <div class="field"><label>Anything else it should know? <span class="why">(optional)</span></label>
+          <textarea rows="3" placeholder="Themes, what your congregation is walking through, stories to include..."></textarea>
+        </div>
+        <div class="field"><label>Extras to create with it</label>
+          <div class="checkrow">
+            <label class="check"><input type="checkbox" onchange="chk(this)">Small group questions</label>
+            <label class="check"><input type="checkbox" onchange="chk(this)">Kids ministry version</label>
+            <label class="check"><input type="checkbox" onchange="chk(this)">Daily devotional</label>
+            <label class="check"><input type="checkbox" onchange="chk(this)">Social media posts</label>
+            <label class="check"><input type="checkbox" onchange="chk(this)">Bulletin notes</label>
+            <label class="check"><input type="checkbox" onchange="chk(this)">Slides</label>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-solid btn-big" onclick="streamSermon()">⚡ Write my draft</button>
+          <button class="btn btn-ghost" onclick="toast('In production: exports the draft as a PDF')">Export PDF</button>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="pv-head"><span>YOUR DRAFT · WRITES LIVE AS YOU WATCH</span><span class="saved" id="bsaved"><span>✓</span> Saved to Library</span></div>
+          <div class="stream" id="stream">Your sermon draft will appear here, written line by line while you watch — like dictation, not a loading spinner.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERMON LIBRARY ============ -->
+  <section class="page" data-page="sermons">
+    <div class="phead">
+      <h1>Sermon Library</h1>
+      <p class="sub">Every sermon you've written or preached, in one place. Publish sends it to the website; your YouTube channel syncs in automatically every night.</p>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">
+      <input placeholder="🔍 Search your sermons..." style="flex:1;min-width:220px;font-size:15px;border:1.5px solid var(--line);border-radius:999px;padding:12px 20px;background:var(--surface)">
+      <button class="btn btn-ghost" onclick="toast('In production: pulls new videos from your YouTube channel')">⟳ Sync from YouTube</button>
+      <button class="btn btn-solid" onclick="go('builder')">+ New sermon</button>
+    </div>
+    <div class="rowlist">
+      <div class="row"><div class="grow"><h3>Deadhead Miles: When the Trip Back Feels Empty</h3><div class="meta">ECCLESIASTES 1–3 · Jul 26, 2026 · from YouTube</div></div><span class="pill pill-live">Published</span><div class="acts"><button class="btn btn-ghost btn-sm" onclick="toast('Opens the sermon editor')">Edit</button><button class="btn btn-ghost btn-sm" onclick="toast('Downloads a print-ready PDF')">PDF</button></div></div>
+      <div class="row"><div class="grow"><h3>Intro to Genesis</h3><div class="meta">GENESIS 1:1–2 · Feb 14, 2026</div></div><span class="pill pill-live">Published</span><div class="acts"><button class="btn btn-ghost btn-sm" onclick="toast('Opens the sermon editor')">Edit</button><button class="btn btn-ghost btn-sm" onclick="toast('Downloads a print-ready PDF')">PDF</button></div></div>
+      <div class="row"><div class="grow"><h3>Sunday Blessings</h3><div class="meta">REVELATION 1:1–10 · Feb 18, 2026</div></div><span class="pill pill-draft">Draft</span><div class="acts"><button class="btn btn-ghost btn-sm" onclick="toast('Opens the sermon editor')">Edit</button><button class="btn btn-solid btn-sm" onclick="toast('Published to the website — live in seconds')">Publish</button></div></div>
+      <div class="row"><div class="grow"><h3>Untitled Sermon</h3><div class="meta">Feb 14, 2026 · "When life feels chaotic, it's easy to wonder if God sees..."</div></div><span class="pill pill-draft">Draft</span><div class="acts"><button class="btn btn-ghost btn-sm" onclick="toast('Opens the sermon editor')">Edit</button><button class="btn btn-solid btn-sm" onclick="toast('Published to the website — live in seconds')">Publish</button></div></div>
+    </div>
+  </section>
+
+  <!-- ============ NOTES ============ -->
+  <section class="page" data-page="notes">
+    <div class="phead">
+      <h1>My Notes</h1>
+      <p class="sub">Private and encrypted. Sermon ideas, counseling follow-ups, prayer lists — only you can see these. Nothing here ever touches the website.</p>
+      <span class="helper">🔒 Encrypted &amp; private — not visible to staff, members, or Kingdom Creatives.</span>
+    </div>
+    <div class="grid31">
+      <div class="card">
+        <div class="field"><label>Title</label><input placeholder="e.g., Ideas for fall series"></div>
+        <div class="grid2" style="gap:14px">
+          <div class="field"><label>Folder</label><select><option>General</option><option>Sermon ideas</option><option>Counseling follow-ups</option><option>Prayer</option></select></div>
+          <div class="field"><label>Tags <span class="why">(optional)</span></label><input placeholder="counseling, follow-up..."></div>
+        </div>
+        <div class="field"><label>Your note</label><textarea rows="8" placeholder="Start typing... it saves by itself as you go." oninput="autosave('nsaved')"></textarea></div>
+        <span class="saved" id="nsaved"><span>✓</span> Saved just now</span>
+      </div>
+      <div class="stack">
+        <div class="card"><h3 style="font-size:17px;margin-bottom:10px">Recent notes</h3><p style="font-size:14px;color:var(--ink-soft)">No saved notes yet. Your last five will show here.</p></div>
+        <div class="stat"><b>0</b><span>total notes</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SITE EDITOR ============ -->
+  <section class="page" data-page="site">
+    <div class="phead">
+      <h1>Edit My Website</h1>
+      <p class="sub">Every part of your website is a card below. Flip a switch to show or hide it. Click to change the words. Drag ☰ to reorder. The little preview shows your changes instantly — and so does the real website.</p>
+      <span class="helper">💡 You cannot break anything. Every change can be undone.</span>
+    </div>
+    <div class="grid31">
+      <div class="stack" style="gap:12px">
+        <div class="field" style="margin-bottom:2px"><label>Which page?</label>
+          <select onchange="toast('Same editor, different page — every page works this way')"><option>Home page</option><option>Plan a Visit</option><option>About Us</option><option>Our Team</option><option>Groups &amp; Bible Studies</option><option>Give</option></select>
+        </div>
+        <div class="sec-item"><span class="drag">☰</span><div class="nm">Big welcome banner<span>Your hero image and tagline</span></div><span class="saved show" style="opacity:.7">✓</span><label class="toggle"><input type="checkbox" checked onchange="toast('Hidden from the website — flip it back anytime')"><span class="tr"></span></label></div>
+        <div class="card" style="padding:18px;border-color:var(--brand)">
+          <div class="field" style="margin-bottom:8px"><label>Welcome message <span class="why">(this text is under the banner)</span></label>
+            <input id="heroline" value="We're a congregation of drivers, dispatchers, and the families who wait up for them." oninput="livePreview(this.value)">
+          </div>
+          <span class="saved" id="ssaved"><span>✓</span> Saved &amp; live on the website</span>
+        </div>
+        <div class="sec-item"><span class="drag">☰</span><div class="nm">Announcements &amp; prayer list<span>The bulletin board</span></div><label class="toggle"><input type="checkbox" checked onchange="toast('Section visibility updated')"><span class="tr"></span></label></div>
+        <div class="sec-item"><span class="drag">☰</span><div class="nm">This week's sermon<span>Fills in automatically from your Library</span></div><label class="toggle"><input type="checkbox" checked onchange="toast('Section visibility updated')"><span class="tr"></span></label></div>
+        <div class="sec-item"><span class="drag">☰</span><div class="nm">Upcoming events<span>Fills in automatically from Events</span></div><label class="toggle"><input type="checkbox" checked onchange="toast('Section visibility updated')"><span class="tr"></span></label></div>
+        <div class="sec-item"><span class="drag">☰</span><div class="nm">Giving<span>Your Tithe.ly or Stripe button</span></div><label class="toggle"><input type="checkbox" checked onchange="toast('Section visibility updated')"><span class="tr"></span></label></div>
+      </div>
+      <div class="preview">
+        <div class="pv-head"><span>LIVE PREVIEW</span><span>updates as you type ⚡</span></div>
+        <div class="pv-body">
+          <div class="pv-banner"><span class="m">Church<br>for<br>Truckers</span><span class="h">Faith on the road.</span></div>
+          <p id="pvline" style="font-size:11.5px;color:#5A4B3E;margin:12px 0 8px;line-height:1.5">We're a congregation of drivers, dispatchers, and the families who wait up for them.</p>
+          <span class="pv-cta">▶ Watch this Sunday</span>
+          <div class="pv-line" style="margin-top:14px"></div>
+          <div class="pv-line short"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PHOTOS ============ -->
+  <section class="page" data-page="gallery">
+    <div class="phead"><h1>Photos</h1><p class="sub">Drop pictures here and use them anywhere on your website. Phone photos are fine — we resize them for you.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <div class="upzone" onclick="toast('In production: opens your files — or just drag photos onto this box')">📷 <b>Drag photos here</b> or click to choose<br><span style="font-size:12.5px">JPG, PNG, HEIC — straight from your phone works great</span></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">Your photos (10)</h3>
+        <div class="rowlist">
+          <div class="row" style="padding:10px 14px"><div class="grow"><h3 style="font-size:14.5px">Church image</h3><div class="meta">used on: Home banner</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Shows the photo full size')">View</button></div>
+          <div class="row" style="padding:10px 14px"><div class="grow"><h3 style="font-size:14.5px">Baptism day</h3><div class="meta">used on: About Us</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Shows the photo full size')">View</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VIDEOS ============ -->
+  <section class="page" data-page="videos">
+    <div class="phead"><h1>Videos</h1><p class="sub">Upload teaching clips and announcements, or let your YouTube channel sync in by itself. Videos appear in the Worship Library on your website.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <div class="field"><label>Video title</label><input placeholder="e.g., Sunday Message — Faith &amp; Hope"></div>
+        <div class="upzone" onclick="toast('In production: choose a video file or paste a YouTube link')">🎬 <b>Drag a video here</b>, click to choose, or paste a YouTube link</div>
+        <div style="margin-top:14px"><button class="btn btn-solid" onclick="toast('Video saved — pick where it shows on the site')">Save video</button></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">Your videos (5)</h3>
+        <div class="rowlist">
+          <div class="row" style="padding:10px 14px"><div class="grow"><h3 style="font-size:14.5px">Sunday Message</h3><div class="meta">3.0 MB · on the website</div></div><span class="pill pill-live">Live</span></div>
+          <div class="row" style="padding:10px 14px"><div class="grow"><h3 style="font-size:14.5px">Test video</h3><div class="meta">6.8 MB · not shown yet</div></div><span class="pill pill-soft">Hidden</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ COMMUNICATIONS ============ -->
+  <section class="page" data-page="comms">
+    <div class="phead"><h1>Send Emails</h1><p class="sub">Email your whole congregation or just one group. Add people one at a time, or bring in a whole spreadsheet at once.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <h3 style="font-size:18px;margin-bottom:14px">Write an email</h3>
+        <div class="field"><label>Send to</label><select><option>Everyone (2 people)</option><option>Test List (1 person)</option></select></div>
+        <div class="field"><label>Subject</label><input placeholder="e.g., This Sunday: service + baptism at The Reset"></div>
+        <div class="field"><label>Your message</label><textarea rows="7" placeholder="Write it like you'd say it..."></textarea></div>
+        <button class="btn btn-solid btn-big" onclick="toast('Email sent to 2 people 🎉')">Send email</button>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <h3 style="font-size:17px;margin-bottom:12px">Your people (2)</h3>
+          <div class="rowlist">
+            <div class="row" style="padding:10px 14px"><div class="grow"><h3 style="font-size:14.5px">Amanda Vega</h3><div class="meta">amandavega...@yahoo.com</div></div></div>
+            <div class="row" style="padding:10px 14px"><div class="grow"><h3 style="font-size:14.5px">Jason Vega</h3><div class="meta">jason.vega...@yahoo.com</div></div></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="toast('Add one person: name + email')">+ Add a person</button>
+            <button class="btn btn-ghost btn-sm" onclick="toast('In production: upload a spreadsheet (CSV) of your contacts')">⬆ Import spreadsheet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EVENTS ============ -->
+  <section class="page" data-page="events">
+    <div class="phead"><h1>Events</h1><p class="sub">Add it here once — it shows on the website, the calendar, and can go in your next email. Flip "Show on website" and it's live.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <div class="field"><label>What's happening?</label><input placeholder="e.g., Sunday Morning Service"></div>
+        <div class="grid2" style="gap:14px">
+          <div class="field"><label>Starts</label><input type="date"></div>
+          <div class="field"><label>Ends <span class="why">(optional)</span></label><input type="date"></div>
+        </div>
+        <div class="field"><label>Where?</label><input placeholder="e.g., 110 Garson Ln, Farmington"></div>
+        <div class="field"><label>Tell people about it</label><textarea rows="3" placeholder="What should folks know or bring?"></textarea></div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+          <label class="toggle"><input type="checkbox" checked><span class="tr"></span></label>
+          <b style="font-size:15px">Show on the website</b>
+        </div>
+        <button class="btn btn-solid" onclick="toast('Event saved — it is on the website now')">Save event</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">Coming up</h3>
+        <div class="rowlist">
+          <div class="row"><div class="grow"><h3>The Reset</h3><div class="meta">SEP 11–18 · Kinsey's Place, Kentucky</div></div><div class="acts"><button class="btn btn-ghost btn-sm" onclick="toast('Opens this event to edit')">Edit</button></div></div>
+          <div class="row"><div class="grow"><h3>In-Person Church Service</h3><div class="meta">SEP 13 · 10:00 AM</div></div><div class="acts"><button class="btn btn-ghost btn-sm" onclick="toast('Opens this event to edit')">Edit</button></div></div>
+          <div class="row"><div class="grow"><h3>Water Baptism</h3><div class="meta">SEP 13 · after service</div></div><div class="acts"><button class="btn btn-ghost btn-sm" onclick="toast('Opens this event to edit')">Edit</button></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CALENDAR ============ -->
+  <section class="page" data-page="calendar">
+    <div class="phead"><h1>Calendar</h1><p class="sub">Everything from Events, laid out by month.</p></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <button class="btn btn-ghost btn-sm" onclick="toast('Previous month')">← Aug</button>
+        <h3 style="font-size:20px">September 2026</h3>
+        <button class="btn btn-ghost btn-sm" onclick="toast('Next month')">Oct →</button>
+      </div>
+      <div class="cal">
+        <div class="dh">Sun</div><div class="dh">Mon</div><div class="dh">Tue</div><div class="dh">Wed</div><div class="dh">Thu</div><div class="dh">Fri</div><div class="dh">Sat</div>
+        <div class="d" style="visibility:hidden"></div><div class="d" style="visibility:hidden"></div>
+        <div class="d">1</div><div class="d">2</div><div class="d">3</div><div class="d">4</div><div class="d">5</div>
+        <div class="d">6</div><div class="d">7</div><div class="d">8</div><div class="d">9</div><div class="d">10</div>
+        <div class="d ev">11<span class="dot">The Reset →</span></div><div class="d ev">12<span class="dot">The Reset</span></div>
+        <div class="d ev">13<span class="dot">Service + Baptism</span></div><div class="d ev">14<span class="dot">The Reset</span></div><div class="d ev">15<span class="dot">The Reset</span></div><div class="d ev">16<span class="dot">The Reset</span></div><div class="d ev">17<span class="dot">The Reset</span></div><div class="d ev">18<span class="dot">← The Reset</span></div><div class="d">19</div>
+        <div class="d">20</div><div class="d">21</div><div class="d">22</div><div class="d">23</div><div class="d">24</div><div class="d">25</div><div class="d">26</div>
+        <div class="d">27</div><div class="d">28</div><div class="d">29</div><div class="d">30</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STAFF ============ -->
+  <section class="page" data-page="staff">
+    <div class="phead"><h1>Our Team</h1><p class="sub">The people on your website's Team page. Add a name, a photo, and a sentence or two — done.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <div class="field"><label>Name</label><input placeholder="e.g., Pastor Chris Moss"></div>
+        <div class="field"><label>What they do</label><input placeholder="e.g., Lead Pastor"></div>
+        <div class="field"><label>A sentence about them</label><textarea rows="3" placeholder="Keep it warm and short."></textarea></div>
+        <div class="upzone" onclick="toast('In production: choose their photo')">📷 <b>Add their photo</b></div>
+        <div style="margin-top:14px"><button class="btn btn-solid" onclick="toast('Saved — they are on the Team page now')">Save person</button></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">On the Team page</h3>
+        <div class="rowlist">
+          <div class="row" style="padding:12px 16px"><div class="avatar" style="width:34px;height:34px;font-size:12px">CM</div><div class="grow"><h3 style="font-size:15px">Pastor Chris Moss</h3><div class="meta">Lead Pastor</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Edit their info or photo')">Edit</button></div>
+          <div class="row" style="padding:12px 16px"><div class="avatar" style="width:34px;height:34px;font-size:12px">JS</div><div class="grow"><h3 style="font-size:15px">John Smith</h3><div class="meta">Head Pastor</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Edit their info or photo')">Edit</button></div>
+          <div class="row" style="padding:12px 16px"><div class="avatar" style="width:34px;height:34px;font-size:12px">MT</div><div class="grow"><h3 style="font-size:15px">Megan Testeroni</h3><div class="meta">Youth Pastor</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Edit their info or photo')">Edit</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GIVING ============ -->
+  <section class="page" data-page="giving">
+    <div class="phead">
+      <h1>Giving</h1>
+      <p class="sub">Choose how your church receives gifts. Already using Tithe.ly? Keep it — we just point the Give button there. Want giving built into the site? Turn on Stripe.</p>
+    </div>
+    <div class="grid31">
+      <div class="card">
+        <div class="mode">
+          <button class="sel" onclick="giveMode(this,'tithely')">Use my Tithe.ly link</button>
+          <button onclick="giveMode(this,'stripe')">Built-in giving (Stripe)</button>
+        </div>
+        <div id="gm-tithely">
+          <div class="field"><label>Your Tithe.ly giving link</label><input placeholder="https://tithe.ly/give?c=your-church"></div>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:16px">The Give button on your website will send people straight to your Tithe.ly page. Nothing about how you receive money changes.</p>
+          <button class="btn btn-solid" onclick="toast('Saved — the Give button now uses your Tithe.ly link')">Save</button>
+        </div>
+        <div id="gm-stripe" style="display:none">
+          <div class="grid2" style="gap:14px">
+            <div class="field"><label>Stripe publishable key</label><input placeholder="pk_live_..."></div>
+            <div class="field"><label>Stripe secret key</label><input type="password" placeholder="sk_live_..."></div>
+          </div>
+          <p style="font-size:14px;color:var(--ink-soft);margin-bottom:16px">Gifts happen right on your website, and every gift shows up in the list on this page. Keys are stored encrypted and never shown again.</p>
+          <button class="btn btn-solid" onclick="toast('Stripe connected — gifts will appear below')">Connect Stripe</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">Recent gifts</h3>
+        <table class="tbl">
+          <tr><th>Who</th><th>Amount</th><th>When</th></tr>
+          <tr><td>Anonymous</td><td>$50.00</td><td>Jul 27</td></tr>
+          <tr><td>D. Miller</td><td>$20.00 / mo</td><td>Jul 25</td></tr>
+          <tr><td>Anonymous</td><td>$100.00</td><td>Jul 21</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OPERATIONS / DOCUMENTS ============ -->
+  <section class="page" data-page="ops">
+    <div class="phead"><h1>Documents</h1><p class="sub">Your church's filing cabinet — policies, safety plans, checklists, and legal papers. Private to you and your team, never on the website.</p></div>
+    <div class="grid2">
+      <div class="doccard">
+        <h3>📋 Policies &amp; operations</h3>
+        <ul>
+          <li>General Operations Manual <em>PDF</em></li>
+          <li>Volunteer Handbook <em>PDF</em></li>
+          <li>Financial Procedures <em>DOCX</em></li>
+          <li>Sunday Service Flow Checklist <em>PDF</em></li>
+          <li>Data Privacy Policy <em>PDF</em></li>
+        </ul>
+        <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm" onclick="toast('Opens this folder')">Open folder</button><button class="btn btn-solid btn-sm" onclick="toast('Choose a file to add')">⬆ Add file</button></div>
+      </div>
+      <div class="doccard">
+        <h3>🚨 Safety &amp; emergency</h3>
+        <ul>
+          <li>Emergency Response Plan <em>PDF</em></li>
+          <li>Fire &amp; Evacuation Procedures <em>PDF</em></li>
+          <li>Severe Weather Plan <em>PDF</em></li>
+          <li>Incident Report Forms <em>PDF</em></li>
+          <li>Child Protection Policy <em>PDF</em></li>
+        </ul>
+        <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm" onclick="toast('Opens this folder')">Open folder</button><button class="btn btn-solid btn-sm" onclick="toast('Choose a file to add')">⬆ Add file</button></div>
+      </div>
+      <div class="doccard">
+        <h3>🔧 Facilities &amp; maintenance</h3>
+        <ul>
+          <li>Cleaning &amp; Janitorial Schedule <em>XLSX</em></li>
+          <li>Work Order Log <em>XLSX</em></li>
+          <li>Open Maintenance Requests (3) <em>—</em></li>
+          <li>Equipment Inventory <em>XLSX</em></li>
+        </ul>
+        <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm" onclick="toast('Opens this folder')">Open folder</button><button class="btn btn-solid btn-sm" onclick="toast('Choose a file to add')">⬆ Add file</button></div>
+      </div>
+      <div class="doccard">
+        <h3>🤝 Volunteers &amp; teams</h3>
+        <ul>
+          <li>Volunteer Onboarding Flow <em>PDF</em></li>
+          <li>Background Check Policy <em>PDF</em></li>
+          <li>Serving Team Expectations <em>PDF</em></li>
+          <li>Volunteer Scheduling System <em>—</em></li>
+        </ul>
+        <div style="display:flex;gap:10px"><button class="btn btn-ghost btn-sm" onclick="toast('Opens this folder')">Open folder</button><button class="btn btn-solid btn-sm" onclick="toast('Choose a file to add')">⬆ Add file</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANNOUNCEMENTS ============ -->
+  <section class="page" data-page="announce">
+    <div class="phead"><h1>Announcements</h1><p class="sub">Post it here and it shows on the website's bulletin board right away. Old ones can be removed with one click.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <div class="field"><label>What do you want everyone to know?</label><textarea rows="3" placeholder="e.g., Potluck after service this Sunday — bring a dish if you can!"></textarea></div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+          <label class="toggle"><input type="checkbox" checked><span class="tr"></span></label>
+          <b style="font-size:15px">Show on the website</b>
+        </div>
+        <button class="btn btn-solid" onclick="toast('Posted — it is on the bulletin board now')">Post announcement</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">On the website now</h3>
+        <div class="rowlist">
+          <div class="row"><div class="grow"><h3 style="font-size:15px">The Reset registration is open — sign up by Sep 1</h3><div class="meta">Posted AUG 28</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Removed from the website')">Remove</button></div>
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Baptism Sunday is Sep 13 — talk to Pastor if you're ready</h3><div class="meta">Posted AUG 26</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Removed from the website')">Remove</button></div>
+          <div class="row"><div class="grow"><h3 style="font-size:15px">New Bible study links are posted under Groups &amp; Studies</h3><div class="meta">Posted AUG 24</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Removed from the website')">Remove</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRAYER WALL ============ -->
+  <section class="page" data-page="prayer">
+    <div class="phead">
+      <h1>Prayer Wall</h1>
+      <p class="sub">Requests from the website land here first. Nothing goes public until you approve it — you are the gatekeeper.</p>
+      <span class="helper">🙏 Best practice: first names only, and make sure you have their OK before approving.</span>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3 style="font-size:18px;margin-bottom:14px">Waiting for your OK (2)</h3>
+        <div class="rowlist">
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Marcus — job interview Thursday, first one since the layoff</h3><div class="meta">From the website · 2 hours ago</div></div><div class="acts"><button class="btn btn-solid btn-sm" onclick="toast('Approved — it is on the prayer wall')">Approve</button><button class="btn btn-ghost btn-sm" onclick="toast('Kept private — Pastor can still pray over it')">Keep private</button></div></div>
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Anonymous — struggling this week, please just pray</h3><div class="meta">From the website · yesterday</div></div><div class="acts"><button class="btn btn-solid btn-sm" onclick="toast('Approved — it is on the prayer wall')">Approve</button><button class="btn btn-ghost btn-sm" onclick="toast('Kept private — Pastor can still pray over it')">Keep private</button></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:18px;margin-bottom:14px">On the prayer wall (3)</h3>
+        <div class="rowlist">
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Danny — knee surgery recovery</h3><div class="meta">🙏 12 people prayed</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Removed from the wall')">Remove</button></div>
+          <div class="row"><div class="grow"><h3 style="font-size:15px">The Kowalski family — grieving their dad</h3><div class="meta">🙏 27 people prayed</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Removed from the wall')">Remove</button></div>
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Renee — first solo run this week</h3><div class="meta">🙏 8 people prayed</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Removed from the wall')">Remove</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GROUPS & STUDIES ============ -->
+  <section class="page" data-page="groups">
+    <div class="phead"><h1>Groups &amp; Bible Studies</h1><p class="sub">Add your small groups and studies with their meeting links. People tap Join on the website and the link takes them straight to your Zoom, phone bridge, or signup.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <div class="field"><label>Group or study name</label><input placeholder="e.g., Tuesday Night Bible Study"></div>
+        <div class="grid2" style="gap:14px">
+          <div class="field"><label>When does it meet?</label><input placeholder="e.g., Tuesdays 7:00 PM CT"></div>
+          <div class="field"><label>How?</label><select><option>Phone call</option><option>Video (Zoom, Meet...)</option><option>In person</option></select></div>
+        </div>
+        <div class="field"><label>Meeting or signup link <span class="why">(this is what the Join button opens)</span></label><input placeholder="https://zoom.us/j/... or your phone bridge number"></div>
+        <div class="field"><label>Who leads it?</label><input placeholder="e.g., Bill O."></div>
+        <button class="btn btn-solid" onclick="toast('Saved — it is on the Groups page with its link')">Save group</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">On the website (3)</h3>
+        <div class="rowlist">
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Night Owls</h3><div class="meta">FRI 11 PM PT · phone · link added ✓</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Edit this group')">Edit</button></div>
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Homefront</h3><div class="meta">TUE 7 PM CT · video · link added ✓</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Edit this group')">Edit</button></div>
+          <div class="row"><div class="grow"><h3 style="font-size:15px">Tailgate Bible Study</h3><div class="meta">SAT 8 AM CT · in person at 110 Garson Ln</div></div><button class="btn btn-ghost btn-sm" onclick="toast('Edit this group')">Edit</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MINISTRIES ============ -->
+  <section class="page" data-page="ministries">
+    <div class="phead"><h1>Ministries We Support</h1><p class="sub">The ministries your church stands behind. They show on your About page with their links.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <div class="field"><label>Ministry name</label><input placeholder="e.g., Highway Chaplains Network"></div>
+        <div class="field"><label>One sentence about them</label><input placeholder="What they do and why you support them"></div>
+        <div class="field"><label>Their website <span class="why">(optional)</span></label><input placeholder="https://..."></div>
+        <button class="btn btn-solid" onclick="toast('Added to your About page')">Add ministry</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:17px;margin-bottom:12px">On your About page</h3>
+        <p style="font-size:14px;color:var(--ink-soft)">Nothing here yet — the sample cards on the website will be replaced by the real ones you add.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ACCOUNT ============ -->
+  <section class="page" data-page="account">
+    <div class="phead"><h1>Help &amp; Account</h1><p class="sub">Stuck on anything? Tell us in plain words — a real person answers, usually the same day.</p></div>
+    <div class="grid31">
+      <div class="card">
+        <h3 style="font-size:18px;margin-bottom:14px">Ask for help</h3>
+        <div class="field"><label>What's going on?</label><input placeholder="e.g., I can't get my photo to upload"></div>
+        <div class="field"><label>Tell us more</label><textarea rows="5" placeholder="Describe it however you would over the phone. Screenshots help but are not required."></textarea></div>
+        <button class="btn btn-solid" onclick="toast('Sent! We will email you back, usually within a day')">Send to support</button>
+      </div>
+      <div class="stack">
+        <div class="card" style="background:linear-gradient(150deg,#241004,#47200C);border:0;color:#F3E2D2">
+          <div style="font-family:var(--font-utility);font-size:10.5px;letter-spacing:.14em;color:#FFB27E;margin-bottom:8px">YOUR PLAN</div>
+          <h3 style="font-size:20px;color:#FFF3E8;margin-bottom:6px">Fully sponsored — $0/month</h3>
+          <p style="font-size:14px;color:#E3C6AE;line-height:1.6">Your website and every tool in this portal are funded by Christian sponsors through Kingdom Creatives, so your church can put every dollar into ministry.</p>
+        </div>
+        <div class="card">
+          <h3 style="font-size:16px;margin-bottom:10px">Connections</h3>
+          <div class="field" style="margin-bottom:10px"><label>Your YouTube channel <span class="why">(sermons sync in nightly)</span></label><input placeholder="Channel ID or channel URL"></div>
+          <button class="btn btn-ghost btn-sm" onclick="toast('Connected — new videos will sync every night')">Save</button>
+          <p style="font-size:12.5px;color:var(--ink-soft);margin-top:12px;line-height:1.6">✓ Bible reader &nbsp;✓ Sermon Builder AI &nbsp;✓ Email sending<br>Included with Kingdom Creatives — no keys or accounts needed.</p>
+        </div>
+        <div class="card"><h3 style="font-size:16px;margin-bottom:8px">Your details</h3><p style="font-size:14px;color:var(--ink-soft)">Church for Truckers<br>110 Garson Ln, Farmington, MO 63640<br>churchfortruckers.org</p></div>
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span class="tick">✓</span><span id="toast-msg"></span></div>
+
+<script>
+/* Router */
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('current', p.dataset.page===id));
+  document.querySelectorAll('.nitem').forEach(n=>n.classList.toggle('active', n.dataset.nav===id));
+  document.getElementById('sidebar').classList.remove('open');
+  window.scrollTo({top:0});
+}
+document.querySelectorAll('.nitem').forEach(n=>n.addEventListener('click',()=>go(n.dataset.nav)));
+
+/* Toast */
+let tt;
+function toast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.add('show'); clearTimeout(tt);
+  tt=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+/* Checkbox pills */
+function chk(input){ input.closest('.check').classList.toggle('on', input.checked); }
+
+/* Autosave indicator */
+let at;
+function autosave(id){
+  const el=document.getElementById(id);
+  el.classList.add('show'); clearTimeout(at);
+  at=setTimeout(()=>el.classList.remove('show'),2200);
+}
+
+/* Live preview binding (Site editor) */
+let st;
+function livePreview(v){
+  document.getElementById('pvline').textContent = v || ' ';
+  const el=document.getElementById('ssaved');
+  el.classList.remove('show'); clearTimeout(st);
+  st=setTimeout(()=>el.classList.add('show'),700);
+}
+
+/* Giving mode toggle */
+function giveMode(btn,mode){
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('gm-tithely').style.display = mode==='tithely'?'':'none';
+  document.getElementById('gm-stripe').style.display  = mode==='stripe'?'':'none';
+}
+
+/* Streaming sermon demo */
+const draft = "DEADHEAD MILES\nEcclesiastes 1:2, 2:11 - Sunday, August 2\n\nOPENING\nEvery driver in this room knows the deadhead run. Miles you drive with nothing in the trailer. You are burning the same fuel, watching the same road, but the load is gone and the pay with it.\n\nSolomon knew that feeling. 'Vanity of vanities,' he writes. 'All is vanity.' The richest man alive, looking back at everything he built, and it felt like hauling empty.\n\nPOINT ONE - The empty trailer is not an empty trip.\nGod does some of His best work on the deadhead run. When the noise of the load is gone, you can finally hear...\n\n[ Draft continues - 41 minutes of material with applications, an illustration from I-80, and a call to action. Every word editable before you preach it. ]";
+let si=null;
+function streamSermon(){
+  const el=document.getElementById('stream');
+  if(si) clearInterval(si);
+  el.classList.add('live'); el.innerHTML='';
+  let i=0;
+  si=setInterval(()=>{
+    i+=2;
+    el.textContent = draft.slice(0,i);
+    el.innerHTML = el.textContent.replace(/\n/g,'<br>') + '<span class="cursor"></span>';
+    if(i>=draft.length){
+      clearInterval(si); si=null;
+      el.innerHTML = el.textContent.replace(/\n/g,'<br>');
+      document.getElementById('bsaved').classList.add('show');
+      toast('Draft finished and saved to your Sermon Library');
+    }
+  },18);
+}
+</script>
+</body>
+</html>
