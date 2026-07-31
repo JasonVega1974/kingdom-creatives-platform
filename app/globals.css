@@ -1,26 +1,223 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--kc-font-body);
+  --font-mono: var(--kc-font-utility);
+  --font-heading: var(--kc-font-display);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================================
+   KINGDOM CREATIVES THEME BRIDGE
+   ------------------------------------------------------------
+   The --kc-* custom properties are emitted per request by
+   app/(public)/layout.tsx from the tenant's church_theme row.
+   Nothing here hardcodes a brand colour - these are only the
+   fallbacks used before/without a theme row, plus the Tailwind
+   semantic names that map onto the tokens.
+   See lib/theme.ts for the column -> token mapping.
+   ============================================================ */
+
+:root {
+  /* Platform defaults (BUILD_BRIEF section 4). A tenant theme overrides
+     these; they exist so an unthemed page is never unstyled. */
+  --kc-brand: #1f4d3a;
+  --kc-brand-deep: color-mix(in srgb, #1f4d3a 80%, #000000);
+  --kc-brand-night: color-mix(in srgb, #1f4d3a 26%, #100a06);
+  --kc-brand-contrast: #fdfbf5;
+  --kc-brand-wash: color-mix(in srgb, #1f4d3a 8%, #ffffff);
+  --kc-brand-soft: color-mix(in srgb, #1f4d3a 45%, #ffffff);
+  --kc-accent: #c9a227;
+  --kc-paper: #faf7f0;
+  --kc-paper-dim: #f3eadf;
+  --kc-surface: #ffffff;
+  --kc-ink: #22271f;
+  --kc-ink-soft: #6b5d51;
+  --kc-line: #e3d5c6;
+  --kc-font-display: var(--font-fraunces), Georgia, serif;
+  --kc-font-body: var(--font-source-sans), system-ui, sans-serif;
+  --kc-font-utility: var(--font-plex-mono), ui-monospace, monospace;
+  --kc-radius: 10px;
+  --kc-shadow:
+    0 2px 6px rgb(0 0 0 / 0.06), 0 12px 32px rgb(0 0 0 / 0.1);
+}
+
+/* Tailwind semantic utilities: bg-paper, text-ink, bg-brand, font-display... */
+@theme inline {
+  --color-brand: var(--kc-brand);
+  --color-brand-deep: var(--kc-brand-deep);
+  --color-brand-night: var(--kc-brand-night);
+  --color-brand-contrast: var(--kc-brand-contrast);
+  --color-brand-wash: var(--kc-brand-wash);
+  --color-brand-soft: var(--kc-brand-soft);
+  --color-kc-accent: var(--kc-accent);
+  --color-paper: var(--kc-paper);
+  --color-paper-dim: var(--kc-paper-dim);
+  --color-surface: var(--kc-surface);
+  --color-ink: var(--kc-ink);
+  --color-ink-soft: var(--kc-ink-soft);
+  --color-line: var(--kc-line);
+  --font-display: var(--kc-font-display);
+  --font-body: var(--kc-font-body);
+  --font-utility: var(--kc-font-utility);
+}
+
+/* Public church site scope. Also points shadcn's primary/ring at the church
+   brand so shadcn components inherit the tenant's colour without being told. */
+.kc-site {
+  --primary: var(--kc-brand);
+  --primary-foreground: var(--kc-brand-contrast);
+  --ring: var(--kc-brand);
+  --radius: var(--kc-radius);
+
+  background: var(--kc-paper);
+  color: var(--kc-ink);
+  font-family: var(--kc-font-body);
+  line-height: 1.6;
+}
+
+.kc-site :is(h1, h2, h3, h4) {
+  font-family: var(--kc-font-display);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* Quality floor (BUILD_BRIEF section 4): visible focus, reduced motion. */
+.kc-site :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--kc-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-site *,
+  .kc-site *::before,
+  .kc-site *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }
