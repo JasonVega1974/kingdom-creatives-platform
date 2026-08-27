@@ -95,11 +95,29 @@ match.
 
 ---
 
-## FF-06 - proxy.ts does not refresh the Supabase session
+## FF-06 - proxy.ts does not refresh the Supabase session - RESOLVED
 
-**File:** `proxy.ts`, `lib/supabase/server.ts`
+**File:** `proxy.ts`, `lib/supabase/server.ts`, `lib/supabase/proxy.ts`
 **Raised:** Phase A review, 2026-07-30
-**Must fix by:** BLOCKER for Phase C - before any login ships
+**Resolved:** Phase C shell, 2026-08-27
+**Was:** BLOCKER for Phase C - before any login ships
+
+**Fixed exactly as the original entry prescribed.** `lib/supabase/proxy.ts`
+exports `refreshSession`, which `proxy.ts` calls on every matched request with a
+cookie handler writing to both the request and the outgoing response. It uses
+`getUser()`, not `getSession()`, so the token is verified against the auth
+server rather than trusted from the cookie. The tenant headers are untouched,
+and the refresh runs for public routes too - a token that expires while a pastor
+reads their own site should not strand them at `/portal`.
+
+The `setAll` catch in `lib/supabase/server.ts` stays as-is. It is now the
+standard pattern it was always meant to be, because something else really does
+refresh the session.
+
+Not yet verified against live Supabase - no `.env.local` existed when this was
+written. Confirm a real login survives a token expiry before closing the loop.
+
+Original entry follows.
 
 `createClient()` in `lib/supabase/server.ts` swallows cookie-write failures in
 its `setAll` catch, which is the standard `@supabase/ssr` pattern - but only
@@ -192,11 +210,29 @@ cache"` migration where the question disappears entirely.
 
 ---
 
-## FF-11 - theme values are validated on read but never on write
+## FF-11 - theme values are validated on read but never on write - HALF DONE
 
-**File:** `lib/theme.ts`, future `app/portal/theme/`
+**File:** `lib/theme.ts`, `app/(portal)/portal/details/actions.ts`
 **Raised:** Phase A review, 2026-07-30
-**Must fix by:** Phase C - ships with the theme editor
+**Updated:** Phase C shell, 2026-08-27
+**Must fix by:** Phase C - the contrast half is still open
+
+**First half fixed.** `saveBranding` in the Church Details tab validates each
+colour with its own `normalizeHex` before writing, rejects the whole save with
+"Colours need to look like #A1B2C3", and normalises `#abc` to `#AABBCC` so the
+stored value is always the form the renderer expects. The silent-rejection
+failure described below can no longer happen through the portal.
+
+Note the duplication that creates: `normalizeHex` now exists in both
+`lib/theme.ts` (read side) and the details action (write side). They agree
+today. Fold them into one exported helper before a third copy appears.
+
+**Second half still open:** nothing checks contrast. All three ratios in the
+table below are still unenforced, and the branding form happily saves a pale
+brand with near-white text on it. That is the part that must ship before a
+pastor other than Jason touches the colour pickers.
+
+Original entry follows.
 
 Two halves of the same gap, both invisible to the person they affect:
 
@@ -478,3 +514,50 @@ rather than an error.
 
 Fix: pass `type="button"` at the call sites, or wrap `Button` for portal use with
 that default. Do not edit the generated file - see FF-20.
+
+---
+
+## FF-23 - migration 01 RLS policies have `using` without `with check`
+
+**File:** `supabase/migrations/01_kc_migration_01.sql`
+**Raised:** Phase C shell, 2026-08-27
+**Must fix by:** BLOCKER - before a second church has real data in the system
+
+Every "member write" policy in migration 01 is written as:
+
+```sql
+create policy "announcements: member write"
+  on public.announcements for all
+  using ( exists (select 1 from church_members cm
+                  where cm.church_id = announcements.church_id
+                    and cm.user_id = auth.uid()) );
+```
+
+`using` is checked against the row as it exists BEFORE the statement. On a
+`for all` policy that covers UPDATE and INSERT, `with check` - which tests the
+row as it will exist AFTER - defaults to the `using` expression only for
+UPDATE, and to permissive for INSERT under some configurations. The practical
+consequence is that a member of church A can `update ... set church_id = <B>`
+and move the row out of their own tenant into another church's data, or insert
+a row already stamped with another church's id.
+
+Affects eight tables: `pastor_notes`, `announcements`, `prayer_requests`,
+`groups`, `ministries`, `gifts`, `email_lists`, `contact_list_memberships`.
+`church_links` (draft 09) already has both clauses and is not affected.
+
+**Why it is safe right now:** `church-for-truckers` is the only church with a
+member, so there is no second tenant to move a row into, and nothing is public
+yet. The exposure starts the moment a second church has a real user.
+
+**Why it is a blocker rather than a nice-to-have:** this is the one class of bug
+where the damage is silent and cross-tenant. A church seeing another church's
+prayer requests is not a bug report, it is an incident.
+
+Fix: re-issue each policy with a `with check` clause identical to its `using`
+clause. Mechanical, eight tables, one draft file. Do it as its own migration so
+the diff is reviewable - do not fold it into a feature migration.
+
+Application code does not rely on the gap: every portal write already filters
+`.eq("church_id", session.site.church.id)` from the server-resolved session and
+never accepts a church id from the client. That is defence in depth, not a
+substitute - RLS is the boundary that holds when a query forgets.

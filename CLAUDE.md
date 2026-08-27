@@ -43,10 +43,29 @@ Standing rules for every session in this repo. These override anything else.
    are used only in Route Handlers / Server Actions / Edge Functions. History
    note: the old WP system leaked a YouTube API key client-side.
 7. **ASCII straight quotes only** in source files.
-8. **WordPress stays untouched.** The old multisite (Cloudways) serves
-   churchfortruckers.org until cutover. Nothing here touches it.
+8. **Know what is actually live.** Updated 2026-08-27 - the previous version of
+   this rule said WordPress serves churchfortruckers.org. It does not, and has
+   not since Jason moved Kingdom Creatives off Cloudways.
+
+   | Thing | State |
+   |---|---|
+   | `churchfortruckers.org` | Served by the **Vercel project `kingdom-creatives`** - the static launch site. Keeps the domain until Phase D cutover. |
+   | `kingdom-creatives-platform` (this repo) | Serves **nothing public yet**. |
+   | Supabase `cyyxhhwuyeyvewqrhewt` | Backs nothing public yet. |
+   | WordPress multisite / Cloudways | **Gone.** Local backup on Jason's desktop only. |
+
+   Consequence: **running a draft in `supabase/drafts/` is not a production
+   change.** No maintenance window, no cutover risk. That stops being true at
+   Phase D, when DNS moves off the static site - after that, re-read this rule
+   before running anything.
+
+   The static site is a separate Vercel project. Nothing in this repo deploys
+   to it, and nothing here should try to edit it.
 9. **`wp-legacy-reference/` is read-only reference** - never deployed, never
-   imported.
+   imported. The full WordPress backup (including the `pastor-portal-plugin`
+   source and the `zvkcuehwvv.sql` dump) lives outside this repo at
+   `Desktop/KingdomCreatives-Backup/`. It is the behaviour spec for what the
+   portal replaces - read it, never port from it.
 
 ## 1. Where things are
 
@@ -56,6 +75,7 @@ Standing rules for every session in this repo. These override anything else.
 | `docs/BUILD_BRIEF_ADDENDUM_01.md` | Multi-page sitemap. **Wins on conflict.** |
 | `docs/KC_MASTER_TODO.md` | Phase order + who does what. Newest of the three. |
 | `docs/FAST_FOLLOW.md` | Reviewed gaps deliberately deferred, with deadlines. Read before starting a phase - some entries are blockers for it. |
+| `docs/PORTAL_SPEC.md` | Phase C settings model + tab spec. **Read before adding any table** - section 2 records which "missing" tables already exist. |
 | `prototypes/cft-site-orange.html` | Public site spec, section by section. |
 | `prototypes/cft-pastor-portal.html` | Pastor Portal spec. The product. |
 | `supabase/migrations/` | SQL that has been run against the live project. |
@@ -80,6 +100,18 @@ Standing rules for every session in this repo. These override anything else.
   `lib/church.ts`.
 - **Never trust a client-supplied church id.** `proxy.ts` strips inbound
   `x-church-*` headers before setting its own.
+- **The portal is gated in `lib/portal/auth.ts`, not in `proxy.ts`.** The proxy
+  refreshes the Supabase session (it is the only place that can write a rotated
+  cookie back) but does not redirect. Access is asserted per page AND per
+  Server Action with `requirePortalUser()`, because a Server Action is a public
+  POST endpoint that never passes through a page's check.
+- **Portal writes use `updateTag`, not `revalidateTag`.** Next 16's
+  `revalidateTag` is stale-while-revalidate and now requires a second argument;
+  it would show a pastor their old text right after saving. `updateTag` expires
+  immediately and is Server-Action-only, which is exactly the call site.
+- **A feature toggle is a section toggle.** There is no `features` map. The
+  registry of sections that can exist is `lib/portal/sections.ts`; the
+  per-church on/off state is `church_sections.visible`. See PORTAL_SPEC 2.2.
 
 ## 3. Regenerating types after a migration
 
@@ -95,6 +127,11 @@ Supabase CLI to be logged in.
 
 - **Phase A - Foundation: built.** Scaffold, tenant resolution, Supabase
   clients, generated types, theme system.
-- Phase B - Public site (spec: `cft-site-orange.html`).
-- Phase C - Pastor Portal (spec: `cft-pastor-portal.html`).
+- Phase B - Public site (spec: `cft-site-orange.html`). **Blocked** until
+  draft 08 then draft 04 are run - there is no page content in the DB.
+- **Phase C - Pastor Portal: shell built.** Auth (`lib/portal/auth.ts`), session
+  refresh in the proxy, sidebar per the prototype, "Edit My Website" section
+  editor, "Church Details" (identity / service times / branding). Every other
+  sidebar tab renders a placeholder from `lib/portal/nav.ts`. Spec:
+  `docs/PORTAL_SPEC.md` + `cft-pastor-portal.html`.
 - Phase D - Cutover. Phase E - KC platform layer.
