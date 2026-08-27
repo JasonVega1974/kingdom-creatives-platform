@@ -696,9 +696,27 @@ management. See `docs/PORTAL_SPEC.md` open question 3.
 
 ## FF-27 - churches and church_theme had no write policy at all
 
-**File:** live schema; fix drafted in `supabase/drafts/17_churches_write_policy.sql`
+**File:** `supabase/migrations/17_churches_write_policy.sql`
 **Raised:** 2026-08-27, from a failed save on the Church Details tab
-**Must fix by:** BLOCKER - Church Details cannot save anything until this runs
+**STATUS: CLOSED 2026-08-27 - fixed and verified live.**
+
+Draft 17 applied 2026-08-27. Church Details now saves and persists, confirmed by
+retest on both the identity and service-times forms. The column grants landed as
+designed - `churches` UPDATE carries exactly `name, tagline, address, phone,
+email, service_times, updated_at`, with no `slug`, `custom_domain`, `status`,
+`id` or `template_id`.
+
+The form fields no longer blank out after save, which confirms that symptom was
+React 19 resetting an uncontrolled form to server values that had never changed,
+not a separate read-back bug.
+
+One loose end came out of the section 4 output and is handled by draft 18:
+`churches` still carried a blanket INSERT grant, and neither table had DELETE
+revoked. Not exploitable - RLS denies both commands with no matching policy -
+but a grant that outlives its purpose becomes live the moment someone adds the
+policy it was waiting for.
+
+The original entry follows.
 
 Draft 16 audited both tables. Each has RLS on and exactly one policy, both
 `for select`. No insert, update or delete policy on either. Every write from
