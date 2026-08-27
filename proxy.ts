@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { refreshSession } from "@/lib/supabase/proxy";
 import {
   CHURCH_HOST_HEADER,
   CHURCH_ID_HEADER,
@@ -18,8 +19,17 @@ import {
  * warning on every build. Same API, same request-time position - only the
  * filename and the exported function name changed.
  *
- * Responsibility is deliberately narrow: resolve the tenant, stamp it on the
- * request headers, get out of the way. No auth, no redirects, no rewrites yet.
+ * Two responsibilities, both of which have to happen here and nowhere else:
+ *
+ *   1. Resolve the tenant and stamp it on the request headers.
+ *   2. Refresh the Supabase session, because the proxy is the only place that
+ *      sees both request and response and can therefore write a rotated auth
+ *      cookie back to the browser.
+ *
+ * It deliberately does NOT gate the portal. Redirecting unauthenticated users
+ * from here would be a routing convenience, not a security boundary - the real
+ * check is server-side in lib/portal/auth.ts, backed by RLS. Doing it in one
+ * place means there is no second copy to fall out of sync.
  *
  * Headers are stripped from the incoming request first, so a client cannot
  * forge x-church-id and read another church's data.
@@ -45,6 +55,12 @@ export async function proxy(request: NextRequest) {
   }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // Rotates the auth cookie onto `response` when Supabase issues a new one.
+  // Must run for every matched request, not just portal routes: a token that
+  // expires while the pastor is reading their own public site should still be
+  // refreshed, or they land on /portal already signed out.
+  await refreshSession(request, response);
 
   // Response-side echo, dev only: makes "which church am I looking at, and
   // which rule matched?" answerable from the network tab.
