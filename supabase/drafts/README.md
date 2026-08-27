@@ -17,8 +17,7 @@ then parses the prose as SQL - the symptom is a baffling
 
 | File | What | Required for | Urgency |
 |---|---|---|---|
-| `17_churches_write_policy.sql` | Write policies + column grants on `churches` / `church_theme` (FF-27) | **Church Details saving at all** | **Blocker.** Run next |
-| `16_churches_write_policy_audit.sql` | Read-only. The audit behind 17 | Nothing - diagnostics | Already run 2026-08-27 |
+| `18_revoke_residual_grants.sql` | Revoke the unused INSERT/DELETE grants left on `churches` / `church_theme` | Nothing today - closes a latent trap | Soon. Cheap, and it stops a future INSERT policy inheriting more than it asks for |
 | `14_videos_published_rls.sql` | Add `published = true` to the public `videos` select policy (FF-25) | Phase B video pages | Before anything public reads `videos`. Not today - no video rows exist |
 | `11_sermons_church_link.sql` | `sermons.church_link_id` - nullable, tenant-safe composite FK to `church_links` | Sermon Library tab, nightly YouTube sync | When that work starts. Requires 09 (done) |
 | `15_post_batch_verify.sql` | Read-only. Re-checks that 08/04/09/10/12 took | Nothing - diagnostics | Run any time. Already passed 2026-08-27 |
@@ -41,6 +40,8 @@ All in `supabase/migrations/`, applied date in the file header.
 | `10_cft_links_seed.sql` | 2026-08-27 | CFT links. Verified: giving=1, social=1, video=2 |
 | `12_grant_portal_access.sql` | 2026-08-27 | Portal membership. Verified: 2 pastors on CFT |
 | `13_rls_with_check.sql` | 2026-08-27 | Explicit `with check` on 7 policies. **Semantic no-op** - see FF-23 STATUS |
+| `16_churches_write_policy_audit.sql` | 2026-08-27 | Read-only audit. Found churches/church_theme had select policies only |
+| `17_churches_write_policy.sql` | 2026-08-27 | Write policies + column grants. Church Details saves. Verified by retest (FF-27) |
 
 Numbering skips nothing and reuses nothing. `02` is optional and still unrun, so
 `03` was applied ahead of it; `14` was reserved for FF-24 and reassigned to FF-25
