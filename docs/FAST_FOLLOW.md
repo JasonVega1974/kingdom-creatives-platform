@@ -691,3 +691,93 @@ migration 01 and false of the schema as a whole. Correct it when this is settled
 
 Not urgent: CFT has only pastors. Decide the model before Phase C ships role
 management. See `docs/PORTAL_SPEC.md` open question 3.
+
+---
+
+## FF-27 - churches and church_theme had no write policy at all
+
+**File:** live schema; fix drafted in `supabase/drafts/17_churches_write_policy.sql`
+**Raised:** 2026-08-27, from a failed save on the Church Details tab
+**Must fix by:** BLOCKER - Church Details cannot save anything until this runs
+
+Draft 16 audited both tables. Each has RLS on and exactly one policy, both
+`for select`. No insert, update or delete policy on either. Every write from
+Church Details has been refused since the tab was built.
+
+It presented as a successful save because **an UPDATE refused by RLS is not an
+error**. The row is filtered out of the statement's scope, Postgres reports 0
+rows changed, PostgREST answers 204 No Content, and supabase-js returns
+`{ error: null }`. The action checked only `error`, so it could not tell "wrote
+one row" from "wrote nothing".
+
+Edit My Website was unaffected because it writes `church_sections`, which does
+have `pastor+ can edit sections`.
+
+Two fixes, both needed:
+
+1. **Code, done** - `saveIdentity`, `saveServiceTimes` and `saveBranding` now
+   chain `.select()` and treat an empty result as a definite refusal, with a
+   different message from a transport failure. A permission problem never
+   succeeds on retry, so "Try again in a moment" was the wrong thing to say.
+2. **Schema, draft 17** - `for update` on churches (not `for all`: DELETE would
+   let a pastor cascade away their own tenant), insert + update on church_theme
+   for the branding upsert, plus column-level GRANTs. RLS cannot express
+   "may edit name but not slug" - a policy sees the row, never which columns
+   changed - so `slug`, `custom_domain` and `status` are held back with column
+   privileges instead.
+
+**The general lesson.** Any portal write that checks only `error` is capable of
+this. Before adding a Server Action that writes, chain `.select()` and assert a
+row came back.
+
+---
+
+## FF-28 - the .select() read-back depends on status = 'active'
+
+**File:** `app/(portal)/portal/details/actions.ts`
+**Raised:** 2026-08-27, while writing draft 17
+**Must fix by:** before any church exists whose status is not `active`
+
+The read-back added for FF-27 is filtered by the same RLS that governs reads,
+and both select policies on `churches` and `church_theme` require
+`status = 'active'`. So on a non-active church a *successful* write would read
+back zero rows and be reported as a refusal - the inverse of the FF-27 bug.
+
+Not reachable today: `getChurchSite()` uses the anon public client, so a
+non-active church cannot load the portal at all. Both problems have the same
+fix - a `pastor+ can view own church` select policy that does not test status -
+and it should be done once, deliberately, rather than bolted onto draft 17.
+
+---
+
+## FF-29 - publish() calls updateTag against an unstable_cache entry
+
+**File:** `app/(portal)/portal/details/actions.ts`, `app/(portal)/portal/website/actions.ts`, `lib/church.ts`
+**Raised:** 2026-08-27
+**Must fix by:** before Phase B goes live, or before `lib/church.ts` moves to `use cache`
+
+`publish()` calls `updateTag(churchTag(slug))`, but `getChurchSite()` caches
+with `unstable_cache({ tags: [churchTag(slug)] })`. Per the installed docs
+(`node_modules/next/dist/docs/.../updateTag.md`), `updateTag` recognises tags
+from two sources only: `fetch` with `next.tags`, and `cacheTag()` inside a
+`use cache` function. `unstable_cache`'s `tags` option is invalidated by
+`revalidateTag` / `revalidatePath`, and its own reference page marks the whole
+API as replaced by `use cache` in Next 16.
+
+So the `updateTag` call is a no-op, and the `revalidatePath("/", "layout")` on
+the next line is doing all the invalidation. Nothing is broken today - that
+second call is a bigger hammer than needed and covers it.
+
+It matters because CLAUDE.md section 2 states the `updateTag` rule as
+architecture ("Portal writes use `updateTag`, not `revalidateTag`"), and that
+rule does not hold while the cache layer is `unstable_cache`. Someone will
+eventually delete the `revalidatePath` line as redundant and quietly break
+read-your-own-writes.
+
+Two coherent end states - pick one, do not leave it as it is:
+
+- Migrate `getChurchSite()` to `use cache` + `cacheTag()`, which makes
+  `updateTag` correct and matches what CLAUDE.md already claims.
+- Or drop `updateTag`, keep `revalidatePath`, and correct CLAUDE.md.
+
+The first is the intended direction; `unstable_cache` is legacy in Next 16.
