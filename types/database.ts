@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -51,6 +51,56 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "announcements_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      church_links: {
+        Row: {
+          church_id: string
+          created_at: string | null
+          external_id: string | null
+          id: string
+          is_primary: boolean
+          kind: string
+          label: string
+          platform: string
+          sort_order: number
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          church_id: string
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          is_primary?: boolean
+          kind: string
+          label: string
+          platform: string
+          sort_order?: number
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          church_id?: string
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          is_primary?: boolean
+          kind?: string
+          label?: string
+          platform?: string
+          sort_order?: number
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "church_links_church_id_fkey"
             columns: ["church_id"]
             isOneToOne: false
             referencedRelation: "churches"
