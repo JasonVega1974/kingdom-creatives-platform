@@ -1,0 +1,8 @@
+# Line endings are normalised to LF in the repository and checked out native.
+# Without this, core.autocrlf is a per-machine setting: a clone on a Mac or a
+# Linux CI runner would rewrite every line of every file it touches, and the
+# resulting whole-file diffs would bury the real change.
+* text=auto eol=lf
+
+# SQL in supabase/ is pasted into the Supabase SQL editor by hand. LF only.
+*.sql text eol=lf
