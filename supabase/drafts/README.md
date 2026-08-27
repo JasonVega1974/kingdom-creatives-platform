@@ -1,50 +1,58 @@
 # supabase/drafts
 
 SQL drafted for Jason to run manually in the Supabase SQL editor
-(project `cyyxhhwuyeyvewqrhewt`). **Nothing in this folder has been run.**
+(project `cyyxhhwuyeyvewqrhewt`). **Nothing left in this folder has been run.**
 
 Ground rule 0.3: Claude never executes SQL. Draft here, stop, Jason runs it and
 pastes the result back. Once a file has been run, move it to
 `supabase/migrations/` with the date it was applied noted at the top, and
 regenerate types with `npm run types`.
 
-**Run 08 first.** It is the blocker: draft 04 cannot be applied until the
-`church_sections` unique constraint is widened, and Phase B has no content
-without 04.
+Use **block comments** (`/* ... */`) in new drafts, not line comments. Copying a
+long file into the SQL editor has dropped a `--` prefix before, and Postgres
+then parses the prose as SQL - the symptom is a baffling
+`relation "the" does not exist`.
 
-**Run 13 last, and run its three sections separately.** The Supabase SQL
-editor returns only the last statement's result, so pasting 13 in one go
-hides the audit in section 1 - which is the part that needs reading.
+## Still to run
 
-| Order | File | What | Required for |
+| File | What | Required for | Urgency |
 |---|---|---|---|
-| 1 | `08_widen_church_sections_unique.sql` | Widen `UNIQUE (church_id, section_key)` to include `page_slug` | **Blocker.** Draft 04, all of Phase B, section editing in Phase C |
-| 2 | `04_cft_sections_seed.sql` | The CFT page/section content | Phase B "renders 100% from DB"; the portal section editor has nothing to list without it |
-| 3 | `09_church_links.sql` | New table: multi-valued social / video / giving links | Portal Church Details links panel; CFT has two YouTube channels and the single `churches.youtube_channel_id` column cannot hold both |
-| 4 | `10_cft_links_seed.sql` | Data only - CFT's two YouTube channels, Facebook group, Tithe.ly link | Requires 09 |
-| 5 | `12_grant_portal_access.sql` | Puts your auth user in `church_members` for CFT | **Logging into the portal at all.** Create the auth user in the dashboard first - the file says how |
-| 6 | `13_rls_with_check.sql` | Adds the missing `with check` to 7 policies (FF-23), plus a read-only RLS audit | Nothing today - CFT is the only church with a member. **Blocker before a second church has real data.** Run it last: section 1 audits `church_links`, so it wants 09 already applied |
-| 7 | `11_sermons_church_link.sql` | `sermons.church_link_id` - nullable, tenant-safe FK to `church_links` | Sermon Library tab, nightly YouTube sync. Requires 09. Not urgent - safe to run later alongside that work |
-| - | `07_cft_giving_url.sql` | Data only - set `churches.giving_url` to the CFT Tithe.ly form link | Every Give button on the public site (Phase B). Superseded by 09/10 once the public site reads `church_links` - see docs/PORTAL_SPEC.md section 2.3 |
-| - | `05_devotionals.sql` | Blocked on ADDENDUM_01 decision B2 | Phase B `/devotionals` |
-| - | `06_sections_inspect.sql` | Read-only diagnostics behind draft 08 | Nothing. 08 is self-diagnosing, so this is only worth running if 08 reports something unexpected |
-| - | `02_theme_tokens.sql` | Optional: per-church control of the neutral ramp + exact brand ramp | Nothing yet - only if a church needs neutrals that differ from the platform defaults |
+| `14_videos_published_rls.sql` | Add `published = true` to the public `videos` select policy (FF-25) | Phase B video pages | Before anything public reads `videos`. Not today - no video rows exist |
+| `11_sermons_church_link.sql` | `sermons.church_link_id` - nullable, tenant-safe composite FK to `church_links` | Sermon Library tab, nightly YouTube sync | When that work starts. Requires 09 (done) |
+| `15_post_batch_verify.sql` | Read-only. Re-checks that 08/04/09/10/12 took | Nothing - diagnostics | Run any time. Already passed 2026-08-27 |
+| `07_cft_giving_url.sql` | Data only - `churches.giving_url` for CFT | Give buttons in Phase B | Superseded by 09/10 once the public site reads `church_links`. See PORTAL_SPEC 2.3 |
+| `05_devotionals.sql` | Blocked on ADDENDUM_01 decision B2 | Phase B `/devotionals` | Blocked |
+| `06_sections_inspect.sql` | Read-only diagnostics behind draft 08 | Nothing | Only if 08 ever reports something odd. 08 is applied and verified |
+| `02_theme_tokens.sql` | Optional per-church neutral ramp | Nothing yet | Only if a church needs neutrals off the platform default |
 
-After running 09, regenerate types so `church_links` is typed:
+## Applied
 
-```
-npm run types
-```
-
-## Already applied
-
-Both live in `supabase/migrations/`, with the applied date in the file header:
+All in `supabase/migrations/`, applied date in the file header.
 
 | File | Applied | What |
 |---|---|---|
-| `01_kc_migration_01.sql` | 2026-07-30 | New tables, column adds, RLS policies, `increment_prayer_count`. Verified present via `supabase gen types`. |
-| `03_cft_theme_seed.sql` | 2026-07-30 | Data only - set the CFT theme row to the orange prototype palette. Verified live: the rendered page reports `#EC5D1B` / `#161311` / `#FDFBF5`, Fraunces / Source Sans 3. |
+| `01_kc_migration_01.sql` | 2026-07-30 | New tables, column adds, RLS policies, `increment_prayer_count` |
+| `03_cft_theme_seed.sql` | 2026-07-30 | CFT theme row set to the orange prototype palette. Verified live |
+| `08_widen_church_sections_unique.sql` | 2026-08-27 | `UNIQUE (church_id, page_slug, section_key)`. Verified |
+| `04_cft_sections_seed.sql` | 2026-08-27 | CFT page content. Verified: 34 rows, 11 pages, no bare-string jsonb |
+| `09_church_links.sql` | 2026-08-27 | `church_links` table + RLS. Verified: RLS on, 2 policies |
+| `10_cft_links_seed.sql` | 2026-08-27 | CFT links. Verified: giving=1, social=1, video=2 |
+| `12_grant_portal_access.sql` | 2026-08-27 | Portal membership. Verified: 2 pastors on CFT |
+| `13_rls_with_check.sql` | 2026-08-27 | Explicit `with check` on 7 policies. **Semantic no-op** - see FF-23 STATUS |
 
-Numbering skips 02 deliberately: `02_theme_tokens.sql` is optional and still
-unrun, so 03 was applied ahead of it. Do not renumber - the header dates are the
-record, not the filenames.
+Numbering skips nothing and reuses nothing. `02` is optional and still unrun, so
+`03` was applied ahead of it; `14` was reserved for FF-24 and reassigned to FF-25
+when the audit closed FF-24. Do not renumber - the header dates are the record,
+not the filenames.
+
+## What the 2026-08-27 audit settled
+
+Section 1 of draft 13 audited RLS across all twenty-one public tables:
+
+- RLS is **on** everywhere, every table has at least one policy. FF-24 closed.
+- The missing `with check` clauses were **not a defect**. Postgres uses `using`
+  as the `with check` when the latter is absent. FF-23 closed.
+- `videos.published` is ignored by its public select policy. **Real.** FF-25,
+  fixed by draft 14.
+- Two authorization models coexist - pre-migration-01 tables gate on role,
+  migration-01 tables gate on membership alone. FF-26.
