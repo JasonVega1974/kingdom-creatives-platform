@@ -1,3 +1,6 @@
+/* APPLIED 2026-08-27 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do. */
+
 /* ============================================================
    DRAFT 16 - do churches / church_theme have a write policy? (READ ONLY)
    Project: cyyxhhwuyeyvewqrhewt

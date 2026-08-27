@@ -1,7 +1,15 @@
+/* APPLIED 2026-08-27 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do. */
+
+/* Ran as one paste rather than section by section, so only the LAST
+   statement's result was visible - the column-privilege query. The policy
+   list in section 4 was never seen. Covered empirically instead: Church
+   Details saves and persists, which the update policy is required for. */
+
 /* ============================================================
    DRAFT 17 - let a pastor edit their own church (FF-27)
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-27.
    Required for: the Church Details tab saving anything at all.
    Requires: nothing. Safe to run now.
 
