@@ -17,6 +17,8 @@ then parses the prose as SQL - the symptom is a baffling
 
 | File | What | Required for | Urgency |
 |---|---|---|---|
+| `17_churches_write_policy.sql` | Write policies + column grants on `churches` / `church_theme` (FF-27) | **Church Details saving at all** | **Blocker.** Run next |
+| `16_churches_write_policy_audit.sql` | Read-only. The audit behind 17 | Nothing - diagnostics | Already run 2026-08-27 |
 | `14_videos_published_rls.sql` | Add `published = true` to the public `videos` select policy (FF-25) | Phase B video pages | Before anything public reads `videos`. Not today - no video rows exist |
 | `11_sermons_church_link.sql` | `sermons.church_link_id` - nullable, tenant-safe composite FK to `church_links` | Sermon Library tab, nightly YouTube sync | When that work starts. Requires 09 (done) |
 | `15_post_batch_verify.sql` | Read-only. Re-checks that 08/04/09/10/12 took | Nothing - diagnostics | Run any time. Already passed 2026-08-27 |
