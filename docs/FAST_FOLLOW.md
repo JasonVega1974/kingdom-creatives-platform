@@ -541,9 +541,35 @@ consequence is that a member of church A can `update ... set church_id = <B>`
 and move the row out of their own tenant into another church's data, or insert
 a row already stamped with another church's id.
 
-Affects eight tables: `pastor_notes`, `announcements`, `prayer_requests`,
-`groups`, `ministries`, `gifts`, `email_lists`, `contact_list_memberships`.
+**Corrected 2026-08-27** while drafting the fix. The original entry said eight
+tables and got the membership wrong in both directions. It is seven policies:
+
+| Policy | Command | Why |
+|---|---|---|
+| `announcements: member write` | `for all` | tenant boundary |
+| `prayer_requests: member full access` | `for all` | tenant boundary |
+| `groups: member write` | `for all` | tenant boundary |
+| `ministries: member write` | `for all` | tenant boundary |
+| `email_lists: member full access` | `for all` | tenant boundary |
+| `contact_list_memberships: member full access` | `for all` | reaches through `email_lists` |
+| `pastor_notes: owner update` | `for update` | **user** boundary, not tenant |
+
+- **`gifts` was listed wrongly.** `gifts: member read` is `for select`. A SELECT
+  policy has no after image, so `with check` is not a legal clause on it.
+- **`pastor_notes` was missed.** Its update policy has `using` and no
+  `with check`, so a pastor can reassign a note to another `user_id` and file a
+  private note in someone else's notes. Same root cause, different boundary.
+
 `church_links` (draft 09) already has both clauses and is not affected.
+
+SQL: `supabase/drafts/13_rls_with_check.sql`.
+
+### The larger question this opened - FF-24
+
+Migration 01 enables RLS on eight tables. `types/database.ts` lists twenty-one.
+The other thirteen predate migration 01 and nothing in the repo records whether
+RLS was ever enabled on them. See FF-24 - it is potentially a worse hole than
+this one and is unresolved until the audit comes back.
 
 **Why it is safe right now:** `church-for-truckers` is the only church with a
 member, so there is no second tenant to move a row into, and nothing is public
@@ -561,3 +587,47 @@ Application code does not rely on the gap: every portal write already filters
 `.eq("church_id", session.site.church.id)` from the server-resolved session and
 never accepts a church id from the client. That is defence in depth, not a
 substitute - RLS is the boundary that holds when a query forgets.
+
+---
+
+## FF-24 - unknown whether RLS is enabled on the thirteen pre-migration-01 tables
+
+**File:** live schema; no repo file records this
+**Raised:** Phase C shell, 2026-08-27, while drafting the FF-23 fix
+**Must fix by:** BLOCKER - before anything in this project is publicly reachable
+
+Migration 01 runs `enable row level security` on exactly eight tables:
+`pastor_notes`, `announcements`, `prayer_requests`, `groups`, `ministries`,
+`gifts`, `email_lists`, `contact_list_memberships`.
+
+`types/database.ts` is generated from the live schema and lists twenty-one:
+the eight above plus `churches`, `church_members`, `church_sections`,
+`church_theme`, `contacts`, `documents`, `events`, `gallery`, `sermons`,
+`staff`, `support_tickets`, `templates`, `videos`.
+
+Those thirteen were created before migration 01. Whether RLS was enabled on them
+at creation is not recorded in any migration, any draft, or any doc in this repo.
+It cannot be determined without reading the live schema.
+
+**Why this could be worse than FF-23.** Supabase grants the `anon` and
+`authenticated` roles table privileges on `public` by default. RLS is the only
+thing between the anon key - which ships to every browser - and the table. FF-23
+needs an authenticated member of one church to exploit. This needs nothing but
+the anon key out of the page source.
+
+Two of the thirteen would be severe:
+
+- **`church_members`** - RLS off means anyone can insert themselves as a pastor
+  of any church. That is total portal compromise, and it also unlocks every
+  policy in FF-23, all of which resolve membership through this table.
+- **`documents`** - the Church Office tab is specified as "private files for you
+  and your board".
+
+**Why it is not fixed in draft 13.** Blanket-enabling RLS would break the public
+site. `churches` and `church_sections` are read anonymously by design - that is
+how Phase B renders - so turning RLS on without first writing a matching select
+policy would take the site down rather than secure it. The right order is audit,
+then per-table policies, then enable.
+
+Section 1 of `supabase/drafts/13_rls_with_check.sql` is that audit, read-only.
+Draft 14 gets written against its output, not against a guess.
