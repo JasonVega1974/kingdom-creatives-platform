@@ -1,7 +1,10 @@
+-- APPLIED 2026-08-27 against project cyyxhhwuyeyvewqrhewt.
+-- Moved from supabase/drafts/ after the run. History, not a to-do.
+
 -- ============================================================
 -- DRAFT 09 - church_links
 -- Project: cyyxhhwuyeyvewqrhewt
--- Status:  NOT RUN. Jason reviews and runs manually.
+-- Status:  APPLIED 2026-08-27.
 -- Required for: portal "Social & Video" and "Giving" tabs; public site
 --               header/footer social row and every Give button.
 -- ============================================================

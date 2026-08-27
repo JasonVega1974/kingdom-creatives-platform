@@ -1,8 +1,11 @@
+-- APPLIED 2026-08-27 against project cyyxhhwuyeyvewqrhewt.
+-- Moved from supabase/drafts/ after the run. History, not a to-do.
+
 -- ============================================================
 -- DRAFT 10 - Church for Truckers links seed
 -- Project: cyyxhhwuyeyvewqrhewt
 -- Church:  church-for-truckers
--- Status:  NOT RUN. Jason reviews and runs manually.
+-- Status:  APPLIED 2026-08-27.
 -- Requires: draft 09 (church_links) to have been run first.
 -- ============================================================
 --

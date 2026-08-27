@@ -1,7 +1,14 @@
+-- APPLIED 2026-08-27 against project cyyxhhwuyeyvewqrhewt.
+-- Moved from supabase/drafts/ after the run. History, not a to-do.
+-- NOTE: this turned out to be a semantic NO-OP. Postgres already applies
+-- `using` to the after-image when `with check` is absent, so the seven
+-- policies behaved identically before and after. Kept because explicit is
+-- better than implicit. See FF-23 STATUS in docs/FAST_FOLLOW.md.
+
 -- ============================================================
 -- DRAFT 13 - close the RLS `with check` gap (FF-23)
 -- Project: cyyxhhwuyeyvewqrhewt
--- Status:  NOT RUN. Jason reviews and runs manually.
+-- Status:  APPLIED 2026-08-27.
 -- Required for: a second church having real data in the system.
 -- ============================================================
 --

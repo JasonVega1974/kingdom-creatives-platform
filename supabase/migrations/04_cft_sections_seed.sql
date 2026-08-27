@@ -1,8 +1,11 @@
+-- APPLIED 2026-08-27 against project cyyxhhwuyeyvewqrhewt.
+-- Moved from supabase/drafts/ after the run. History, not a to-do.
+
 -- ============================================================
 -- DRAFT 04 - church_sections seed for Church for Truckers
 -- Project: cyyxhhwuyeyvewqrhewt
 -- Church:  36cb9fdf-4ca1-414f-a206-c3885e07ed5a (church-for-truckers)
--- Status:  NOT RUN. Jason reviews and runs manually.
+-- Status:  APPLIED 2026-08-27.
 -- ============================================================
 --
 -- Critical path for Phase B. The acceptance criterion is "content renders 100%

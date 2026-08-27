@@ -1,7 +1,10 @@
+-- APPLIED 2026-08-27 against project cyyxhhwuyeyvewqrhewt.
+-- Moved from supabase/drafts/ after the run. History, not a to-do.
+
 -- ============================================================
 -- DRAFT 08 - widen the church_sections unique constraint
 -- Project: cyyxhhwuyeyvewqrhewt
--- Status:  NOT RUN. Jason reviews and runs manually.
+-- Status:  APPLIED 2026-08-27.
 -- Unblocks: draft 04 (CFT sections seed), all of Phase B and Phase C.
 -- ============================================================
 --
