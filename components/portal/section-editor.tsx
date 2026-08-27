@@ -6,8 +6,8 @@ import {
   moveSection,
   saveSectionContent,
   setSectionVisible,
-  type SaveState,
 } from "@/app/(portal)/portal/website/actions";
+import { SAVE_IDLE, type SaveState } from "@/lib/portal/form-state";
 import type { FieldKind } from "@/lib/portal/sections";
 
 export type EditableField = {
@@ -58,7 +58,7 @@ function SectionCard({
 }) {
   const [visible, setVisible] = useState(section.visible);
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<SaveState>({ ok: false, error: null, savedAt: null });
+  const [status, setStatus] = useState<SaveState>(SAVE_IDLE);
   const [, startTransition] = useTransition();
 
   const hasFields = section.fields.length > 0;

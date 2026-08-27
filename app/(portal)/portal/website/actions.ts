@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 
 import { churchTag } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import type { SaveState } from "@/lib/portal/form-state";
 import { findSection } from "@/lib/portal/sections";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/types/database";
@@ -20,9 +21,8 @@ import type { Json } from "@/types/database";
  * church that id belongs to. RLS enforces the same rule underneath.
  */
 
-export type SaveState = { ok: boolean; error: string | null; savedAt: number | null };
-
-export const IDLE: SaveState = { ok: false, error: null, savedAt: null };
+// SaveState and SAVE_IDLE live in lib/portal/form-state.ts - see the note
+// there. A value export from a "use server" file kills every action in it.
 
 /**
  * Push the change to the live public site immediately.
