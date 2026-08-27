@@ -519,6 +519,30 @@ that default. Do not edit the generated file - see FF-20.
 
 ## FF-23 - migration 01 RLS policies have `using` without `with check`
 
+**STATUS: CLOSED 2026-08-27 - NOT A DEFECT. The premise below is wrong.**
+
+Postgres applies the `using` expression to the after-image when a policy covering
+ALL or UPDATE has no `with check`. From the CREATE POLICY documentation:
+
+> For policies that can have both USING and WITH CHECK expressions (ALL and
+> UPDATE), if no WITH CHECK expression is defined, then the USING expression will
+> be used both to determine which rows are visible (normal USING case) and which
+> new rows will be allowed to be added (WITH CHECK case).
+
+The cross-tenant update described below was never possible - the database would
+have rejected it. Draft 13 ran on 2026-08-27 and was semantically a no-op: it
+made an implicit check explicit on seven policies. Harmless, not a fix, and
+nothing needs rolling back.
+
+Kept as a record of the misreading, and because explicit `with check` clauses are
+still worth having - they are self-documenting, and they stop a later edit to
+`using` from silently changing write behaviour. That is hygiene, not a blocker.
+
+The nine `pastor+ can edit` policies on the pre-migration-01 tables have the same
+shape and are equally fine. No draft was written for them.
+
+The original entry follows, unedited.
+
 **File:** `supabase/migrations/01_kc_migration_01.sql`
 **Raised:** Phase C shell, 2026-08-27
 **Must fix by:** BLOCKER - before a second church has real data in the system
@@ -590,44 +614,80 @@ substitute - RLS is the boundary that holds when a query forgets.
 
 ---
 
-## FF-24 - unknown whether RLS is enabled on the thirteen pre-migration-01 tables
+## FF-24 - RLS enablement on the thirteen pre-migration-01 tables
 
-**File:** live schema; no repo file records this
+**File:** live schema
 **Raised:** Phase C shell, 2026-08-27, while drafting the FF-23 fix
-**Must fix by:** BLOCKER - before anything in this project is publicly reachable
+**STATUS: CLOSED 2026-08-27 - audited, no action needed.**
 
-Migration 01 runs `enable row level security` on exactly eight tables:
-`pastor_notes`, `announcements`, `prayer_requests`, `groups`, `ministries`,
-`gifts`, `email_lists`, `contact_list_memberships`.
+Section 1 of draft 13 was run against the live schema on 2026-08-27. Result: RLS
+is enabled on all twenty-one public tables, and every table carries at least one
+policy. Nothing came back OFF, and nothing came back "RLS on but no policy".
 
-`types/database.ts` is generated from the live schema and lists twenty-one:
-the eight above plus `churches`, `church_members`, `church_sections`,
-`church_theme`, `contacts`, `documents`, `events`, `gallery`, `sermons`,
-`staff`, `support_tickets`, `templates`, `videos`.
+The two severe cases this entry called out are both clear. `church_members` has
+RLS on, so the anon key cannot insert a membership row and the total-portal-
+compromise scenario does not exist. `documents` has RLS on with a role-gated
+`staff+ can view documents` policy.
 
-Those thirteen were created before migration 01. Whether RLS was enabled on them
-at creation is not recorded in any migration, any draft, or any doc in this repo.
-It cannot be determined without reading the live schema.
+The audit did surface two real findings on those same tables, filed separately as
+FF-25 and FF-26. Neither is the problem this entry predicted.
 
-**Why this could be worse than FF-23.** Supabase grants the `anon` and
-`authenticated` roles table privileges on `public` by default. RLS is the only
-thing between the anon key - which ships to every browser - and the table. FF-23
-needs an authenticated member of one church to exploit. This needs nothing but
-the anon key out of the page source.
+---
 
-Two of the thirteen would be severe:
+## FF-25 - `videos.published` is not enforced by the public select policy
 
-- **`church_members`** - RLS off means anyone can insert themselves as a pastor
-  of any church. That is total portal compromise, and it also unlocks every
-  policy in FF-23, all of which resolve membership through this table.
-- **`documents`** - the Church Office tab is specified as "private files for you
-  and your board".
+**File:** live schema; fix drafted in `supabase/drafts/14_videos_published_rls.sql`
+**Raised:** 2026-08-27, from the draft 13 section 1 audit
+**Must fix by:** BLOCKER - before Phase B serves a video to the public
 
-**Why it is not fixed in draft 13.** Blanket-enabling RLS would break the public
-site. `churches` and `church_sections` are read anonymously by design - that is
-how Phase B renders - so turning RLS on without first writing a matching select
-policy would take the site down rather than secure it. The right order is audit,
-then per-table policies, then enable.
+`videos` has a `published boolean not null` column. Its public policy ignores it:
 
-Section 1 of `supabase/drafts/13_rls_with_check.sql` is that audit, read-only.
-Draft 14 gets written against its output, not against a guess.
+```sql
+create policy "public can view videos of active churches"
+  on public.videos for select
+  using ( church_id in (select id from churches where status = 'active') );
+```
+
+Every other public-facing table gates on its visibility column - `church_sections`
+on `visible = true`, `staff` on `visible = true`. `videos` does not, so an
+unpublished video is readable by anyone holding the anon key, which ships in every
+browser bundle. `gallery` is correct by accident: it has no visibility column to
+filter on, so there is nothing for its policy to omit.
+
+Unlike FF-23 this needs no authentication and no second tenant - just the anon key
+out of the page source. It is not exploitable today because nothing public reads
+`videos` yet and CFT has no video rows, but it goes live the moment Phase B
+renders a video page.
+
+Fix: re-issue the policy with `and published = true`. The authenticated
+`staff+ can view videos` policy is permissive and untouched, so the portal still
+sees unpublished rows.
+
+---
+
+## FF-26 - two authorization models in one schema
+
+**File:** `supabase/migrations/01_kc_migration_01.sql` vs the pre-migration-01 tables
+**Raised:** 2026-08-27, from the draft 13 section 1 audit
+**Must fix by:** before the portal exposes role management
+
+The audit showed the schema gates writes two different ways:
+
+- **Pre-migration-01 tables** - `church_sections`, `contacts`, `documents`,
+  `events`, `gallery`, `sermons`, `staff`, `support_tickets`, `videos` - gate on
+  ROLE: `role = any(array['pastor','admin'])`, with a separate `staff+ can view`
+  read policy that also admits `staff`.
+- **Migration 01 tables** - `announcements`, `prayer_requests`, `groups`,
+  `ministries`, `email_lists`, `contact_list_memberships` - gate on MEMBERSHIP
+  ALONE: any row in `church_members`, whatever the role.
+
+So a user with role `member` can write announcements and prayer requests but
+cannot touch sermons or events. Nobody chose that split; it is an artifact of two
+authoring sessions, and it is invisible until a church has a non-pastor user.
+
+The comment in `12_grant_portal_access.sql` section 2 - "nothing enforces roles
+yet - every migration 01 policy checks membership, not role" - is true of
+migration 01 and false of the schema as a whole. Correct it when this is settled.
+
+Not urgent: CFT has only pastors. Decide the model before Phase C ships role
+management. See `docs/PORTAL_SPEC.md` open question 3.
