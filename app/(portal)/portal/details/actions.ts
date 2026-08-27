@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 
 import { churchTag, type ServiceTime } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import type { DetailsState } from "@/lib/portal/form-state";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -19,9 +20,55 @@ import { createClient } from "@/lib/supabase/server";
  * internet; that stays a Kingdom Creatives operation.
  */
 
-export type DetailsState = { ok: boolean; error: string | null };
+// DetailsState and DETAILS_IDLE live in lib/portal/form-state.ts: a
+// "use server" file can only export async functions, and a value export
+// here fails the whole module at load. Re-exporting the type would be
+// safe but pointless indirection - import it from the source.
 
-export const IDLE: DetailsState = { ok: false, error: null };
+/**
+ * Why every write here asks for its rows back.
+ *
+ * A PostgREST UPDATE that RLS filters out is NOT an error. The row is simply
+ * not in scope, so Postgres reports "0 rows updated", PostgREST answers 204,
+ * and supabase-js returns { error: null }. Checking only `error` cannot tell
+ * "saved" from "silently refused" - which is how this tab reported success
+ * while writing nothing.
+ *
+ * `.select()` makes the server return the rows it actually changed, so an
+ * empty array is a definite refusal. Safe on both tables: churches is
+ * anon-readable (tenant resolution depends on it) and church_theme is read on
+ * every public page, so the read-back cannot itself be filtered away.
+ *
+ * The two failures are reported differently on purpose. "Try again" is honest
+ * for a transport blip and wrong for a permission problem, which will never
+ * succeed no matter how many times a pastor clicks Save.
+ */
+const WRITE_FAILED = "That did not save. Try again in a moment.";
+const WRITE_REFUSED =
+  "That did not save. Your account is not allowed to change this - nothing was written. Please contact Kingdom Creatives.";
+
+type WriteOutcome = { ok: true } | { ok: false; error: string };
+
+function judgeWrite(
+  what: string,
+  churchId: string,
+  error: { message: string } | null,
+  rows: unknown[] | null,
+): WriteOutcome {
+  if (error) {
+    console.error(`[portal] ${what} failed for church ${churchId}: ${error.message}`);
+    return { ok: false, error: WRITE_FAILED };
+  }
+
+  if (!rows || rows.length === 0) {
+    console.error(
+      `[portal] ${what} for church ${churchId} affected 0 rows - RLS refused the write, or the row is gone.`,
+    );
+    return { ok: false, error: WRITE_REFUSED };
+  }
+
+  return { ok: true };
+}
 
 function publish(slug: string): void {
   updateTag(churchTag(slug));
@@ -50,7 +97,7 @@ export async function saveIdentity(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("churches")
     .update({
       name,
@@ -60,11 +107,11 @@ export async function saveIdentity(
       email: nullableText(formData, "email"),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", session.site.church.id);
+    .eq("id", session.site.church.id)
+    .select("id");
 
-  if (error) {
-    return { ok: false, error: "That did not save. Try again in a moment." };
-  }
+  const outcome = judgeWrite("saveIdentity", session.site.church.id, error, data);
+  if (!outcome.ok) return { ok: false, error: outcome.error };
 
   publish(session.site.church.slug);
   return { ok: true, error: null };
@@ -113,14 +160,14 @@ export async function saveServiceTimes(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("churches")
     .update({ service_times: services, updated_at: new Date().toISOString() })
-    .eq("id", session.site.church.id);
+    .eq("id", session.site.church.id)
+    .select("id");
 
-  if (error) {
-    return { ok: false, error: "That did not save. Try again in a moment." };
-  }
+  const outcome = judgeWrite("saveServiceTimes", session.site.church.id, error, data);
+  if (!outcome.ok) return { ok: false, error: outcome.error };
 
   publish(session.site.church.slug);
   return { ok: true, error: null };
@@ -165,7 +212,7 @@ export async function saveBranding(
     .eq("church_id", session.site.church.id)
     .maybeSingle();
 
-  const { error } = await supabase.from("church_theme").upsert(
+  const { data, error } = await supabase.from("church_theme").upsert(
     {
       church_id: session.site.church.id,
       color_primary: primary,
@@ -177,11 +224,10 @@ export async function saveBranding(
       updated_at: new Date().toISOString(),
     },
     { onConflict: "church_id" },
-  );
+  ).select("church_id");
 
-  if (error) {
-    return { ok: false, error: "That did not save. Try again in a moment." };
-  }
+  const outcome = judgeWrite("saveBranding", session.site.church.id, error, data);
+  if (!outcome.ok) return { ok: false, error: outcome.error };
 
   publish(session.site.church.slug);
   return { ok: true, error: null };

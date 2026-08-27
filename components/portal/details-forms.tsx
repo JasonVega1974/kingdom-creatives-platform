@@ -4,12 +4,11 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
-  IDLE,
   saveBranding,
   saveIdentity,
   saveServiceTimes,
-  type DetailsState,
 } from "@/app/(portal)/portal/details/actions";
+import { DETAILS_IDLE, type DetailsState } from "@/lib/portal/form-state";
 import type { ServiceTime } from "@/lib/church";
 
 const FIELD =
@@ -101,7 +100,7 @@ export function IdentityForm({
   phone: string;
   email: string;
 }) {
-  const [state, action] = useActionState(saveIdentity, IDLE);
+  const [state, action] = useActionState(saveIdentity, DETAILS_IDLE);
 
   return (
     <Card
@@ -132,7 +131,7 @@ type Row = { key: number; day: string; time: string; label: string; streaming: b
 let nextKey = 0;
 
 export function ServiceTimesForm({ services }: { services: ServiceTime[] }) {
-  const [state, action] = useActionState(saveServiceTimes, IDLE);
+  const [state, action] = useActionState(saveServiceTimes, DETAILS_IDLE);
   const [rows, setRows] = useState<Row[]>(() =>
     services.length
       ? services.map((s) => ({
@@ -238,7 +237,7 @@ export function BrandingForm({
   accent: string;
   logoUrl: string;
 }) {
-  const [state, action] = useActionState(saveBranding, IDLE);
+  const [state, action] = useActionState(saveBranding, DETAILS_IDLE);
 
   return (
     <Card
