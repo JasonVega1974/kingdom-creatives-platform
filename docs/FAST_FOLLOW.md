@@ -832,3 +832,46 @@ Two coherent end states - pick one, do not leave it as it is:
 - Or drop `updateTag`, keep `revalidatePath`, and correct CLAUDE.md.
 
 The first is the intended direction; `unstable_cache` is legacy in Next 16.
+
+---
+
+## FF-30 - decision B2 (devotionals source) deliberately deferred
+
+**File:** `docs/BUILD_BRIEF_ADDENDUM_01.md` section D, decision B2
+**Raised:** 2026-08-28
+**Deferred by:** Jason, deliberately. **Revisit:** after the pastor has used the
+portal for a few weeks.
+
+Not forgotten and not blocked - deferred on purpose, because the deciding
+evidence does not exist yet.
+
+**The decision.** `/devotionals` is either pastor-authored per church, or
+syndicated from YourLife CC. ADDENDUM_01 lists both and picks neither.
+
+**Why waiting is right.** The answer depends on whether the pastor is
+comfortable writing content in the portal, which is unknowable until he has
+used it. Guessing now risks building the wrong one - and both are real work, not
+a flag to flip.
+
+**What each option costs, so the revisit starts from facts:**
+
+| | Pastor-authored | YourLife CC syndication |
+|---|---|---|
+| SQL | Run `supabase/drafts/05_devotionals.sql` | None - no table |
+| Portal | New "Devotionals" tab: list, editor, publish | None |
+| Public site | Index + `/devotionals/[id]` from the table | Index + detail from a cached feed |
+| Ongoing | Pastor writes every entry | Feed shape is someone else's to change |
+| Registry | `devotionals` sections stay content-editable | Sections become `auto: true` |
+
+**What Phase B does in the meantime.** Steps 1-5 are built; devotionals is left
+out entirely. No table, no tab, no feed reader.
+
+`/devotionals` still resolves, because draft 04 seeded a `church_sections` row
+for it. The `[slug]` route renders the page shell - header, nav, hero, footer -
+with an empty state where the list will go. That is deliberate: the page must
+not 404, because the nav links to it and a 404 would read as a broken site
+rather than a section still to come.
+
+**The trap to avoid on revisit.** Do not let "it renders fine" become the
+decision. The empty state is a placeholder, not an answer. When the pastor has
+enough portal history to judge, pick an option from the table above and build it.

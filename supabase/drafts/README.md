@@ -20,8 +20,8 @@ then parses the prose as SQL - the symptom is a baffling
 | `14_videos_published_rls.sql` | Add `published = true` to the public `videos` select policy (FF-25) | Phase B video pages | Before anything public reads `videos`. Not today - no video rows exist |
 | `11_sermons_church_link.sql` | `sermons.church_link_id` - nullable, tenant-safe composite FK to `church_links` | Sermon Library tab, nightly YouTube sync | When that work starts. Requires 09 (done) |
 | `15_post_batch_verify.sql` | Read-only. Re-checks that 08/04/09/10/12 took | Nothing - diagnostics | Run any time. Already passed 2026-08-27 |
-| `07_cft_giving_url.sql` | Data only - `churches.giving_url` for CFT | Give buttons in Phase B | Superseded by 09/10 once the public site reads `church_links`. See PORTAL_SPEC 2.3 |
-| `05_devotionals.sql` | Blocked on ADDENDUM_01 decision B2 | Phase B `/devotionals` | Blocked |
+| `07_cft_giving_url.sql` | Data only - `churches.giving_url` for CFT | Nothing | **WON'T RUN - superseded.** Decided 2026-08-28: the Give page reads `church_links`, where the real Tithe.ly link already sits from draft 10. See PORTAL_SPEC 2.3 |
+| `05_devotionals.sql` | Blocked on ADDENDUM_01 decision B2 | Phase B `/devotionals` | **DEFERRED, not blocked.** Decided 2026-08-28 to defer B2 until the pastor has used the portal. Do not run. See FF-30 |
 | `06_sections_inspect.sql` | Read-only diagnostics behind draft 08 | Nothing | Only if 08 ever reports something odd. 08 is applied and verified |
 | `02_theme_tokens.sql` | Optional per-church neutral ramp | Nothing yet | Only if a church needs neutrals off the platform default |
 
