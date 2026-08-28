@@ -891,9 +891,14 @@ enough portal history to judge, pick an option from the table above and build it
 
 ## FF-31 - events and sermons have no public read policy
 
-**File:** live schema; fix drafted in `supabase/drafts/20_public_read_events_sermons.sql`
+**File:** `supabase/migrations/20_public_read_events_sermons.sql`
 **Raised:** 2026-08-28, while building Phase B step 3
-**Must fix by:** BLOCKER - `/events` and `/sermons` show nothing until it runs
+**STATUS: CLOSED 2026-08-28 - fixed and verified.**
+
+Draft 20 applied. Both policies verified in place: `events` on
+`published = true`, `sermons` on `status = 'published'`, each scoped to an
+active church. Archived sermons stay excluded, confirmed as the deliberate
+restrictive choice.
 
 The public site reads with the anon key. The 2026-08-27 audit listed every
 policy on the nine pre-migration-01 tables, and only four carry a policy the
@@ -1013,3 +1018,72 @@ from the prototype.
 **What to change if this reverses:** render the picker in `GivingBand`, and
 decide where it submits before writing a line of it. That was the question that
 made this a decision rather than an omission.
+
+---
+
+## FF-33 - contacts has no anon insert policy
+
+**File:** live schema; fix drafted in `supabase/drafts/21_public_form_policies.sql`
+**Raised:** 2026-08-28, while building Phase B step 4
+**Must fix by:** BLOCKER - the Plan-a-Visit form cannot save without it
+
+`contacts` has exactly two policies, `pastor+ can edit contacts` (ALL) and
+`staff+ can view contacts` (select). Neither is satisfiable for `anon`, so a
+visitor submitting the visit form is refused.
+
+Unlike FF-27 this one fails **loudly**: an INSERT with no matching policy raises
+42501, where an UPDATE is silently filtered to zero rows. It would have surfaced
+on the first submission rather than pretending to work - which is the only
+reason it is a blocker rather than an incident.
+
+Draft 21 section 2 adds a constrained insert policy: `type` must be one of the
+four the application uses, and the church must be active. Deliberately no SELECT
+for anon - a visitor may write to this table and must never read it, since it
+holds other people's names, emails and phone numbers.
+
+---
+
+## FF-34 - anyone with the anon key can publish to the prayer wall
+
+**File:** `supabase/migrations/01_kc_migration_01.sql`; fix drafted in `supabase/drafts/21_public_form_policies.sql`
+**Raised:** 2026-08-28, while building Phase B step 4
+**Must fix by:** BLOCKER - before the bulletin renders publicly
+
+Migration 01 wrote:
+
+```sql
+create policy "prayer_requests: anon submit"
+  on public.prayer_requests for insert
+  with check (true);
+
+create policy "prayer_requests: anon read approved"
+  on public.prayer_requests for select
+  using (status = 'approved');
+```
+
+`with check (true)` constrains **nothing**. The anon key ships in every browser,
+so anyone can POST straight to `/rest/v1/prayer_requests` and choose every
+column - including `status`. Setting `status = 'approved'` satisfies the read
+policy, so arbitrary text publishes itself to a church's prayer wall with no
+moderation. `church_id`, `prayed_count`, `approved_at` and `approved_by` are
+equally unconstrained.
+
+**Going through a Server Action does not help.** The action can set
+`status = 'pending'` correctly and the direct POST still works. The REST
+endpoint is public; the policy is the only thing in front of it. This is the
+same lesson as `requirePortalUser()` being asserted per action rather than per
+page - a public endpoint is a public endpoint.
+
+**Second, separate problem in the same pair.** The read policy has no church
+filter. `using (status = 'approved')` returns approved rows for **every**
+church, so one church's prayer wall is readable from any other church's site or
+with a bare anon key. That is the cross-tenant class this project treats as a
+blocker before a second church has real data.
+
+Neither is exploitable today: nothing public reads or writes `prayer_requests`.
+Both go live the moment the bulletin ships, which is why the "Add a request" CTA
+is deliberately not rendered yet - the prayer list displays, the form does not.
+
+Draft 21 section 3 constrains the insert to `status = 'pending'`,
+`prayed_count = 0`, null approval marks and an active church, and adds the
+missing church scoping to the read.
