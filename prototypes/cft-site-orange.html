@@ -1,9 +1,52 @@
 <!DOCTYPE html>
+<!--
+  ============================================================
+  CFT PUBLIC SITE - PHASE B SPEC
+  Revised 2026-08-28, replacing the 2026-07-30 version.
+  ============================================================
+
+  THE DESIGN IN THIS FILE IS AUTHORITATIVE. The form plumbing is NOT.
+
+  This revision arrived from the static launch site (the separate Vercel
+  project serving churchfortruckers.org), which has no backend. To make its
+  forms work at all, two of them were wired to Web3Forms - a third-party
+  form-to-email service - via fetch('https://api.web3forms.com/submit') with
+  an embedded access key. Those blocks are in this file. DO NOT PORT THEM.
+
+  Three places carry it:
+    - the "Add a request" prayer button and its hidden #prayer-form
+    - the "Plan my visit" button and its hidden #visit-form
+    - sendVisit() / showPrayerModal() / sendPrayer() in the script block
+
+  WHAT PHASE B BUILDS INSTEAD - both tables and policies already exist:
+
+    Plan a visit    -> public.contacts         (contacts.type distinguishes
+                                                general | visit | prayer | group)
+    Prayer request  -> public.prayer_requests  (display_name, body, status,
+                                                prayed_count; the
+                                                "prayer_requests: anon submit"
+                                                policy from migration 01
+                                                permits the anonymous insert)
+
+  Both are Server Actions, not client fetches. Posting to a third party would
+  send the church's own data somewhere the pastor cannot see it: the portal's
+  Prayer tab reads prayer_requests, and the Church Office tab reads contacts.
+  Route them offsite and both tabs render empty, prayed_count and the
+  approve/publish workflow become dead code, and nobody notices until the
+  pastor asks where his prayer requests went.
+
+  The section registry already reflects this - `visit_form` and `bulletin` are
+  marked auto: true in lib/portal/sections.ts, meaning the app renders them
+  rather than the pastor editing them as content.
+
+  Also prototype-only: showPrayerModal() collects input with browser prompt()
+  dialogs. Fine for a mockup, not the spec for a real form.
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Church for Truckers - Faith for the Long Haul</title>
+<title>Church for Truckers - Faith on the Road. Hope at Every Mile.</title>
 <meta name="description" content="A church for the men and women who keep America moving. Live Sundays, prayer any hour, community at every mile marker.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -479,7 +522,12 @@ body.show-zones [data-edit]::after{content:attr(data-edit);position:absolute;top
             <div class="logbook-row" style="padding:12px 0;align-items:center"><span style="font-size:15px"><strong>The Kowalski family</strong> — grieving their dad, a 40-year driver</span><button class="btn btn-ghost btn-sm" style="flex:none" onclick="pray(this)">🙏 <b>27</b></button></div>
             <div class="logbook-row" style="padding:12px 0;border-bottom:0;align-items:center"><span style="font-size:15px"><strong>Renee</strong> — first solo run this week, pray her out of the yard</span><button class="btn btn-ghost btn-sm" style="flex:none" onclick="pray(this)">🙏 <b>8</b></button></div>
           </div>
-          <div class="card-foot" style="padding-top:16px"><span>Names shared with permission</span><button class="btn btn-ghost btn-sm" onclick="submitForm('Prayer request sent — a real person will pray over it')">Add a request</button></div>
+          <div class="card-foot" style="padding-top:16px"><span>Names shared with permission</span><button class="btn btn-ghost btn-sm" onclick="showPrayerModal()">Add a request</button>
+          <form id="prayer-form" style="display:none">
+            <input type="hidden" name="access_key" value="82b49a08-915f-4011-93c7-388decb73e2a">
+            <input type="hidden" name="subject" value="Prayer Request - Church for Truckers">
+            <input type="text" name="botcheck" style="display:none">
+          </form></div>
         </div>
       </div>
     </div>
@@ -553,7 +601,12 @@ body.show-zones [data-edit]::after{content:attr(data-edit);position:absolute;top
       <div class="field"><label for="v-date">Which Sunday?</label><select id="v-date"><option>This Sunday — in person, Farmington MO</option><option>Sep 13 — service + baptism at The Reset (KY)</option><option>Online — whichever Sunday the route allows</option><option>Not sure yet</option></select></div>
       <div class="field"><label for="v-rig">Bringing a rig?</label><select id="v-rig"><option>No</option><option>Yes — bobtail</option><option>Yes — full combo (save me 70 ft)</option></select></div>
       <div class="field"><label for="v-note">Anything we should know?</label><textarea id="v-note" rows="3" placeholder="First visit, prayer request, kids coming along..."></textarea></div>
-      <button class="btn btn-gold" style="width:100%" onclick="submitForm('Visit request sent — see you Sunday')">Plan my visit</button>
+      <button class="btn btn-gold" style="width:100%" onclick="sendVisit()">Plan my visit</button>
+      <form id="visit-form" style="display:none">
+        <input type="hidden" name="access_key" value="82b49a08-915f-4011-93c7-388decb73e2a">
+        <input type="hidden" name="subject" value="Visit Request - Church for Truckers">
+        <input type="text" name="botcheck" style="display:none">
+      </form>
       <p class="hint" style="margin-top:12px;font-size:12.5px;color:var(--ink-soft)">Goes straight to a real person. We reply within a day.</p>
     </div>
   </div>
@@ -906,7 +959,43 @@ function submitForm(msg){ toast(msg); }
 function pray(btn){
   var b=btn.querySelector('b'); b.textContent=(+b.textContent)+1;
   btn.disabled=true; btn.style.opacity=.65;
-  toast('Amen — added to the count');
+  toast('Amen \u2014 added to the count');
+}
+
+async function sendVisit(){
+  var name=document.getElementById('v-name').value.trim();
+  var contact=document.getElementById('v-contact').value.trim();
+  if(!name||!contact){toast('Please add your name and email or cell');return;}
+  var data=new FormData(document.getElementById('visit-form'));
+  data.append('Name',name);
+  data.append('Contact',contact);
+  data.append('Sunday',document.getElementById('v-date').value);
+  data.append('Rig',document.getElementById('v-rig').value);
+  data.append('Note',document.getElementById('v-note').value||'(none)');
+  try{
+    var r=await fetch('https://api.web3forms.com/submit',{method:'POST',body:data});
+    var j=await r.json();
+    toast(j.success?'Visit request sent \u2014 see you Sunday!':'Something went wrong \u2014 please email us directly');
+  }catch(e){toast('Connection error \u2014 please try again');}
+}
+
+function showPrayerModal(){
+  var name=prompt('Your first name (or leave blank for anonymous):','');
+  if(name===null)return;
+  var req=prompt('What would you like prayer for?','');
+  if(!req||!req.trim()){toast('No request entered');return;}
+  sendPrayer(name||'Anonymous',req);
+}
+
+async function sendPrayer(name,body){
+  var data=new FormData(document.getElementById('prayer-form'));
+  data.append('Name',name);
+  data.append('Prayer Request',body);
+  try{
+    var r=await fetch('https://api.web3forms.com/submit',{method:'POST',body:data});
+    var j=await r.json();
+    toast(j.success?'Request received \u2014 someone will pray over this':'Something went wrong \u2014 please call the prayer line');
+  }catch(e){toast('Connection error \u2014 please try again');}
 }
 
 /* ---------- Facade player ---------- */
