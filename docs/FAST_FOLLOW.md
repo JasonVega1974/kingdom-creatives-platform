@@ -1164,3 +1164,31 @@ reads `process.env.ESV_API_KEY` only.
 checked against the church's own seeded book list and `?chapter=` clamped to
 1-150 (Psalms is the longest book), both falling back to the section's defaults
 rather than erroring. A hand-edited URL shows a real passage.
+
+---
+
+## FF-37 - subdomain to apex redirect, at cutover
+
+**Raised:** 2026-08-28
+**Do this:** at Phase D cutover. **Not before** - the subdomain is currently the
+only working public address.
+
+Once DNS moves, `churchfortruckers.org` and
+`church-for-truckers.kingdom-creatives.com` serve byte-identical pages. Two URLs
+for one site fragments links, bookmarks and search results.
+
+**Decision: 308 redirect, subdomain -> apex.** Not a canonical tag.
+
+- A canonical is a hint search engines may ignore, and it leaves both URLs
+  returning 200, so the split persists for anyone sharing a link.
+- Direction is the church's own domain, because that is what goes on business
+  cards and truck stop flyers. The subdomain is platform plumbing.
+- The subdomain must keep working as a redirect permanently, so links shared
+  during the trial period survive.
+
+**Exempt `/portal`.** It is already `noindex`, and the pastor may be signed in
+on the subdomain - redirecting it would bounce him out of a live session.
+
+Shape: a rewrite/redirect rule in `vercel.ts` matching the subdomain host for
+everything except `/portal`. Verify after cutover that a signed-in portal
+session on the subdomain survives.
