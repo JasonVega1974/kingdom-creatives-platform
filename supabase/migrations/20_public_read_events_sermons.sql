@@ -1,7 +1,13 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do.
+   Section 1b confirmed the blocker by execution: probe rows inserted into
+   events and sermons were invisible to the anon role. Sections 2 and 3 ran;
+   both policies verified in place. FF-31 closed. */
+
 /* ============================================================
    DRAFT 20 - public read policies for events and sermons (FF-31)
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Required for: /events and /sermons showing anything at all.
    Requires: nothing. Safe to run now.
 
