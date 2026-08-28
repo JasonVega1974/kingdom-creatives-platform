@@ -130,8 +130,11 @@ function SectionCard({
             onChange={toggleVisible}
             className="h-5 w-5 accent-[var(--kc-brand)]"
           />
-          <span aria-hidden className="w-10 text-[var(--kc-ink-soft)]">
-            {visible ? "Shown" : "Hidden"}
+          {/* The label says what ticking does, not what the state is - an
+              unticked box reading "Hidden" does not tell you which way it
+              goes. The tick carries the state. */}
+          <span aria-hidden className="text-[var(--kc-ink-soft)]">
+            Show on my website
           </span>
         </label>
       </div>

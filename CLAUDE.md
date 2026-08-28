@@ -34,6 +34,26 @@ Standing rules for every session in this repo. These override anything else.
    `userConfig`, so this cannot be set via `claude plugin install --config`.
 4. **Verify live, don't trust reports.** After any deploy, check the actual
    deployed behavior before declaring done.
+
+   **4a. Any feature whose public side reads through a new or changed RLS
+   policy gets an anon probe before it is called done** - the same probe a
+   draft gets, not a lighter one.
+
+   This has failed three times, always identically: FF-27 (churches had no
+   write policy), FF-31 (events and sermons had no public read), FF-42
+   (church_media's read was gated on `in_gallery`). Each time the write
+   succeeded, the portal reported saved, and the public page rendered nothing
+   with no error anywhere.
+
+   What does NOT catch it: `tsc`, `eslint`, `next build`, generated types
+   carrying the relationship, or every page returning 200. All of those passed
+   every time. **They prove the query is well-formed. Only an anon read proves
+   it returns anything.**
+
+   The probe: insert a row inside a transaction, `set local role anon`, read it
+   back the way the public page reads it - through the embed, not a bare select
+   - then `rollback`. State what a failing run looks like before running it.
+   See FF-35 for how to write one that can actually fail.
 5. **Do not redesign the backend.** Build against the schema that exists; ask
    before assuming a column exists. `types/database.ts` is generated from the
    live schema and is never hand-edited.

@@ -161,24 +161,31 @@ export function SaveRow({ label, state }: { label: string; state: TeamState }) {
 /**
  * Show/hide.
  *
- * A CHECKBOX, not a button labelled with the current state. A button reading
- * "Hidden" is ambiguous - it could mean "this is hidden" or "click to hide it",
- * and that ambiguity was reported from real use on 2026-08-28. A checkbox
- * affords "click to change" on its own, so the text beside it is free to
- * describe the state.
+ * THE LABEL DESCRIBES WHAT TICKING IT DOES, not the current state.
  *
- * Matches the toggle in Edit My Website. Two controls doing the same job in the
- * same product should not look different.
+ * This went wrong twice. First it was a button labelled "Hidden", which could
+ * mean "this is hidden" or "click to hide it". That became a checkbox, which
+ * fixed the affordance - a checkbox plainly invites a click - but the label
+ * stayed as state text, so an UNTICKED box reading "Hidden" still did not say
+ * whether ticking would hide or show. Reported from real use both times.
+ *
+ * "Show on my website" reads correctly in both positions: unticked means it is
+ * not shown, ticked means it is. The tick carries the state; the words carry
+ * the action. That is the rule for every checkbox in this product.
  */
 export function VisibleCheckbox({
   itemName,
   visible,
   onToggle,
+  label = "Show on my website",
 }: {
   /** Used in the screen-reader label: "Show {itemName} on the website". */
   itemName: string;
   visible: boolean;
   onToggle: (next: boolean) => Promise<TeamState>;
+  /** Override where "my website" is not the destination - the photo gallery,
+      for instance. Still phrased as an action. */
+  label?: string;
 }) {
   const [shown, setShown] = useState(visible);
   const [pending, startTransition] = useTransition();
@@ -207,8 +214,8 @@ export function VisibleCheckbox({
           }}
           className="h-5 w-5 accent-[var(--kc-brand)]"
         />
-        <span aria-hidden className="w-14 text-[var(--kc-ink-soft)]">
-          {shown ? "Shown" : "Hidden"}
+        <span aria-hidden className="text-[var(--kc-ink-soft)]">
+          {label}
         </span>
       </label>
 

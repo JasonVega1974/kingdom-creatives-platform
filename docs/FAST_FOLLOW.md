@@ -1342,8 +1342,9 @@ applied to drafts 20, 21 and 22 and then not applied to the feature work that
 depended on them. **A typecheck proves the query is well-formed; only an anon
 read proves it returns anything.**
 
-Rule going forward: any feature whose public side reads through a NEW policy
-gets an anon probe before it is called done, exactly as a new draft does.
+**Promoted to a standing rule 2026-08-28: CLAUDE.md ground rule 4a.** Three
+occurrences is a pattern, not a note - it belongs in the file that is read at
+the start of every session, not in an entry someone has to go looking for.
 
 ### The decision, and what it costs
 
