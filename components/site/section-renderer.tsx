@@ -9,6 +9,11 @@ import {
 } from "@/components/site/collections";
 import type { Collections } from "@/lib/collections";
 import { PrayerForm, VisitForm } from "@/components/site/public-forms";
+import {
+  getBibleProvider,
+  normalizeBook,
+  normalizeChapter,
+} from "@/lib/bible";
 import type { ChurchLink } from "@/lib/links";
 import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/sections";
 
@@ -55,6 +60,9 @@ export type SectionContext = {
    * The lists stay Server Components either way.
    */
   filter: string | null;
+  /** ?book= and ?chapter= for the Bible reader. Null when absent. */
+  book: string | null;
+  chapter: string | null;
 };
 
 export function SectionRenderer({
@@ -115,6 +123,8 @@ export function SectionRenderer({
       return <Bulletin section={section} context={context} />;
     case "visit_form":
       return <VisitFormSection section={section} />;
+    case "reader":
+      return <BibleReader section={section} context={context} />;
 
     case "giving_band":
     case "give_band":
@@ -613,6 +623,115 @@ function EventsPreview({
       </div>
 
       {cta.href && cta.label ? <CtaButtons ctas={[cta]} /> : null}
+    </Band>
+  );
+}
+
+/**
+ * The Bible reader.
+ *
+ * An async Server Component that fetches its own passage rather than having the
+ * page do it: the book list and defaults are section content, so only this
+ * component knows what to ask for. No key reaches the browser - the provider
+ * module is server-only.
+ *
+ * Navigation runs through the URL (?book=&chapter=), same as the list filters:
+ * linkable, shareable, survives a reload, works with JavaScript off. The form
+ * below submits with GET for exactly that reason.
+ *
+ * Both inputs are attacker-controlled, so both are normalised against the
+ * church's own seeded book list and a 1-150 chapter range before anything
+ * reaches a provider URL.
+ */
+async function BibleReader({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const content = sectionContent(section.content);
+  const books = strings(section.content, "books");
+
+  const fallbackBook = content.default_book ?? books[0] ?? "John";
+  const fallbackChapter = Number.parseInt(content.default_chapter ?? "1", 10) || 1;
+
+  const book = normalizeBook(context.book, books, fallbackBook);
+  const chapter = normalizeChapter(context.chapter, fallbackChapter);
+
+  const provider = getBibleProvider();
+  const reading = await provider.fetchPassage(book, chapter);
+
+  return (
+    <Band>
+      <form method="get" className="flex flex-wrap items-end gap-3">
+        <div>
+          <label htmlFor="book" className="mb-1 block text-sm font-medium">
+            Book
+          </label>
+          <select
+            id="book"
+            name="book"
+            defaultValue={book}
+            className="rounded-[var(--kc-radius)] border border-line bg-surface px-3 py-2"
+          >
+            {books.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="chapter" className="mb-1 block text-sm font-medium">
+            Chapter
+          </label>
+          <input
+            id="chapter"
+            name="chapter"
+            type="number"
+            min={1}
+            max={150}
+            defaultValue={chapter}
+            className="w-24 rounded-[var(--kc-radius)] border border-line bg-surface px-3 py-2"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="rounded-[var(--kc-radius)] bg-brand px-5 py-2.5 font-semibold text-brand-contrast"
+        >
+          {content.load_label ?? "Read"}
+        </button>
+      </form>
+
+      {reading ? (
+        <article className="mt-8">
+          <h3 className="text-2xl text-ink">
+            {reading.reference}
+            <span className="ml-3 font-utility text-xs uppercase tracking-[0.16em] text-brand">
+              {reading.translation}
+            </span>
+          </h3>
+
+          {content.default_subtitle ? (
+            <p className="mt-1 text-sm text-ink-soft">{content.default_subtitle}</p>
+          ) : null}
+
+          <p className="mt-5 max-w-[68ch] text-lg leading-relaxed text-ink">
+            {reading.text}
+          </p>
+
+          {/* Licence condition for several providers, not decoration. Printed
+              verbatim as the adapter returned it - see lib/bible.ts. */}
+          <p className="mt-6 font-utility text-xs text-ink-soft">{reading.attribution}</p>
+        </article>
+      ) : (
+        <p className="mt-8 rounded-[var(--kc-radius)] border border-dashed border-line px-5 py-8 text-center text-ink-soft">
+          {content.error ?? "That passage could not be loaded right now."}
+        </p>
+      )}
     </Band>
   );
 }

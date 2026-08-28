@@ -39,8 +39,14 @@ export default async function HomePage() {
     ]),
   ]);
 
-  // Home has no filterable list.
-  const context = { giving: givingLink(links), collections, filter: null };
+  // Home has no filterable list and no Bible reader.
+  const context = {
+    giving: givingLink(links),
+    collections,
+    filter: null,
+    book: null,
+    chapter: null,
+  };
 
   return (
     <>

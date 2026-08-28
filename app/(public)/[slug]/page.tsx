@@ -85,11 +85,25 @@ export default async function PublicPage({
   // ?filter= drives the list filters. A repeated param arrives as an array;
   // take the first rather than rendering "a,b" as a filter value nothing
   // matches. "all" means no filter, same as absent.
-  const raw = (await searchParams).filter;
-  const first = Array.isArray(raw) ? raw[0] : raw;
-  const filter = !first || first === "all" ? null : first;
+  const query = await searchParams;
+  const one = (key: string): string | null => {
+    const value = query[key];
+    const first = Array.isArray(value) ? value[0] : value;
+    return first && first.trim() !== "" ? first : null;
+  };
 
-  const context = { giving: givingLink(links), collections, filter };
+  // "all" and absent both mean no filter. A repeated param takes the first
+  // value rather than rendering "a,b" as something nothing matches.
+  const rawFilter = one("filter");
+  const filter = rawFilter === "all" ? null : rawFilter;
+
+  const context = {
+    giving: givingLink(links),
+    collections,
+    filter,
+    book: one("book"),
+    chapter: one("chapter"),
+  };
 
   return (
     <>

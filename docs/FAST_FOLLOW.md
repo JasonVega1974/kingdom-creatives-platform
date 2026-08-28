@@ -1123,3 +1123,44 @@ Rules for the next one:
    row landed.
 4. **Say what a failing run looks like** before running it. If you cannot state
    which output means "broken", the probe is not testing anything.
+
+---
+
+## FF-36 - decision B1 answered: bible-api.com, with ESV left as a stub
+
+**File:** `lib/bible.ts`
+**Decided:** 2026-08-28 by Jason. `/bible` is complete and shipping.
+
+`/bible` reads through a swappable provider adapter. v1 is **bible-api.com** -
+no key, no signup, public-domain WEB text. Selected with `KC_BIBLE_PROVIDER`;
+absent or unrecognised falls back to bible-api, because a typo in an env var
+should degrade to a working Bible page rather than an empty one.
+
+**Attribution travels with the passage.** Every provider credits differently and
+several make correct attribution a licence condition rather than a courtesy, so
+`attribution` is a field on the returned passage and the renderer prints
+whatever came back. Hardcoding a WEB credit would become quietly false the
+moment the provider changed - the exact failure a swappable adapter exists to
+prevent.
+
+**ESV is a documented stub, not working code.** A key exists, left over from the
+WordPress build. It is deliberately not wired up: ESV's terms are oriented to
+non-commercial use with attribution and caching conditions, and whether they
+cover redistributing ESV text across many churches' sites on a paid platform is
+an open legal question. Shipping a working implementation would make it trivial
+to enable before that is answered. `isConfigured()` returns true when the key is
+present and `fetchPassage()` throws with a pointer to this entry.
+
+To finish it once licensing is settled: implement against
+`GET https://api.esv.org/v3/passage/text/` with an `Authorization: Token <key>`
+header, and return their required credit line as `attribution`.
+
+**Security note, 2026-08-28.** The leftover ESV token was pasted into a chat
+transcript during this work. It should be rotated at api.esv.org regardless of
+the licensing outcome. It was never written to a file in this repo; the adapter
+reads `process.env.ESV_API_KEY` only.
+
+**Input from the URL is normalised before it reaches a provider.** `?book=` is
+checked against the church's own seeded book list and `?chapter=` clamped to
+1-150 (Psalms is the longest book), both falling back to the section's defaults
+rather than erroring. A hand-edited URL shows a real passage.
