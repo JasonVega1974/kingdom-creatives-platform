@@ -34,10 +34,16 @@ import type { Database } from "@/types/database";
 
 type Tables = Database["public"]["Tables"];
 
+/**
+ * A staff row plus the library photo it points at.
+ *
+ * The embed rides the composite FK from draft 23. FF-40 sets the precedence:
+ * `church_media` wins, `photo_url` is the fallback for a hand-pasted link.
+ */
 export type StaffMember = Pick<
   Tables["staff"]["Row"],
   "id" | "name" | "role_title" | "bio" | "photo_url" | "email"
->;
+> & { church_media: { storage_path: string; alt_text: string | null } | null };
 
 export type Group = Pick<
   Tables["groups"]["Row"],
@@ -54,7 +60,7 @@ export type Group = Pick<
   | "meeting_link"
 >;
 
-export type ChurchEvent = Pick<
+export type ChurchEvent = { church_media: { storage_path: string; alt_text: string | null } | null } & Pick<
   Tables["events"]["Row"],
   | "id"
   | "title"
@@ -152,7 +158,9 @@ export function getStaff(slug: string, churchId: string): Promise<StaffMember[]>
   return cached(["staff", slug], slug, "staff", () =>
     createPublicClient()
       .from("staff")
-      .select("id, name, role_title, bio, photo_url, email")
+      .select(
+        "id, name, role_title, bio, photo_url, email, church_media(storage_path, alt_text)",
+      )
       .eq("church_id", churchId)
       .eq("visible", true)
       .order("sort_order", { ascending: true }),
@@ -187,7 +195,7 @@ export function getEvents(slug: string, churchId: string): Promise<ChurchEvent[]
     createPublicClient()
       .from("events")
       .select(
-        "id, title, description, starts_at, ends_at, location, event_type, image_url, registration_url",
+        "id, title, description, starts_at, ends_at, location, event_type, image_url, registration_url, church_media(storage_path, alt_text)",
       )
       .eq("church_id", churchId)
       .eq("published", true)

@@ -7,7 +7,15 @@ import { CHURCH_HOST_HEADER, CHURCH_ID_HEADER, CHURCH_SLUG_HEADER } from "@/lib/
 import type { Database } from "@/types/database";
 
 export type Church = Database["public"]["Tables"]["churches"]["Row"];
-export type ChurchTheme = Database["public"]["Tables"]["church_theme"]["Row"];
+/**
+ * The theme row, plus the library logo it points at.
+ *
+ * FF-40 precedence: `church_media` wins, `logo_url` is the fallback for a link
+ * pasted before the Photos tab existed.
+ */
+export type ChurchTheme = Database["public"]["Tables"]["church_theme"]["Row"] & {
+  church_media?: { storage_path: string; alt_text: string | null } | null;
+};
 
 export type ChurchSite = {
   church: Church;
@@ -63,7 +71,7 @@ export function getChurchSite(slug: string): Promise<ChurchSite | null> {
 
       const { data: theme, error: themeError } = await supabase
         .from("church_theme")
-        .select("*")
+        .select("*, church_media(storage_path, alt_text)")
         .eq("church_id", church.id)
         .maybeSingle();
 

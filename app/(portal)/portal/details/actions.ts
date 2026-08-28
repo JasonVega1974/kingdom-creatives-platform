@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 
 import { churchTag, type ServiceTime } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import { nullableUuid } from "@/lib/portal/collection-write";
 import type { DetailsState } from "@/lib/portal/form-state";
 import { createClient } from "@/lib/supabase/server";
 
@@ -221,6 +222,7 @@ export async function saveBranding(
       font_heading: existing?.font_heading ?? null,
       font_body: existing?.font_body ?? null,
       logo_url: nullableText(formData, "logo_url"),
+      logo_media_id: nullableUuid(formData, "logo_media_id"),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "church_id" },

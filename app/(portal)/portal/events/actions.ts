@@ -4,6 +4,7 @@ import { requirePortalUser } from "@/lib/portal/auth";
 import {
   judgeWrite,
   nullableText,
+  nullableUuid,
   nullableTimestamp,
   publishChange,
   text,
@@ -65,6 +66,7 @@ export async function addEvent(
       location: nullableText(formData, "location"),
       event_type: nullableText(formData, "event_type"),
       registration_url: nullableText(formData, "registration_url"),
+      media_id: nullableUuid(formData, "media_id"),
       published: false,
     })
     .select("id");
@@ -104,6 +106,7 @@ export async function updateEvent(
       location: nullableText(formData, "location"),
       event_type: nullableText(formData, "event_type"),
       registration_url: nullableText(formData, "registration_url"),
+      media_id: nullableUuid(formData, "media_id"),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

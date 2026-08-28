@@ -10,6 +10,7 @@ import {
   setPersonVisible,
   updatePerson,
 } from "@/app/(portal)/portal/team/actions";
+import { MediaPicker, type LibraryItem } from "@/components/portal/media-picker";
 import { TEAM_IDLE, type TeamState } from "@/lib/portal/form-state";
 
 /**
@@ -35,16 +36,23 @@ export type Person = {
   email: string;
   phone: string;
   photoUrl: string;
+  mediaId: string | null;
   visible: boolean;
 };
 
 const FIELD =
   "w-full rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] px-3 py-2 outline-none focus:border-[var(--kc-brand)]";
 
-export function TeamEditor({ people }: { people: Person[] }) {
+export function TeamEditor({
+  people,
+  library,
+}: {
+  people: Person[];
+  library: LibraryItem[];
+}) {
   return (
     <div className="space-y-5">
-      <AddPersonCard />
+      <AddPersonCard library={library} />
 
       {people.length === 0 ? (
         <p className="rounded-[var(--kc-radius)] border border-dashed border-[var(--kc-line)] px-5 py-8 text-center text-[var(--kc-ink-soft)]">
@@ -56,6 +64,7 @@ export function TeamEditor({ people }: { people: Person[] }) {
           <PersonCard
             key={person.id}
             person={person}
+            library={library}
             isFirst={index === 0}
             isLast={index === people.length - 1}
           />
@@ -65,7 +74,7 @@ export function TeamEditor({ people }: { people: Person[] }) {
   );
 }
 
-function AddPersonCard() {
+function AddPersonCard({ library }: { library: LibraryItem[] }) {
   const [state, action] = useActionState(addPerson, TEAM_IDLE);
   const [open, setOpen] = useState(false);
 
@@ -84,7 +93,7 @@ function AddPersonCard() {
           <Field name="name" label="Name" required />
           <Field name="role_title" label="Role" hint="Pastor, Chaplain, Worship Lead" />
           <TextArea name="bio" label="A short bio" />
-          <Field name="photo_url" label="Photo link" hint="the Photos tab will replace this" />
+          <MediaPicker name="media_id" label="Photo" library={library} />
           <Field name="email" label="Email" type="email" />
           <Field name="phone" label="Phone" type="tel" />
 
@@ -102,10 +111,12 @@ function AddPersonCard() {
 
 function PersonCard({
   person,
+  library,
   isFirst,
   isLast,
 }: {
   person: Person;
+  library: LibraryItem[];
   isFirst: boolean;
   isLast: boolean;
 }) {
@@ -152,7 +163,13 @@ function PersonCard({
           <Field name="name" label="Name" defaultValue={person.name} required />
           <Field name="role_title" label="Role" defaultValue={person.roleTitle} />
           <TextArea name="bio" label="A short bio" defaultValue={person.bio} />
-          <Field name="photo_url" label="Photo link" defaultValue={person.photoUrl} />
+          <MediaPicker
+            name="media_id"
+            label="Photo"
+            library={library}
+            value={person.mediaId}
+            fallbackUrl={person.photoUrl}
+          />
           <Field name="email" label="Email" type="email" defaultValue={person.email} />
           <Field name="phone" label="Phone" type="tel" defaultValue={person.phone} />
 

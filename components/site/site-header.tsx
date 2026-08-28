@@ -1,5 +1,7 @@
 import Image from "next/image";
 
+import { mediaUrl } from "@/lib/portal/media";
+
 import type { Church, ChurchTheme } from "@/lib/church";
 
 /**
@@ -20,7 +22,17 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-[1120px] items-center gap-3 px-6 py-4">
-        {theme?.logo_url ? (
+        {theme?.church_media ? (
+          /* A library logo is in our own bucket, which next.config allow-lists,
+             so it goes through next/image properly. */
+          <Image
+            src={mediaUrl(theme.church_media.storage_path)}
+            alt={name}
+            width={48}
+            height={48}
+            className="h-12 w-auto"
+          />
+        ) : theme?.logo_url ? (
           <Image
             src={theme.logo_url}
             alt={name}
@@ -29,8 +41,7 @@ export function SiteHeader({
             className="h-12 w-auto"
             /* Unoptimized on purpose: logo_url is a free-text column, so it can
                point outside next.config's remotePatterns and would otherwise
-               throw. Phase C constrains logo uploads to the gallery bucket,
-               after which this can go. */
+               throw. Retired with FF-40, once every logo is a library item. */
             unoptimized
           />
         ) : (

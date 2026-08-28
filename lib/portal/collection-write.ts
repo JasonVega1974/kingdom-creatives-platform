@@ -88,6 +88,18 @@ export function nullableText(formData: FormData, key: string): string | null {
   return value === "" ? null : value;
 }
 
+/**
+ * A nullable uuid from a form.
+ *
+ * The media picker posts "" when nothing is chosen, and that must become NULL
+ * rather than being skipped - clearing a photo is a thing a pastor does, and a
+ * skipped field would silently keep the old one.
+ */
+export function nullableUuid(formData: FormData, key: string): string | null {
+  const value = text(formData, key);
+  return /^[0-9a-f-]{36}$/i.test(value) ? value : null;
+}
+
 /** A checkbox that was ticked. Unticked checkboxes post nothing at all. */
 export function checked(formData: FormData, key: string): boolean {
   return formData.get(key) != null;

@@ -9,6 +9,7 @@ import {
   saveServiceTimes,
 } from "@/app/(portal)/portal/details/actions";
 import { DETAILS_IDLE, type DetailsState } from "@/lib/portal/form-state";
+import { MediaPicker, type LibraryItem } from "@/components/portal/media-picker";
 import type { ServiceTime } from "@/lib/church";
 
 const FIELD =
@@ -231,11 +232,15 @@ export function BrandingForm({
   secondary,
   accent,
   logoUrl,
+  logoMediaId,
+  library,
 }: {
   primary: string;
   secondary: string;
   accent: string;
   logoUrl: string;
+  logoMediaId: string | null;
+  library: LibraryItem[];
 }) {
   const [state, action] = useActionState(saveBranding, DETAILS_IDLE);
 
@@ -252,11 +257,12 @@ export function BrandingForm({
           label="Text on your main colour"
           defaultValue={accent}
         />
-        <Field
-          name="logo_url"
+        <MediaPicker
+          name="logo_media_id"
           label="Logo"
-          defaultValue={logoUrl}
-          hint="paste a link for now - the Photos tab will replace this"
+          library={library}
+          value={logoMediaId}
+          fallbackUrl={logoUrl}
         />
         <SaveRow state={state} />
       </form>

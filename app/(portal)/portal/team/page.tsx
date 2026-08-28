@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { TeamEditor, type Person } from "@/components/portal/team-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
+import type { LibraryItem } from "@/components/portal/media-picker";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Our Team" };
@@ -20,9 +21,25 @@ export default async function TeamPage() {
   const session = await requirePortalUser();
 
   const supabase = await createClient();
+
+  // The picker needs the whole library. One extra query per page load, which is
+  // cheaper than a client-side fetch and keeps the grid server-rendered.
+  const { data: libraryRows } = await supabase
+    .from("church_media")
+    .select("id, storage_path, title, alt_text")
+    .eq("church_id", session.site.church.id)
+    .order("created_at", { ascending: false });
+
+  const library: LibraryItem[] = (libraryRows ?? []).map((row) => ({
+    id: row.id,
+    storagePath: row.storage_path,
+    title: row.title ?? "",
+    altText: row.alt_text ?? "",
+  }));
+
   const { data: rows, error } = await supabase
     .from("staff")
-    .select("id, name, role_title, bio, email, phone, photo_url, visible")
+    .select("id, name, role_title, bio, email, phone, photo_url, media_id, visible")
     .eq("church_id", session.site.church.id)
     .order("sort_order", { ascending: true });
 
@@ -47,12 +64,13 @@ export default async function TeamPage() {
     email: row.email ?? "",
     phone: row.phone ?? "",
     photoUrl: row.photo_url ?? "",
+    mediaId: row.media_id,
     visible: row.visible,
   }));
 
   return (
     <Shell>
-      <TeamEditor people={people} />
+      <TeamEditor people={people} library={library} />
     </Shell>
   );
 }

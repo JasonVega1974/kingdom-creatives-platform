@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { mediaUrl } from "@/lib/portal/media";
 import type {
   ChurchEvent,
   Group,
@@ -59,12 +60,23 @@ export function StaffGrid({ staff, empty }: { staff: StaffMember[]; empty: strin
           key={person.id}
           className="rounded-[var(--kc-radius)] border border-line bg-surface p-5"
         >
-          {person.photo_url ? (
+          {/* FF-40 precedence: the library photo wins, photo_url is the
+              fallback for a link someone pasted before the Photos tab existed.
+              The fallback is unoptimized because a pasted URL can point at any
+              host, and next/image throws on one that is not allow-listed. */}
+          {person.church_media ? (
             <Image
-              src={person.photo_url}
-              alt=""
+              src={mediaUrl(person.church_media.storage_path)}
+              alt={person.church_media.alt_text ?? ""}
               width={96}
               height={96}
+              className="mb-4 h-24 w-24 rounded-full object-cover"
+            />
+          ) : person.photo_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={person.photo_url}
+              alt=""
               className="mb-4 h-24 w-24 rounded-full object-cover"
             />
           ) : null}
@@ -164,6 +176,16 @@ export function EventList({ events, empty }: { events: ChurchEvent[]; empty: str
     <ul className="divide-y divide-line border-y border-line">
       {events.map((event) => (
         <li key={event.id} className="flex flex-wrap gap-x-8 gap-y-3 py-6">
+          {event.church_media ? (
+            <Image
+              src={mediaUrl(event.church_media.storage_path)}
+              alt={event.church_media.alt_text ?? ""}
+              width={160}
+              height={120}
+              className="aspect-[4/3] w-32 shrink-0 rounded-[var(--kc-radius)] object-cover"
+            />
+          ) : null}
+
           <div className="w-32 shrink-0">
             <time
               dateTime={event.starts_at}

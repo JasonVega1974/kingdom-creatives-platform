@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { EventsEditor, type EventRow } from "@/components/portal/events-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
+import type { LibraryItem } from "@/components/portal/media-picker";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Events" };
@@ -18,10 +19,24 @@ export default async function EventsPage() {
   const session = await requirePortalUser();
 
   const supabase = await createClient();
+
+  const { data: libraryRows } = await supabase
+    .from("church_media")
+    .select("id, storage_path, title, alt_text")
+    .eq("church_id", session.site.church.id)
+    .order("created_at", { ascending: false });
+
+  const library: LibraryItem[] = (libraryRows ?? []).map((row) => ({
+    id: row.id,
+    storagePath: row.storage_path,
+    title: row.title ?? "",
+    altText: row.alt_text ?? "",
+  }));
+
   const { data: rows, error } = await supabase
     .from("events")
     .select(
-      "id, title, description, starts_at, ends_at, location, event_type, registration_url, published",
+      "id, title, description, starts_at, ends_at, location, event_type, registration_url, media_id, published",
     )
     .eq("church_id", session.site.church.id)
     .order("starts_at", { ascending: false });
@@ -49,12 +64,13 @@ export default async function EventsPage() {
     location: row.location ?? "",
     eventType: row.event_type ?? "",
     registrationUrl: row.registration_url ?? "",
+    mediaId: row.media_id,
     published: row.published,
   }));
 
   return (
     <Shell>
-      <EventsEditor events={events} />
+      <EventsEditor events={events} library={library} />
     </Shell>
   );
 }

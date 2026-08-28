@@ -18,6 +18,7 @@ import {
   TextArea,
   VisibleCheckbox,
 } from "@/components/portal/editor-kit";
+import { MediaPicker, type LibraryItem } from "@/components/portal/media-picker";
 import { TEAM_IDLE } from "@/lib/portal/form-state";
 
 /**
@@ -44,6 +45,7 @@ export type EventRow = {
   location: string;
   eventType: string;
   registrationUrl: string;
+  mediaId: string | null;
   published: boolean;
 };
 
@@ -58,10 +60,16 @@ const EVENT_TYPES = [
   { value: "retreat", label: "Retreat" },
 ];
 
-export function EventsEditor({ events }: { events: EventRow[] }) {
+export function EventsEditor({
+  events,
+  library,
+}: {
+  events: EventRow[];
+  library: LibraryItem[];
+}) {
   return (
     <div className="space-y-5">
-      <AddEvent />
+      <AddEvent library={library} />
 
       {events.length === 0 ? (
         <EmptyList>
@@ -69,19 +77,21 @@ export function EventsEditor({ events }: { events: EventRow[] }) {
           your website until you switch it on.
         </EmptyList>
       ) : (
-        events.map((event) => <EventCard key={event.id} event={event} />)
+        events.map((event) => (
+          <EventCard key={event.id} event={event} library={library} />
+        ))
       )}
     </div>
   );
 }
 
-function AddEvent() {
+function AddEvent({ library }: { library: LibraryItem[] }) {
   const [state, action] = useActionState(addEvent, TEAM_IDLE);
 
   return (
     <AddCard label="+ Add an event">
       <form action={action} className="space-y-4">
-        <EventFields />
+        <EventFields library={library} />
         <p className="text-sm text-[var(--kc-ink-soft)]">
           New events stay off your website until you switch them on.
         </p>
@@ -91,7 +101,13 @@ function AddEvent() {
   );
 }
 
-function EventCard({ event }: { event: EventRow }) {
+function EventCard({
+  event,
+  library,
+}: {
+  event: EventRow;
+  library: LibraryItem[];
+}) {
   const [state, action] = useActionState(updateEvent, TEAM_IDLE);
   const [open, setOpen] = useState(false);
 
@@ -134,7 +150,7 @@ function EventCard({ event }: { event: EventRow }) {
       {open ? (
         <form action={action} className="mt-5 space-y-4 border-t border-[var(--kc-line)] pt-5">
           <input type="hidden" name="id" value={event.id} />
-          <EventFields event={event} />
+          <EventFields event={event} library={library} />
           <SaveRow label="Save" state={state} />
         </form>
       ) : null}
@@ -142,7 +158,13 @@ function EventCard({ event }: { event: EventRow }) {
   );
 }
 
-function EventFields({ event }: { event?: EventRow }) {
+function EventFields({
+  event,
+  library,
+}: {
+  event?: EventRow;
+  library: LibraryItem[];
+}) {
   return (
     <>
       <Field name="title" label="What is it?" defaultValue={event?.title} required />
@@ -180,6 +202,12 @@ function EventFields({ event }: { event?: EventRow }) {
         hint="if people need to register"
       />
       <TextArea name="description" label="Details" defaultValue={event?.description} />
+      <MediaPicker
+        name="media_id"
+        label="Photo"
+        library={library}
+        value={event?.mediaId}
+      />
     </>
   );
 }

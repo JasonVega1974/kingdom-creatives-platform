@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 
 import { churchTag } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import { nullableUuid } from "@/lib/portal/collection-write";
 import type { TeamState } from "@/lib/portal/form-state";
 import { createClient } from "@/lib/supabase/server";
 
@@ -114,6 +115,7 @@ export async function addPerson(
       email: nullableText(formData, "email"),
       phone: nullableText(formData, "phone"),
       photo_url: nullableText(formData, "photo_url"),
+      media_id: nullableUuid(formData, "media_id"),
       visible: false,
       sort_order: (last?.sort_order ?? 0) + 1,
     })
@@ -148,6 +150,7 @@ export async function updatePerson(
       email: nullableText(formData, "email"),
       phone: nullableText(formData, "phone"),
       photo_url: nullableText(formData, "photo_url"),
+      media_id: nullableUuid(formData, "media_id"),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

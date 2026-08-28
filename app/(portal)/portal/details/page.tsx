@@ -7,6 +7,8 @@ import {
 } from "@/components/portal/details-forms";
 import { parseServiceTimes } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import type { LibraryItem } from "@/components/portal/media-picker";
+import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_THEME } from "@/lib/theme";
 
 export const metadata: Metadata = { title: "Church Details" };
@@ -23,8 +25,22 @@ export const metadata: Metadata = { title: "Church Details" };
  * so there is no second query.
  */
 export default async function DetailsPage() {
-  const { site } = await requirePortalUser();
-  const { church, theme } = site;
+  const session = await requirePortalUser();
+  const { church, theme } = session.site;
+
+  const supabase = await createClient();
+  const { data: libraryRows } = await supabase
+    .from("church_media")
+    .select("id, storage_path, title, alt_text")
+    .eq("church_id", church.id)
+    .order("created_at", { ascending: false });
+
+  const library: LibraryItem[] = (libraryRows ?? []).map((row) => ({
+    id: row.id,
+    storagePath: row.storage_path,
+    title: row.title ?? "",
+    altText: row.alt_text ?? "",
+  }));
 
   return (
     <div className="max-w-3xl">
@@ -52,6 +68,8 @@ export default async function DetailsPage() {
           secondary={theme?.color_secondary ?? DEFAULT_THEME.color_secondary}
           accent={theme?.color_accent ?? DEFAULT_THEME.color_accent}
           logoUrl={theme?.logo_url ?? ""}
+          logoMediaId={theme?.logo_media_id ?? null}
+          library={library}
         />
 
         {/* Social, video and giving links are multi-valued and live in
