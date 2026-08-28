@@ -636,9 +636,20 @@ FF-25 and FF-26. Neither is the problem this entry predicted.
 
 ## FF-25 - `videos.published` is not enforced by the public select policy
 
-**File:** live schema; fix drafted in `supabase/drafts/14_videos_published_rls.sql`
+**File:** `supabase/migrations/14_videos_published_rls.sql`
 **Raised:** 2026-08-27, from the draft 13 section 1 audit
-**Must fix by:** BLOCKER - before Phase B serves a video to the public
+**STATUS: CLOSED 2026-08-28 - fixed.**
+
+Draft 14 applied. Section 1 confirmed the policy was unfiltered before the
+change; section 2 recreated it as `published = true AND church_id in (active)`.
+
+Timing worth noting: this closed the same day Phase B step 3 shipped `/worship`,
+the first public page to read `videos`. The exposure was theoretical for as long
+as nothing public read the table and would have become real on that deploy.
+`lib/collections.ts` also filters `published` in the query, but that is defence
+in depth - the policy is the boundary.
+
+The original entry follows.
 
 `videos` has a `published boolean not null` column. Its public policy ignores it:
 
@@ -875,3 +886,80 @@ rather than a section still to come.
 **The trap to avoid on revisit.** Do not let "it renders fine" become the
 decision. The empty state is a placeholder, not an answer. When the pastor has
 enough portal history to judge, pick an option from the table above and build it.
+
+---
+
+## FF-31 - events and sermons have no public read policy
+
+**File:** live schema; fix drafted in `supabase/drafts/20_public_read_events_sermons.sql`
+**Raised:** 2026-08-28, while building Phase B step 3
+**Must fix by:** BLOCKER - `/events` and `/sermons` show nothing until it runs
+
+The public site reads with the anon key. The 2026-08-27 audit listed every
+policy on the nine pre-migration-01 tables, and only four carry a policy the
+anon role can use:
+
+```
+church_sections   public can view visible sections of active churches
+gallery           public can view gallery of active churches
+staff             public can view visible staff of active churches
+videos            public can view videos of active churches
+```
+
+`events` and `sermons` have exactly two policies each - `pastor+ can edit` and
+`staff+ can view` - and neither admits `anon`. An anonymous visitor reading
+either table gets **zero rows**.
+
+Not an error and not a 403: RLS filters the rows out and PostgREST returns an
+empty array. So `/events` and `/sermons` render their seeded empty states and
+look like a church that has not posted anything yet. Identical failure shape to
+FF-27 - the operation is refused and the result reads as success.
+
+Migration 01's own tables are fine; it wrote `groups: anon read visible`,
+`ministries: anon read visible`, `announcements: anon read visible` and
+`prayer_requests: anon read approved` at the time. `events` and `sermons`
+predate it and never got the equivalent.
+
+**Why this was invisible until now.** Nothing public read those tables before
+step 3. The gap has existed since the schema was created.
+
+**The diagnostic problem it leaves.** From the browser, "empty because the
+table has no rows" and "empty because RLS refused" look identical - both render
+the same empty state. That is why draft 20 leads with an audit rather than going
+straight to the fix, and why the code cannot tell you which one you are looking
+at.
+
+**And the audit itself got it wrong first.** Draft 20's original section 1 had a
+column `anon_can_select` derived from `pg_policy.polroles`. It reported `true`
+for every table, events and sermons included, which would have read as "no
+problem here".
+
+polroles records which ROLES a policy applies to, not whether its predicate can
+ever be true. None of these policies was created with a `TO` clause, so they all
+default to PUBLIC and polroles is `{0}` - the all-roles placeholder. The check
+matched that for everything; it would have said `true` for `documents`.
+
+The policies genuinely do apply to anon. Their predicates just resolve false for
+it: `staff+ can view events` resolves through `church_members` on `auth.uid()`,
+which is null for anon, so the subquery is empty and no row passes.
+
+**The lesson: reachability cannot be read off the catalog.** A policy's
+applicability and its satisfiability are different questions, and only the
+second one decides what a visitor sees. Section 1b executes it instead - insert
+a probe row, read as `anon`, roll back. A probe row is required because an empty
+table returns 0 either way.
+
+**Open question inside the fix.** `sermons.status` is
+`draft | published | archived` per its column comment. Draft 20 admits
+`published` only. If an archived sermon is meant to stay readable in an
+archive rather than be withdrawn, widen it to
+`status in ('published', 'archived')` - but that republishes anything
+deliberately retired, so it is written the restrictive way until someone says
+otherwise.
+
+**Related and still unrun: draft 14 (FF-25).** `videos` has a public policy but
+it does not filter `published`. Step 3 ships `/worship`, which is the first
+public page to read that table - so the exposure stops being theoretical the
+moment this deploys. `lib/collections.ts` filters `published` in the query as
+defence in depth, but a query filter is not the boundary and must not be
+mistaken for one.
