@@ -30,12 +30,17 @@ export default async function HomePage() {
   const [sections, links, collections] = await Promise.all([
     getPageSections(site.church.slug, site.church.id, "home"),
     getChurchLinks(site.church.slug, site.church.id),
-    // Home's collection-backed sections - latest_sermon, events_preview,
-    // bulletin - are step 4, so nothing is queried for it yet.
-    getCollectionsFor(site.church.slug, site.church.id, []),
+    // latest_sermon, events_preview and bulletin all read from these.
+    getCollectionsFor(site.church.slug, site.church.id, [
+      "sermons",
+      "events",
+      "announcements",
+      "prayer",
+    ]),
   ]);
 
-  const context = { giving: givingLink(links), collections };
+  // Home has no filterable list.
+  const context = { giving: givingLink(links), collections, filter: null };
 
   return (
     <>

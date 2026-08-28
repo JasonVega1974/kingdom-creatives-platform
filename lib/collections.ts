@@ -24,9 +24,8 @@ import type { Database } from "@/types/database";
  *
  * Filtering here is DEFENCE IN DEPTH, not the boundary. RLS is the boundary,
  * and it has to be right independently - a query that forgets a filter must
- * still not leak. Both layers apply the same rule on purpose. See FF-25, where
- * the videos policy omits `published` and the filter below is currently the
- * only thing holding it.
+ * still not leak. Both layers apply the same rule on purpose. FF-25 and FF-31
+ * are both cases where the policy was wrong and only the query was holding.
  *
  * SORTING. Each table carries its own idea of order: an explicit sort_order
  * where a pastor arranges the list by hand, a date where chronology is the
@@ -93,6 +92,16 @@ export type Video = Pick<
   | "duration_min"
 >;
 
+export type Announcement = Pick<
+  Tables["announcements"]["Row"],
+  "id" | "body" | "created_at"
+>;
+
+export type PrayerRequest = Pick<
+  Tables["prayer_requests"]["Row"],
+  "id" | "body" | "display_name" | "prayed_count" | "created_at"
+>;
+
 export type Ministry = Pick<
   Tables["ministries"]["Row"],
   "id" | "name" | "description" | "logo_url" | "website_url"
@@ -106,6 +115,8 @@ export type Collections = {
   sermons: Sermon[];
   videos: Video[];
   ministries: Ministry[];
+  announcements: Announcement[];
+  prayer: PrayerRequest[];
 };
 
 /**
@@ -214,11 +225,52 @@ export function getVideos(slug: string, churchId: string): Promise<Video[]> {
         "id, title, description, category, video_url, youtube_id, thumbnail_url, duration_min",
       )
       .eq("church_id", churchId)
-      // FF-25: the public RLS policy does NOT filter published. Until draft 14
-      // runs, this line is the only thing keeping unpublished videos off the
-      // page - which is exactly why it is not the boundary.
+      // Also enforced by the public RLS policy since draft 14 (FF-25). Kept
+      // here as defence in depth - before that draft ran, this line was the
+      // only thing holding it, which is exactly why it is not the boundary.
       .eq("published", true)
       .order("sort_order", { ascending: true }),
+  );
+}
+
+/**
+ * Announcements still worth showing.
+ *
+ * `expires_at` is honoured here rather than left to the pastor to tidy up: a
+ * bulletin board carrying last month's notice is worse than an empty one. A
+ * null expiry means "until I take it down".
+ */
+export function getAnnouncements(slug: string, churchId: string): Promise<Announcement[]> {
+  const now = new Date().toISOString();
+
+  return cached(["announcements", slug], slug, "announcements", () =>
+    createPublicClient()
+      .from("announcements")
+      .select("id, body, created_at")
+      .eq("church_id", churchId)
+      .eq("visible", true)
+      .or(`expires_at.is.null,expires_at.gte.${now}`)
+      .order("sort_order", { ascending: true }),
+  );
+}
+
+/**
+ * The prayer wall - approved requests only.
+ *
+ * `status = 'approved'` is also what the RLS policy enforces, so this filter is
+ * defence in depth rather than the boundary. A pending request must never
+ * appear: it has been submitted but not read by a person yet, and the seed
+ * promises exactly that ("Requests are read by a person before they appear
+ * here").
+ */
+export function getPrayerRequests(slug: string, churchId: string): Promise<PrayerRequest[]> {
+  return cached(["prayer", slug], slug, "prayer requests", () =>
+    createPublicClient()
+      .from("prayer_requests")
+      .select("id, body, display_name, prayed_count, created_at")
+      .eq("church_id", churchId)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false }),
   );
 }
 
@@ -252,6 +304,8 @@ export async function getCollectionsFor(
     sermons: [],
     videos: [],
     ministries: [],
+    announcements: [],
+    prayer: [],
   };
 
   const fetchers: Record<keyof Collections, () => Promise<unknown[]>> = {
@@ -261,6 +315,8 @@ export async function getCollectionsFor(
     sermons: () => getSermons(slug, churchId),
     videos: () => getVideos(slug, churchId),
     ministries: () => getMinistries(slug, churchId),
+    announcements: () => getAnnouncements(slug, churchId),
+    prayer: () => getPrayerRequests(slug, churchId),
   };
 
   const results = await Promise.all(needed.map((key) => fetchers[key]()));

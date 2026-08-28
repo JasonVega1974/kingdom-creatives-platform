@@ -51,8 +51,10 @@ export async function generateMetadata({
 
 export default async function PublicPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
 
@@ -80,7 +82,14 @@ export default async function PublicPage({
     ),
   ]);
 
-  const context = { giving: givingLink(links), collections };
+  // ?filter= drives the list filters. A repeated param arrives as an array;
+  // take the first rather than rendering "a,b" as a filter value nothing
+  // matches. "all" means no filter, same as absent.
+  const raw = (await searchParams).filter;
+  const first = Array.isArray(raw) ? raw[0] : raw;
+  const filter = !first || first === "all" ? null : first;
+
+  const context = { giving: givingLink(links), collections, filter };
 
   return (
     <>

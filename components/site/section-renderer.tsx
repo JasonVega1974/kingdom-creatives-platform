@@ -4,6 +4,7 @@ import {
   EventList,
   GroupList,
   MinistryList,
+  SermonList,
   VideoGrid,
 } from "@/components/site/collections";
 import type { Collections } from "@/lib/collections";
@@ -45,6 +46,14 @@ export type SectionContext = {
   giving: ChurchLink | null;
   /** Only the collections this page asked for are populated. */
   collections: Collections;
+  /**
+   * The active `?filter=` value, or null for "all".
+   *
+   * Filters run through the URL rather than client state on purpose: the
+   * result is linkable, survives a reload, and works with JavaScript off.
+   * The lists stay Server Components either way.
+   */
+  filter: string | null;
 };
 
 export function SectionRenderer({
@@ -96,6 +105,13 @@ export function SectionRenderer({
       return <EventsSection section={section} context={context} />;
     case "worship_filters":
       return <WorshipSection section={section} context={context} />;
+
+    case "latest_sermon":
+      return <LatestSermon section={section} context={context} />;
+    case "events_preview":
+      return <EventsPreview section={section} context={context} />;
+    case "bulletin":
+      return <Bulletin section={section} context={context} />;
 
     case "giving_band":
     case "give_band":
@@ -417,15 +433,19 @@ function GroupsSection({
   context: SectionContext;
 }) {
   const { empty, link_label } = sectionContent(section.content);
+  const filters = rows(section.content, "filters");
+  const groups = context.filter
+    ? context.collections.groups.filter((g) => g.location_type === context.filter)
+    : context.collections.groups;
 
   return (
     <Band>
+      <FilterStrip filters={filters} active={context.filter} />
       <GroupList
-        groups={context.collections.groups}
+        groups={groups}
         empty={empty ?? "No groups listed yet."}
         linkLabel={link_label ?? "Join online"}
       />
-      <FiltersDeferred />
     </Band>
   );
 }
@@ -438,14 +458,18 @@ function EventsSection({
   context: SectionContext;
 }) {
   const { empty } = sectionContent(section.content);
+  const filters = rows(section.content, "filters");
+  const events = context.filter
+    ? context.collections.events.filter((e) => e.event_type === context.filter)
+    : context.collections.events;
 
   return (
     <Band>
+      <FilterStrip filters={filters} active={context.filter} />
       <EventList
-        events={context.collections.events}
+        events={events}
         empty={empty ?? "Nothing on the calendar yet."}
       />
-      <FiltersDeferred />
     </Band>
   );
 }
@@ -458,27 +482,227 @@ function WorshipSection({
   context: SectionContext;
 }) {
   const { empty, play_label } = sectionContent(section.content);
+  const filters = rows(section.content, "filters");
+  const videos = context.filter
+    ? context.collections.videos.filter((v) => v.category === context.filter)
+    : context.collections.videos;
 
   return (
     <Band>
+      <FilterStrip filters={filters} active={context.filter} />
       <VideoGrid
-        videos={context.collections.videos}
+        videos={videos}
         empty={empty ?? "No worship videos yet."}
         playLabel={play_label ?? "Play"}
       />
-      <FiltersDeferred />
     </Band>
   );
 }
 
-/** Dev-only note that the filter strip above a list is still to come. */
-function FiltersDeferred() {
-  if (process.env.NODE_ENV === "production") return null;
+/**
+ * The filter strip above a list.
+ *
+ * Plain links carrying `?filter=`, not client state. The result is linkable and
+ * shareable, survives a reload, needs no JavaScript, and keeps the list a
+ * Server Component. `value: "all"` clears the filter rather than setting one.
+ *
+ * Which column each strip filters is the list section's business, not this
+ * component's: groups by location_type, events by event_type, videos by
+ * category. The seed supplies only labels and values.
+ */
+function FilterStrip({
+  filters,
+  active,
+}: {
+  filters: Record<string, string>[];
+  active: string | null;
+}) {
+  const usable = filters.filter((f) => f.label && f.value);
+  if (usable.length === 0) return null;
 
   return (
-    <p className="mt-6 font-utility text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-      filter strip deferred to step 4 - the list above is live
-    </p>
+    <div className="mb-8 flex flex-wrap gap-2">
+      {usable.map((filter) => {
+        const isAll = filter.value === "all";
+        const isActive = isAll ? active === null : active === filter.value;
+
+        return (
+          <Link
+            key={filter.value}
+            href={isAll ? "?" : `?filter=${encodeURIComponent(filter.value)}`}
+            aria-current={isActive ? "true" : undefined}
+            className={
+              isActive
+                ? "rounded-full bg-brand px-4 py-1.5 font-utility text-xs uppercase tracking-[0.14em] text-brand-contrast"
+                : "rounded-full border border-line px-4 py-1.5 font-utility text-xs uppercase tracking-[0.14em] text-ink-soft hover:border-brand hover:text-brand"
+            }
+          >
+            {filter.label}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Home: the most recent published sermon, or the seeded empty line. */
+function LatestSermon({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { eyebrow, badge, archive_label, archive_href, empty } = sectionContent(
+    section.content,
+  );
+  // getSermons() already orders newest first.
+  const latest = context.collections.sermons[0];
+
+  return (
+    <Band>
+      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+      {badge ? (
+        <p className="mt-2 font-utility text-[11px] uppercase tracking-[0.16em] text-ink-soft">
+          {badge}
+        </p>
+      ) : null}
+
+      <div className="mt-6">
+        <SermonList
+          sermons={latest ? [latest] : []}
+          empty={empty ?? "No sermon posted yet."}
+          watchLabel="Watch this message"
+        />
+      </div>
+
+      {archive_label && archive_href ? (
+        <CtaButtons ctas={[{ label: archive_label, href: archive_href, style: "ghost" }]} />
+      ) : null}
+    </Band>
+  );
+}
+
+/** Home: the next few events. `limit` comes from the seed, not a constant. */
+function EventsPreview({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { eyebrow, heading, limit, empty } = sectionContent(section.content);
+  const cta = obj(section.content, "cta");
+
+  const count = Number.parseInt(limit ?? "", 10);
+  const events = context.collections.events.slice(
+    0,
+    Number.isFinite(count) && count > 0 ? count : 3,
+  );
+
+  return (
+    <Band tint>
+      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+      {heading ? <Heading>{heading}</Heading> : null}
+
+      <div className="mt-8">
+        <EventList events={events} empty={empty ?? "Nothing on the calendar yet."} />
+      </div>
+
+      {cta.href && cta.label ? <CtaButtons ctas={[cta]} /> : null}
+    </Band>
+  );
+}
+
+/**
+ * Home: the bulletin board - announcements and the prayer wall.
+ *
+ * The "Add a request" CTA is NOT rendered yet. prayer_requests still has the
+ * `with check (true)` insert policy from migration 01, which lets anyone with
+ * the anon key publish straight to this wall by setting status themselves
+ * (FF-34, draft 21). A button that posts nowhere is worse than no button, and
+ * one that posts into an unmoderated hole is worse still.
+ *
+ * The prayer LIST renders now: reading approved requests already works.
+ */
+function Bulletin({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const {
+    eyebrow,
+    heading,
+    announcements_title,
+    announcements_empty,
+    prayer_title,
+    prayer_note,
+    prayer_empty,
+    prayer_pending_note,
+  } = sectionContent(section.content);
+
+  const { announcements, prayer } = context.collections;
+
+  return (
+    <Band>
+      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+      {heading ? <Heading>{heading}</Heading> : null}
+
+      <div className="mt-8 grid gap-8 md:grid-cols-2">
+        <div>
+          <h3 className="font-utility text-xs uppercase tracking-[0.16em] text-brand">
+            {announcements_title ?? "Announcements"}
+          </h3>
+          {announcements.length > 0 ? (
+            <ul className="mt-4 space-y-4">
+              {announcements.map((item) => (
+                <li key={item.id} className="text-ink-soft">
+                  {item.body}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-ink-soft">
+              {announcements_empty ?? "Nothing posted this week."}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <h3 className="font-utility text-xs uppercase tracking-[0.16em] text-brand">
+            {prayer_title ?? "Prayer list"}
+          </h3>
+          {prayer_note ? (
+            <p className="mt-1 text-sm text-ink-soft">{prayer_note}</p>
+          ) : null}
+
+          {prayer.length > 0 ? (
+            <ul className="mt-4 space-y-4">
+              {prayer.map((item) => (
+                <li key={item.id}>
+                  <p className="text-ink-soft">{item.body}</p>
+                  {item.display_name ? (
+                    <p className="mt-1 font-utility text-xs text-ink-soft">
+                      {item.display_name}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-4 text-ink-soft">
+              {prayer_empty ?? "No requests right now."}
+            </p>
+          )}
+
+          {prayer_pending_note ? (
+            <p className="mt-4 text-sm text-ink-soft">{prayer_pending_note}</p>
+          ) : null}
+        </div>
+      </div>
+    </Band>
   );
 }
 
