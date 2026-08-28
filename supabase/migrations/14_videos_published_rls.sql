@@ -1,7 +1,12 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do.
+   Section 1 verdict was 'NOT filtered - FF-25 confirmed'; section 2
+   recreated the policy with published = true. FF-25 closed. */
+
 /* ============================================================
    DRAFT 14 - enforce videos.published in the public select policy (FF-25)
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Required for: Phase B serving a video page. Not urgent today - nothing
    public reads videos yet and CFT has no video rows.
 
