@@ -1231,3 +1231,50 @@ Groups avoid this entirely: `meeting_day`, `meeting_time` and `meeting_tz` are
 separate text columns, so "Tuesdays 7:00 PM CT" is stored as the church wrote
 it and never parsed into an instant at all. That is the cheaper model for a
 recurring meeting, and worth remembering if the events model is revisited.
+
+---
+
+## FF-39 - `gallery` is superseded by `church_media`
+
+**File:** live schema; `supabase/drafts/23_media_library.sql`
+**Raised:** 2026-08-28, while scoping the media library
+**Do this:** after `church_media` is proven in use. Not urgent.
+
+`gallery` is a display collection - `image_url`, `caption`, `sort_order`. The
+media library needs an asset store, which is a different question: an event
+photo must be storable without appearing in the public photo gallery.
+
+`church_media` answers both, with `in_gallery` marking the subset that also
+appears publicly. That is one row per file and one place to look.
+
+`gallery` today has zero rows, no section in the seed, no renderer, and no fetch
+in `lib/collections.ts`. Nothing migrates. Draft 23 deliberately does NOT drop
+it: dropping a table with a live RLS policy is reversible only from a backup,
+and there is no cost to leaving it.
+
+Retire it once the Photos tab has real uploads. Until then it is dead weight
+that will confuse the next person reading the schema for "where do images live".
+
+---
+
+## FF-40 - `media_id` and the legacy `*_url` columns are two sources for one fact
+
+**File:** `supabase/drafts/23_media_library.sql` section 6
+**Raised:** 2026-08-28
+**Resolve by:** when the Photos tab has replaced every hand-pasted URL.
+
+Every table that takes an image already had a text column - `events.image_url`,
+`staff.photo_url`, `groups.image_path`, `church_theme.logo_url`. Draft 23 adds
+`media_id` alongside rather than replacing them, because the Our Team form
+already accepts a pasted URL and a pastor may have used it.
+
+**Precedence is defined: `media_id` wins; the URL is read only when `media_id`
+is null.** Renderers must follow that and nothing else.
+
+This is deliberately the same shape as `churches.giving_url` after the
+`church_links` decision - a column kept working while its replacement proves
+itself, then retired. It is acceptable only while it is temporary. Two live
+sources for one fact is how they drift, and the drift is silent.
+
+Retire by: nulling the `*_url` columns once every image is a library item, then
+dropping them in their own draft.
