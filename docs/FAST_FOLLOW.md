@@ -1309,3 +1309,65 @@ deleting any with no matching `storage_path`. It must run with the service role
 (listing across churches) and must be careful about the race in case 1: a file
 uploaded seconds ago may have a row that has not been written yet, so anything
 younger than a few minutes has to be left alone.
+
+---
+
+## FF-42 - church_media public read was gated on in_gallery
+
+**File:** live schema; fix drafted in `supabase/drafts/24_media_public_read.sql`
+**Raised:** 2026-08-28, by Jason, after the media picker shipped
+**Must fix by:** BLOCKER - picked photos do not appear on the public site
+
+Draft 23 gave `church_media` a public policy of
+`in_gallery = true AND church_id in (active)`. That predicate was written for
+the photo gallery and then reused, unexamined, as the policy for every public
+read of the table.
+
+The media picker made the difference matter. A photo chosen for a team member
+or an event, and not ticked into the gallery, is invisible to `anon`. The
+PostgREST embed returns null, no image renders, and nothing reports an error.
+
+**Write succeeds, portal says saved, public page shows nothing.** The same shape
+as FF-27 and FF-31, for the third time.
+
+### How it got through
+
+The FK was verified. The generated types carried all four relationships, so the
+embeds typechecked. `tsc`, `eslint` and `next build` all passed, and every page
+returned 200.
+
+None of that touches whether `anon` can READ the embedded row. FF-35 already
+states the rule - reachability has to be executed, not inferred - and it was
+applied to drafts 20, 21 and 22 and then not applied to the feature work that
+depended on them. **A typecheck proves the query is well-formed; only an anon
+read proves it returns anything.**
+
+Rule going forward: any feature whose public side reads through a NEW policy
+gets an anon probe before it is called done, exactly as a new draft does.
+
+### The decision, and what it costs
+
+Two options. Expose every media row of an active church and let `in_gallery`
+control only gallery membership; or admit only rows referenced by something
+already public.
+
+**Chose the first.** The second is tighter but needs four `EXISTS` subqueries
+against `events`, `staff`, `groups` and `church_theme`, each wanting an index -
+and it **fails silently the next time** a fifth referencing table is added and
+the policy is not widened. That is this exact bug, re-armed. A design that
+cannot fail quietly beats a tighter one that can, when the thing being
+protected is low-sensitivity.
+
+It protects little in any case: **the bucket is public.** The file is served
+without auth to anyone with the URL, whatever the table policy says. The policy
+governs the metadata row, not the image.
+
+**What is genuinely given up:** the library becomes enumerable. Anyone with the
+anon key can list every photo a church has uploaded, including one uploaded and
+never used - previously guessable-ish rather than discoverable. `uploaded_by` is
+revoked from `anon` because a user id has no business being public, but titles,
+dimensions and paths are readable.
+
+If that ever matters, the fix is a private bucket with signed URLs for
+unreferenced media - a bigger change than a policy, and not worth making before
+someone actually wants it.
