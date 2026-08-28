@@ -45,3 +45,8 @@ export const SAVE_IDLE: SaveState = Object.freeze({
   error: null,
   savedAt: null,
 });
+
+/** Our Team: add, edit, show/hide, reorder, remove. */
+export type TeamState = { ok: boolean; error: string | null };
+
+export const TEAM_IDLE: TeamState = Object.freeze({ ok: false, error: null });

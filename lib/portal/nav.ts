@@ -126,13 +126,7 @@ export const NAV: NavGroup[] = [
         built: false,
         blurb: "The month view of your events.",
       },
-      {
-        href: "/portal/team",
-        label: "Our Team",
-        icon: "\u{1F465}",
-        built: false,
-        blurb: "Staff and volunteers, with photos and bios.",
-      },
+      { href: "/portal/team", label: "Our Team", icon: "\u{1F465}", built: true },
     ],
   },
   {
