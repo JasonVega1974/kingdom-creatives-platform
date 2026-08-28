@@ -1,7 +1,14 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do. */
+
+/* Read-only trace. Probe A passed, probe C raised 42501 on church_id, probe
+   D reached RLS instead of the ACL because its SET list omitted church_id.
+   That isolated the cause; the fix is section 2b of draft 18. */
+
 /* ============================================================
    DRAFT 19 - trace "permission denied for table church_theme"
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Writes nothing: section 2 executes DML inside transactions that ROLL BACK.
 
    >>> RUN EACH PROBE SEPARATELY. The editor shows only the last result. <<<

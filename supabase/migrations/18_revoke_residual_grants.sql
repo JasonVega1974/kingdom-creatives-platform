@@ -1,7 +1,16 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do. */
+
+/* Verified after the run: church_theme authenticated UPDATE is 8 columns
+   (was 7), no INSERT or DELETE row for churches, no DELETE row for
+   church_theme, no write row of any kind for anon. Branding saves and
+   persists, which confirms church_theme's insert and update policies
+   empirically - the half of draft 17 section 4 that was never displayed. */
+
 /* ============================================================
    DRAFT 18 - revoke the write grants nothing uses
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Requires: draft 17 (applied 2026-08-27).
    Required for: section 2b unblocks the branding form, which is broken right
    now. Sections 1/2/3 close a latent trap and are not urgent.
