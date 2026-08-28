@@ -923,6 +923,17 @@ predate it and never got the equivalent.
 **Why this was invisible until now.** Nothing public read those tables before
 step 3. The gap has existed since the schema was created.
 
+**CONFIRMED BY EXECUTION 2026-08-28.** Draft 20 section 1b inserted a probe row
+into each table - `events` with `published = true`, `sermons` with
+`status = 'published'`, CFT active - then read both as the `anon` role inside
+the same transaction and rolled back. Anon saw **0 rows in both**. The rows
+existed in that transaction, so 0 can only be RLS filtering them.
+
+One flaw in that probe worth not repeating: `staff` and `groups` were included
+as controls but got no probe rows of their own, so their 0s are just empty
+tables. A control that returns the same value under both hypotheses is not a
+control. The result stands on the two tables that were actually seeded.
+
 **The diagnostic problem it leaves.** From the browser, "empty because the
 table has no rows" and "empty because RLS refused" look identical - both render
 the same empty state. That is why draft 20 leads with an audit rather than going
@@ -963,3 +974,42 @@ public page to read that table - so the exposure stops being theoretical the
 moment this deploys. `lib/collections.ts` filters `published` in the query as
 defence in depth, but a query filter is not the boundary and must not be
 mistaken for one.
+
+---
+
+## FF-32 - giving is Tithe.ly only; the seeded picker fields stay unrendered
+
+**File:** `components/site/section-renderer.tsx` (GivingBand), `supabase/migrations/04_cft_sections_seed.sql`
+**Decided:** 2026-08-28 by Jason. **Not open, not deferred.**
+
+The Give button points at the `kind = 'giving'` row in `church_links` - for CFT
+the Tithe.ly form seeded by draft 10. No Stripe, no amount picker, no
+custom-amount field.
+
+**Why this entry exists.** The seed for `home.giving_band` and `give.give_band`
+carries a complete donation widget that nothing renders:
+
+```
+frequencies         ["One-time", "Monthly"]
+amounts             [20, 50, 100, 250]
+default_amount      50
+custom_placeholder  "Or enter another amount"
+submit_label        "Continue to giving"
+```
+
+Anyone reading those rows later will reasonably assume a renderer is missing.
+It is not. Amount and frequency are chosen on the Tithe.ly form itself, so
+collecting them beforehand would either be decorative or would require Tithe.ly
+to accept them as URL parameters - a real integration nobody has asked for.
+
+The section's `body` text also says "Handled by Stripe", which is now wrong for
+CFT. Stripe remains a Phase E possibility; if it ever arrives, this entry is
+where to start, and the seeded fields are already the right shape for it.
+
+**Do not delete the seeded fields.** They cost nothing, they are the spec if
+Stripe ever lands, and removing them would mean re-deriving the amount ladder
+from the prototype.
+
+**What to change if this reverses:** render the picker in `GivingBand`, and
+decide where it submits before writing a line of it. That was the question that
+made this a decision rather than an omission.

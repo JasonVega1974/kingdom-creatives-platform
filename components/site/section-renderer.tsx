@@ -531,18 +531,17 @@ function CalloutCard({ section }: { section: SectionRow }) {
 }
 
 /**
- * The giving band - prose now, amount picker later.
+ * The giving band - prose and one button out to Tithe.ly.
  *
- * The seed carries a full donation widget (frequencies, preset amounts, a
- * default, a custom-amount field, a submit label). That is NOT built here,
- * because where it submits to is an open decision: the body text says Stripe,
- * the `note` says the button can point at an existing Tithe.ly form, and
- * Stripe is Phase E. Guessing would mean building a checkout against the wrong
- * processor.
+ * DECIDED 2026-08-28 (Jason): Tithe.ly only, through the `kind = 'giving'` row
+ * in church_links. No Stripe, no amount picker, no custom-amount field.
  *
- * What is certain today is the destination for a plain Give button: the
- * `kind = 'giving'` row in church_links, decided 2026-08-28. So the prose and
- * that button render now, and the picker waits for the decision.
+ * The seed carries a full donation widget - `frequencies`, `amounts`,
+ * `default_amount`, `custom_placeholder`, `submit_label`. Those fields are
+ * DELIBERATELY NOT RENDERED and are not a bug to fix. Amount and frequency are
+ * chosen on the Tithe.ly form itself, so collecting them here would either be
+ * decorative or would need Tithe.ly to accept them as parameters - a real
+ * integration nobody has asked for. See FF-32.
  *
  * A church with no giving link gets no button rather than a dead one.
  */
@@ -593,12 +592,6 @@ function GivingBand({ section, giving }: { section: SectionRow; giving: ChurchLi
       </div>
 
       {note ? <p className="mt-4 max-w-[62ch] text-sm text-ink-soft">{note}</p> : null}
-
-      {process.env.NODE_ENV !== "production" ? (
-        <p className="mt-4 font-utility text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-          amount picker deferred - needs the Stripe vs Tithe.ly decision
-        </p>
-      ) : null}
     </Band>
   );
 }
