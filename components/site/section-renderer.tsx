@@ -8,6 +8,7 @@ import {
   VideoGrid,
 } from "@/components/site/collections";
 import type { Collections } from "@/lib/collections";
+import { PrayerForm, VisitForm } from "@/components/site/public-forms";
 import type { ChurchLink } from "@/lib/links";
 import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/sections";
 
@@ -112,6 +113,8 @@ export function SectionRenderer({
       return <EventsPreview section={section} context={context} />;
     case "bulletin":
       return <Bulletin section={section} context={context} />;
+    case "visit_form":
+      return <VisitFormSection section={section} />;
 
     case "giving_band":
     case "give_band":
@@ -615,15 +618,43 @@ function EventsPreview({
 }
 
 /**
+ * Plan a Visit.
+ *
+ * Every label, placeholder and option is seeded content, so a pastor can reword
+ * the whole form from the portal. The option lists are read with strings()
+ * because sectionContent() keeps only scalars and would drop them.
+ */
+function VisitFormSection({ section }: { section: SectionRow }) {
+  const content = sectionContent(section.content);
+
+  return (
+    <Band tint>
+      {content.title ? <Heading>{content.title}</Heading> : null}
+      {content.sub ? (
+        <p className="mt-3 max-w-[62ch] text-ink-soft">{content.sub}</p>
+      ) : null}
+
+      <div className="mt-8 max-w-xl">
+        <VisitForm
+          content={content}
+          whenOptions={strings(section.content, "when_options")}
+          rigOptions={strings(section.content, "rig_options")}
+        />
+      </div>
+    </Band>
+  );
+}
+
+/**
  * Home: the bulletin board - announcements and the prayer wall.
  *
- * The "Add a request" CTA is NOT rendered yet. prayer_requests still has the
- * `with check (true)` insert policy from migration 01, which lets anyone with
- * the anon key publish straight to this wall by setting status themselves
- * (FF-34, draft 21). A button that posts nowhere is worse than no button, and
- * one that posts into an unmoderated hole is worse still.
+ * The "Add a request" form is live as of draft 21 (FF-34). Before that, the
+ * insert policy was `with check (true)` and anyone with the anon key could POST
+ * straight to this wall with status = 'approved', publishing unmoderated - so
+ * the CTA was deliberately held back until the policy could refuse it.
  *
- * The prayer LIST renders now: reading approved requests already works.
+ * Submissions arrive as 'pending' and stay invisible here until a pastor
+ * approves them, which is what prayer_pending_note promises the visitor.
  */
 function Bulletin({
   section,
@@ -700,6 +731,8 @@ function Bulletin({
           {prayer_pending_note ? (
             <p className="mt-4 text-sm text-ink-soft">{prayer_pending_note}</p>
           ) : null}
+
+          <PrayerForm content={sectionContent(section.content)} />
         </div>
       </div>
     </Band>
