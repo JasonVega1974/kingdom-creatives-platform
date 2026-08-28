@@ -4,6 +4,7 @@ import { SectionRenderer } from "@/components/site/section-renderer";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
+import { getCollectionsFor } from "@/lib/collections";
 import { getChurchLinks, givingLink } from "@/lib/links";
 import { getPageSections } from "@/lib/sections";
 
@@ -26,12 +27,15 @@ export default async function HomePage() {
   const site = await getCurrentChurchSite();
   if (!site) notFound();
 
-  const [sections, links] = await Promise.all([
+  const [sections, links, collections] = await Promise.all([
     getPageSections(site.church.slug, site.church.id, "home"),
     getChurchLinks(site.church.slug, site.church.id),
+    // Home's collection-backed sections - latest_sermon, events_preview,
+    // bulletin - are step 4, so nothing is queried for it yet.
+    getCollectionsFor(site.church.slug, site.church.id, []),
   ]);
 
-  const context = { giving: givingLink(links) };
+  const context = { giving: givingLink(links), collections };
 
   return (
     <>

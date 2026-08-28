@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 
+import {
+  COLLECTIONS_BY_PAGE,
+  PageCollection,
+} from "@/components/site/page-collection";
 import { SectionRenderer } from "@/components/site/section-renderer";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
+import { getCollectionsFor } from "@/lib/collections";
 import { getChurchLinks, givingLink } from "@/lib/links";
 import { getPageSections } from "@/lib/sections";
 import { PAGES } from "@/lib/portal/sections";
@@ -65,12 +70,17 @@ export default async function PublicPage({
   // One round trip each, in parallel. Links are needed only by the giving
   // sections, but fetching them per-section would mean a query inside a
   // render loop.
-  const [sections, links] = await Promise.all([
+  const [sections, links, collections] = await Promise.all([
     getPageSections(site.church.slug, site.church.id, page.slug),
     getChurchLinks(site.church.slug, site.church.id),
+    getCollectionsFor(
+      site.church.slug,
+      site.church.id,
+      COLLECTIONS_BY_PAGE[page.slug] ?? [],
+    ),
   ]);
 
-  const context = { giving: givingLink(links) };
+  const context = { giving: givingLink(links), collections };
 
   return (
     <>
@@ -84,6 +94,12 @@ export default async function PublicPage({
         ) : (
           <EmptyPage label={page.label} />
         )}
+
+        <PageCollection
+          pageSlug={page.slug}
+          sections={sections}
+          collections={collections}
+        />
       </main>
 
       <SiteFooter church={site.church} />

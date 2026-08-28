@@ -1,5 +1,12 @@
 import Link from "next/link";
 
+import {
+  EventList,
+  GroupList,
+  MinistryList,
+  VideoGrid,
+} from "@/components/site/collections";
+import type { Collections } from "@/lib/collections";
 import type { ChurchLink } from "@/lib/links";
 import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/sections";
 
@@ -36,6 +43,8 @@ import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/secti
 export type SectionContext = {
   /** Resolved once per page and passed down; see givingLink(). */
   giving: ChurchLink | null;
+  /** Only the collections this page asked for are populated. */
+  collections: Collections;
 };
 
 export function SectionRenderer({
@@ -68,7 +77,7 @@ export function SectionRenderer({
     case "beliefs":
       return <Beliefs section={section} />;
     case "ministries_intro":
-      return <SimpleIntro section={section} />;
+      return <MinistriesSection section={section} context={context} />;
     case "about_ctas":
       return <CtaRow section={section} />;
 
@@ -77,6 +86,16 @@ export function SectionRenderer({
     case "reading_plan":
     case "ylcc_bridge":
       return <CalloutCard section={section} />;
+
+    // The filter strips themselves are interactive and belong to step 4. The
+    // LIST each one heads is the page's actual content, so it renders now -
+    // an events page with working filters and no events would be backwards.
+    case "group_filters":
+      return <GroupsSection section={section} context={context} />;
+    case "event_filters":
+      return <EventsSection section={section} context={context} />;
+    case "worship_filters":
+      return <WorshipSection section={section} context={context} />;
 
     case "giving_band":
     case "give_band":
@@ -366,22 +385,100 @@ function Beliefs({ section }: { section: SectionRow }) {
   );
 }
 
-/**
- * Heading + lede with nothing else.
- *
- * `ministries_intro` also carries an `empty` string for when the ministries
- * table has no rows. The list itself is step 3; this renders the words above
- * it, which are real content today.
- */
-function SimpleIntro({ section }: { section: SectionRow }) {
-  const { heading, lede } = sectionContent(section.content);
-  if (!heading && !lede) return null;
+/** Ministries: the intro copy, then the list it introduces. */
+function MinistriesSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { heading, lede, empty } = sectionContent(section.content);
 
   return (
     <Band>
       {heading ? <Heading>{heading}</Heading> : null}
       {lede ? <p className="mt-4 max-w-[62ch] text-lg text-ink-soft">{lede}</p> : null}
+      <div className="mt-8">
+        <MinistryList
+          ministries={context.collections.ministries}
+          empty={empty ?? "Ministry list coming soon."}
+        />
+      </div>
     </Band>
+  );
+}
+
+function GroupsSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { empty, link_label } = sectionContent(section.content);
+
+  return (
+    <Band>
+      <GroupList
+        groups={context.collections.groups}
+        empty={empty ?? "No groups listed yet."}
+        linkLabel={link_label ?? "Join online"}
+      />
+      <FiltersDeferred />
+    </Band>
+  );
+}
+
+function EventsSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { empty } = sectionContent(section.content);
+
+  return (
+    <Band>
+      <EventList
+        events={context.collections.events}
+        empty={empty ?? "Nothing on the calendar yet."}
+      />
+      <FiltersDeferred />
+    </Band>
+  );
+}
+
+function WorshipSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { empty, play_label } = sectionContent(section.content);
+
+  return (
+    <Band>
+      <VideoGrid
+        videos={context.collections.videos}
+        empty={empty ?? "No worship videos yet."}
+        playLabel={play_label ?? "Play"}
+      />
+      <FiltersDeferred />
+    </Band>
+  );
+}
+
+/** Dev-only note that the filter strip above a list is still to come. */
+function FiltersDeferred() {
+  if (process.env.NODE_ENV === "production") return null;
+
+  return (
+    <p className="mt-6 font-utility text-[11px] uppercase tracking-[0.16em] text-ink-soft">
+      filter strip deferred to step 4 - the list above is live
+    </p>
   );
 }
 
