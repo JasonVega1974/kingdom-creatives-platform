@@ -110,3 +110,69 @@ export function sectionContent(content: Json): Record<string, string> {
   }
   return out;
 }
+
+/**
+ * ============================================================
+ * TYPED READERS for section content
+ * ============================================================
+ *
+ * sectionContent() above flattens to strings and is right for simple
+ * text sections. The seed is richer than that - draft 04 stores lists of
+ * objects (faq items, timeline stops, stat tiles) and nested objects (link
+ * targets), and a renderer needs those without asserting a shape the database
+ * does not enforce.
+ *
+ * Each reader returns a safe empty value rather than throwing. A malformed row
+ * costs one section, never the page.
+ */
+
+/** A string field, or null when absent or the wrong type. */
+export function str(content: Json, key: string): string | null {
+  if (typeof content !== "object" || content === null || Array.isArray(content)) {
+    return null;
+  }
+  const value = (content as Record<string, Json>)[key];
+  return typeof value === "string" && value.trim() !== "" ? value : null;
+}
+
+/** A nested object field as a string map, or {} . */
+export function obj(content: Json, key: string): Record<string, string> {
+  if (typeof content !== "object" || content === null || Array.isArray(content)) {
+    return {};
+  }
+  const value = (content as Record<string, Json>)[key];
+  return value === undefined ? {} : sectionContent(value);
+}
+
+/**
+ * A list field whose entries are objects, as string maps.
+ *
+ * Entries that are not objects are dropped rather than rendered as "[object
+ * Object]" or crashing a .map(). Numbers survive as strings, which is what
+ * mile_stats and the giving amounts need.
+ */
+export function rows(content: Json, key: string): Record<string, string>[] {
+  if (typeof content !== "object" || content === null || Array.isArray(content)) {
+    return [];
+  }
+  const value = (content as Record<string, Json>)[key];
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((entry): entry is Json => entry !== null && typeof entry === "object" && !Array.isArray(entry))
+    .map((entry) => sectionContent(entry));
+}
+
+/** A list field of plain strings (bullets, option lists). */
+export function strings(content: Json, key: string): string[] {
+  if (typeof content !== "object" || content === null || Array.isArray(content)) {
+    return [];
+  }
+  const value = (content as Record<string, Json>)[key];
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((entry) => typeof entry === "string" || typeof entry === "number")
+    .map(String)
+    .filter((entry) => entry.trim() !== "");
+}

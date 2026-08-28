@@ -5,6 +5,7 @@ import { SectionRenderer } from "@/components/site/section-renderer";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
+import { getChurchLinks, givingLink } from "@/lib/links";
 import { getPageSections } from "@/lib/sections";
 import { PAGES } from "@/lib/portal/sections";
 
@@ -61,11 +62,15 @@ export default async function PublicPage({
   const site = await getCurrentChurchSite();
   if (!site) notFound();
 
-  const sections = await getPageSections(
-    site.church.slug,
-    site.church.id,
-    page.slug,
-  );
+  // One round trip each, in parallel. Links are needed only by the giving
+  // sections, but fetching them per-section would mean a query inside a
+  // render loop.
+  const [sections, links] = await Promise.all([
+    getPageSections(site.church.slug, site.church.id, page.slug),
+    getChurchLinks(site.church.slug, site.church.id),
+  ]);
+
+  const context = { giving: givingLink(links) };
 
   return (
     <>
@@ -74,7 +79,7 @@ export default async function PublicPage({
       <main>
         {sections.length > 0 ? (
           sections.map((section) => (
-            <SectionRenderer key={section.id} section={section} />
+            <SectionRenderer key={section.id} section={section} context={context} />
           ))
         ) : (
           <EmptyPage label={page.label} />
