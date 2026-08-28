@@ -714,7 +714,40 @@ One loose end came out of the section 4 output and is handled by draft 18:
 `churches` still carried a blanket INSERT grant, and neither table had DELETE
 revoked. Not exploitable - RLS denies both commands with no matching policy -
 but a grant that outlives its purpose becomes live the moment someone adds the
-policy it was waiting for.
+policy it was waiting for. Draft 18 applied 2026-08-28.
+
+### Column grants and upserts - the part that bit
+
+Draft 17's column grants broke the branding form, and the reason generalises to
+every future upsert against a table with column-level privileges.
+
+`saveBranding` upserts `church_theme`. A church that already has a theme row
+takes the `ON CONFLICT DO UPDATE` path, and **PostgREST builds the SET clause
+from every column in the payload, including the conflict target**. So the
+statement needs UPDATE privilege on `church_id` - which draft 17 withheld on
+purpose, since nothing should be able to move a theme row between churches.
+
+The rule to remember: **grant UPDATE on the conflict-target column whenever a
+table is upserted through PostgREST and its write privileges are column-scoped.**
+It is safe when the update policy carries a `with check` on that column, as
+draft 17's does - the grant opens the column, the policy still decides the
+value.
+
+Two things made this expensive to diagnose, both worth recognising on sight:
+
+- The error read `permission denied for table church_theme`, not "column".
+  Postgres has a column-granular message form, but the executor's DML
+  permission check does not use it, so a missing COLUMN privilege on
+  INSERT/UPDATE reports at TABLE granularity. "table" does not rule out a
+  column problem.
+- It surfaced as the transport message ("Try again in a moment") rather than
+  the refusal message, because PostgREST genuinely raised. That was correct
+  behaviour from the FF-27 code fix and correctly ruled out a 0-row write.
+
+Traced in `supabase/migrations/19_church_theme_privilege_trace.sql`, which
+isolated it with three probes: the granted columns alone passed, the same
+statement plus `church_id` raised 42501, and a hand-written upsert omitting
+`church_id` from its SET list reached RLS instead of the ACL.
 
 The original entry follows.
 
