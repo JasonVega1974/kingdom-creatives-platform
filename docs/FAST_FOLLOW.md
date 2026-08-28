@@ -1192,3 +1192,42 @@ on the subdomain - redirecting it would bounce him out of a live session.
 Shape: a rewrite/redirect rule in `vercel.ts` matching the subdomain host for
 everything except `/portal`. Verify after cutover that a signed-in portal
 session on the subdomain survives.
+
+---
+
+## FF-38 - event times are stored as UTC wall-clock, not real instants
+
+**File:** `lib/portal/collection-write.ts` (`nullableTimestamp`), `components/portal/events-editor.tsx`
+**Raised:** 2026-08-28, while building the Events tab
+**Must fix by:** before anything exports an event with real timezone meaning -
+a calendar file, a reminder email, or a second church in another zone.
+
+`<input type="datetime-local">` posts `2026-09-13T10:30` with no timezone, and
+there is nowhere to look one up: `churches` has no timezone column, and only
+`service_times` carries a `tz`, per slot. Events are not service times.
+
+So the typed wall-clock is **pinned to UTC** rather than left to
+`new Date(raw)`, which would interpret it in whatever zone the server runs in.
+Vercel runs UTC so the two agree today - but "happens to agree" is not a rule,
+and a region change would silently shift every event by hours. Pinning makes the
+behaviour explicit instead of incidental.
+
+The events list formats with `timeZone: "UTC"` to match, so the pastor types
+10:30 and every reader sees 10:30 regardless of their own zone.
+
+**What this is and is not.** The site is self-consistent and predictable. The
+stored instant is NOT the real instant unless the church is on UTC - so an
+event at 10:30 CT is stored as 10:30Z, six hours off. That is invisible while
+the only consumer is our own page, and wrong the moment something leaves the
+site carrying timezone meaning.
+
+**The fix** is a timezone column on `churches`, defaulting to the church's own
+zone, with the input converted on write and rendered in that zone on read. That
+is a schema change, so it is a draft rather than a decision to make inside a
+helper. It should land before a second church exists in a different zone, since
+at that point the bug stops being uniform and starts being per-tenant.
+
+Groups avoid this entirely: `meeting_day`, `meeting_time` and `meeting_tz` are
+separate text columns, so "Tuesdays 7:00 PM CT" is stored as the church wrote
+it and never parsed into an instant at all. That is the cheaper model for a
+recurring meeting, and worth remembering if the events model is revisited.

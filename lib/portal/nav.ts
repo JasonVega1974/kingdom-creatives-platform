@@ -84,8 +84,7 @@ export const NAV: NavGroup[] = [
         href: "/portal/groups",
         label: "Groups & Studies",
         icon: "\u{1F9ED}",
-        built: false,
-        blurb: "Your small groups and Bible studies, with meeting links.",
+        built: true,
       },
       {
         href: "/portal/ministries",
@@ -110,8 +109,7 @@ export const NAV: NavGroup[] = [
         href: "/portal/events",
         label: "Events",
         icon: "\u{1F4C5}",
-        built: false,
-        blurb: "Everything on your calendar.",
+        built: true,
       },
       {
         href: "/portal/calendar",

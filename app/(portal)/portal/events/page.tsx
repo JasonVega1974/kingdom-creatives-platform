@@ -1,0 +1,82 @@
+import type { Metadata } from "next";
+
+import { EventsEditor, type EventRow } from "@/components/portal/events-editor";
+import { requirePortalUser } from "@/lib/portal/auth";
+import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "Events" };
+
+/**
+ * "Events" - the calendar, including past and unpublished ones.
+ *
+ * Deliberately shows everything, unlike the public page which lists upcoming
+ * published events only. A pastor needs to find last month's event to copy its
+ * details, and needs to see that something is unpublished in order to publish
+ * it. Soonest first so the next thing is at the top.
+ */
+export default async function EventsPage() {
+  const session = await requirePortalUser();
+
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("events")
+    .select(
+      "id, title, description, starts_at, ends_at, location, event_type, registration_url, published",
+    )
+    .eq("church_id", session.site.church.id)
+    .order("starts_at", { ascending: false });
+
+  if (error) {
+    return (
+      <Shell>
+        <p role="alert" className="text-red-700">
+          Your events could not be loaded right now. Refresh the page - nothing
+          has been lost.
+        </p>
+      </Shell>
+    );
+  }
+
+  const events: EventRow[] = (rows ?? []).map((row) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description ?? "",
+    // <input type="datetime-local"> wants "YYYY-MM-DDTHH:mm" with no zone.
+    // Stored values are UTC wall-clock (FF-38), so slicing the ISO string is
+    // the round trip - converting would double-apply an offset.
+    startsAt: toLocalInput(row.starts_at),
+    endsAt: toLocalInput(row.ends_at),
+    location: row.location ?? "",
+    eventType: row.event_type ?? "",
+    registrationUrl: row.registration_url ?? "",
+    published: row.published,
+  }));
+
+  return (
+    <Shell>
+      <EventsEditor events={events} />
+    </Shell>
+  );
+}
+
+/** "2026-09-13T10:30:00+00:00" -> "2026-09-13T10:30". */
+function toLocalInput(value: string | null): string {
+  if (!value) return "";
+  return String(value).slice(0, 16);
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="max-w-3xl">
+      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
+        Events
+      </h1>
+      <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
+        What is coming up. Your website shows upcoming events only - anything
+        that has already happened drops off on its own.
+      </p>
+
+      {children}
+    </div>
+  );
+}
