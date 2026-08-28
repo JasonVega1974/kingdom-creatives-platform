@@ -1023,9 +1023,9 @@ made this a decision rather than an omission.
 
 ## FF-33 - contacts has no anon insert policy
 
-**File:** live schema; fix drafted in `supabase/drafts/21_public_form_policies.sql`
+**File:** `supabase/migrations/21_public_form_policies.sql`
 **Raised:** 2026-08-28, while building Phase B step 4
-**Must fix by:** BLOCKER - the Plan-a-Visit form cannot save without it
+**STATUS: CLOSED 2026-08-28 - fixed and verified.**
 
 `contacts` has exactly two policies, `pastor+ can edit contacts` (ALL) and
 `staff+ can view contacts` (select). Neither is satisfiable for `anon`, so a
@@ -1045,9 +1045,10 @@ holds other people's names, emails and phone numbers.
 
 ## FF-34 - anyone with the anon key can publish to the prayer wall
 
-**File:** `supabase/migrations/01_kc_migration_01.sql`; fix drafted in `supabase/drafts/21_public_form_policies.sql`
+**File:** `supabase/migrations/21_public_form_policies.sql`
 **Raised:** 2026-08-28, while building Phase B step 4
-**Must fix by:** BLOCKER - before the bulletin renders publicly
+**STATUS: CLOSED 2026-08-28 - fixed and verified by probe.** The pre-approved
+insert is now refused with 42501, which is the check that mattered.
 
 Migration 01 wrote:
 
@@ -1087,3 +1088,38 @@ is deliberately not rendered yet - the prayer list displays, the form does not.
 Draft 21 section 3 constrains the insert to `status = 'pending'`,
 `prayed_count = 0`, null approval marks and an active church, and adds the
 missing church scoping to the read.
+
+---
+
+## FF-35 - a probe that cannot fail is not a probe
+
+**Raised:** 2026-08-28, after making the same mistake twice
+**Status:** Reference. No action - this is a rule for writing future audits.
+
+Two RLS probes in two days returned a number that looked like a verdict and was
+not one:
+
+- **Draft 20 section 1b** included `staff` and `groups` as controls but never
+  inserted probe rows into them. Both returned 0 because the tables are empty,
+  which is what they would have returned if RLS had blocked them too.
+- **Draft 21 section 4b** inserted into `contacts` as `anon` and then counted
+  the row *still as anon*. `contacts` has no anon SELECT policy by design, so
+  the count returned 0 while the insert had actually succeeded. A 0 there reads
+  as "the policy failed" and would send the next person chasing a policy that is
+  fine.
+
+Both have the same shape: **the check returns the same value whether or not the
+thing under test worked.**
+
+Rules for the next one:
+
+1. **Seed what you measure.** A count over an empty table proves nothing. Insert
+   a probe row inside the transaction, then roll back.
+2. **Read with a role that can read.** `reset role` before counting, or do not
+   count at all. Testing a write with a read is only valid where the same role
+   can do both - which is exactly what these tables are designed to prevent.
+3. **Prefer the raise over the count.** For INSERT, a refusal raises 42501. The
+   statement completing without error IS the result; a count only confirms the
+   row landed.
+4. **Say what a failing run looks like** before running it. If you cannot state
+   which output means "broken", the probe is not testing anything.

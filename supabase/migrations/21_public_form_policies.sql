@@ -1,7 +1,13 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do.
+   Both fixes confirmed by probe. The pre-approved prayer insert was
+   refused with 42501 (FF-34 closed); the contacts insert succeeded once
+   the probe stopped counting as anon (FF-33 closed) - see the note on 4b. */
+
 /* ============================================================
    DRAFT 21 - policies for the two public forms (FF-33, FF-34)
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Required for: the Plan-a-Visit form working, and the prayer wall being safe
                  to render.
 
@@ -209,12 +215,27 @@ select c.relname::text as table_name,
 
 /* ---- 4b. Probe. Run the block; it rolls back either way. ---- */
 
+/* CORRECTED 2026-08-28. The first version of this probe counted the row while
+   still `set local role anon`, and returned 0 with no error - which reads as a
+   failed insert when the insert had in fact succeeded.
+
+   contacts has NO anon SELECT policy, deliberately: a visitor may write to that
+   table and must never read it. So anon cannot see its own row, and the count
+   was measuring the read policy rather than the write it was meant to test.
+
+   `reset role` before counting. The insert running without raising is the real
+   result; the count only confirms the row landed. Same mistake as draft 20's
+   staff/groups controls - a check that returns the same value whether or not
+   the thing under test worked. */
+
 begin;
   set local role anon;
 
   insert into public.contacts (church_id, type, name, email, message)
   values ('36cb9fdf-4ca1-414f-a206-c3885e07ed5a', 'visit',
           'RLS probe', 'probe@example.com', 'rolled back');
+
+  reset role;
 
   select count(*) as visit_ok from public.contacts
    where email = 'probe@example.com';

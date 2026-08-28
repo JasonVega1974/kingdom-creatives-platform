@@ -17,7 +17,6 @@ then parses the prose as SQL - the symptom is a baffling
 
 | File | What | Required for | Urgency |
 |---|---|---|---|
-| `21_public_form_policies.sql` | anon insert on `contacts` (FF-33); close the prayer-wall self-publish hole and add church scoping (FF-34) | **The visit form saving, and the prayer wall being safe to render** | **Blocker.** Run next |
 | `11_sermons_church_link.sql` | `sermons.church_link_id` - nullable, tenant-safe composite FK to `church_links` | Sermon Library tab, nightly YouTube sync | When that work starts. Requires 09 (done) |
 | `15_post_batch_verify.sql` | Read-only. Re-checks that 08/04/09/10/12 took | Nothing - diagnostics | Run any time. Already passed 2026-08-27 |
 | `07_cft_giving_url.sql` | Data only - `churches.giving_url` for CFT | Nothing | **WON'T RUN - superseded.** Decided 2026-08-28: the Give page reads `church_links`, where the real Tithe.ly link already sits from draft 10. See PORTAL_SPEC 2.3 |
@@ -41,6 +40,7 @@ All in `supabase/migrations/`, applied date in the file header.
 | `13_rls_with_check.sql` | 2026-08-27 | Explicit `with check` on 7 policies. **Semantic no-op** - see FF-23 STATUS |
 | `16_churches_write_policy_audit.sql` | 2026-08-27 | Read-only audit. Found churches/church_theme had select policies only |
 | `17_churches_write_policy.sql` | 2026-08-27 | Write policies + column grants. Church Details saves. Verified by retest (FF-27) |
+| `21_public_form_policies.sql` | 2026-08-28 | anon insert on `contacts`; prayer-wall self-publish hole closed and church-scoped. FF-33, FF-34 |
 | `20_public_read_events_sermons.sql` | 2026-08-28 | Public read policies for `events` and `sermons`. Blocker confirmed by probe first. FF-31 closed |
 | `14_videos_published_rls.sql` | 2026-08-28 | Public `videos` policy now filters `published`. FF-25 closed |
 | `19_church_theme_privilege_trace.sql` | 2026-08-28 | Read-only trace. Isolated the branding failure to a missing UPDATE grant on `church_theme.church_id` |
