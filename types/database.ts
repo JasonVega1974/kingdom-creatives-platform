@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -108,6 +108,65 @@ export type Database = {
           },
         ]
       }
+      church_media: {
+        Row: {
+          alt_text: string | null
+          byte_size: number | null
+          church_id: string
+          created_at: string
+          gallery_order: number
+          height: number | null
+          id: string
+          in_gallery: boolean
+          mime_type: string | null
+          storage_path: string
+          title: string | null
+          updated_at: string
+          uploaded_by: string | null
+          width: number | null
+        }
+        Insert: {
+          alt_text?: string | null
+          byte_size?: number | null
+          church_id: string
+          created_at?: string
+          gallery_order?: number
+          height?: number | null
+          id?: string
+          in_gallery?: boolean
+          mime_type?: string | null
+          storage_path: string
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Update: {
+          alt_text?: string | null
+          byte_size?: number | null
+          church_id?: string
+          created_at?: string
+          gallery_order?: number
+          height?: number | null
+          id?: string
+          in_gallery?: boolean
+          mime_type?: string | null
+          storage_path?: string
+          title?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "church_media_church_id_fkey"
+            columns: ["church_id"]
+            isOneToOne: false
+            referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       church_members: {
         Row: {
           approved_at: string | null
@@ -198,6 +257,7 @@ export type Database = {
           color_secondary: string
           font_body: string | null
           font_heading: string | null
+          logo_media_id: string | null
           logo_url: string | null
           updated_at: string | null
         }
@@ -208,6 +268,7 @@ export type Database = {
           color_secondary?: string
           font_body?: string | null
           font_heading?: string | null
+          logo_media_id?: string | null
           logo_url?: string | null
           updated_at?: string | null
         }
@@ -218,6 +279,7 @@ export type Database = {
           color_secondary?: string
           font_body?: string | null
           font_heading?: string | null
+          logo_media_id?: string | null
           logo_url?: string | null
           updated_at?: string | null
         }
@@ -228,6 +290,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "churches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "church_theme_logo_media_fkey"
+            columns: ["logo_media_id", "church_id"]
+            isOneToOne: false
+            referencedRelation: "church_media"
+            referencedColumns: ["id", "church_id"]
           },
         ]
       }
@@ -456,6 +525,7 @@ export type Database = {
           id: string
           image_url: string | null
           location: string | null
+          media_id: string | null
           published: boolean
           recurrence_rule: string | null
           registration_url: string | null
@@ -472,6 +542,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location?: string | null
+          media_id?: string | null
           published?: boolean
           recurrence_rule?: string | null
           registration_url?: string | null
@@ -488,6 +559,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           location?: string | null
+          media_id?: string | null
           published?: boolean
           recurrence_rule?: string | null
           registration_url?: string | null
@@ -502,6 +574,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "churches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_media_fkey"
+            columns: ["media_id", "church_id"]
+            isOneToOne: false
+            referencedRelation: "church_media"
+            referencedColumns: ["id", "church_id"]
           },
         ]
       }
@@ -607,6 +686,7 @@ export type Database = {
           leader_name: string | null
           location_detail: string | null
           location_type: string
+          media_id: string | null
           meeting_day: string | null
           meeting_link: string | null
           meeting_time: string | null
@@ -626,6 +706,7 @@ export type Database = {
           leader_name?: string | null
           location_detail?: string | null
           location_type?: string
+          media_id?: string | null
           meeting_day?: string | null
           meeting_link?: string | null
           meeting_time?: string | null
@@ -645,6 +726,7 @@ export type Database = {
           leader_name?: string | null
           location_detail?: string | null
           location_type?: string
+          media_id?: string | null
           meeting_day?: string | null
           meeting_link?: string | null
           meeting_time?: string | null
@@ -661,6 +743,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "churches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "groups_media_fkey"
+            columns: ["media_id", "church_id"]
+            isOneToOne: false
+            referencedRelation: "church_media"
+            referencedColumns: ["id", "church_id"]
           },
         ]
       }
@@ -898,6 +987,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          media_id: string | null
           name: string
           phone: string | null
           photo_url: string | null
@@ -912,6 +1002,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          media_id?: string | null
           name: string
           phone?: string | null
           photo_url?: string | null
@@ -926,6 +1017,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          media_id?: string | null
           name?: string
           phone?: string | null
           photo_url?: string | null
@@ -941,6 +1033,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "churches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_media_fkey"
+            columns: ["media_id", "church_id"]
+            isOneToOne: false
+            referencedRelation: "church_media"
+            referencedColumns: ["id", "church_id"]
           },
         ]
       }

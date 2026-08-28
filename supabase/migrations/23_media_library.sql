@@ -1,7 +1,14 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do.
+   Section 7 verified: both buckets with the right public flags, seven
+   storage policies, church_media with RLS on and two policies, and all
+   four composite FKs present - the do block matched every target, so
+   there is no single-column FK and no cross-tenant hole. */
+
 /* ============================================================
    DRAFT 23 - media library: storage buckets, church_media, links
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Requires: nothing. Safe to run now.
 
    >>> RUN THE SECTIONS SEPARATELY. Section 1 is an audit. <<<

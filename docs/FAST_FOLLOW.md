@@ -1278,3 +1278,34 @@ sources for one fact is how they drift, and the drift is silent.
 
 Retire by: nulling the `*_url` columns once every image is a library item, then
 dropping them in their own draft.
+
+---
+
+## FF-41 - orphaned storage objects have no sweeper
+
+**File:** `app/(portal)/portal/photos/actions.ts`
+**Raised:** 2026-08-28, while building the Photos tab
+**Must fix by:** not urgent. Revisit when storage cost becomes visible, or
+before a second church is paying for it.
+
+A file can end up in the `church-media` bucket with no `church_media` row
+pointing at it, in two ways:
+
+1. The browser upload succeeds and `recordUpload()` then fails. The file is
+   there; nothing describes it.
+2. `removeMedia()` deletes the row and the subsequent storage removal fails.
+   Logged as `orphaned storage object`, not surfaced.
+
+Both orderings are deliberate and both pick the same direction: **an invisible
+file that costs a little storage beats a visible row pointing at a file that is
+not there**, which renders as a broken image on the public site.
+
+Nothing cleans them up. Today that is fine - one church, a handful of photos,
+and a bucket bill measured in cents. It stops being fine when churches pay for
+storage and are being charged for files they cannot see.
+
+The sweep is a scheduled job listing bucket objects per church prefix and
+deleting any with no matching `storage_path`. It must run with the service role
+(listing across churches) and must be careful about the race in case 1: a file
+uploaded seconds ago may have a row that has not been written yet, so anything
+younger than a few minutes has to be left alone.

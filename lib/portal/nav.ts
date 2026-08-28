@@ -56,8 +56,7 @@ export const NAV: NavGroup[] = [
         href: "/portal/photos",
         label: "Photos",
         icon: "\u{1F4F7}",
-        built: false,
-        blurb: "Drop pictures here and use them anywhere on your website.",
+        built: true,
       },
       {
         href: "/portal/videos",
