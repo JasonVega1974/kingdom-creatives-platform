@@ -78,6 +78,86 @@ Verified locally against the live database:
 | forged `x-church-id` header | ignored |
 | `?church=` with the override off | 404 |
 
+## Production environment
+
+Vercel scopes environment variables per environment. The two tenant-resolution
+knobs are deliberately set differently in Preview and Production, and getting
+that backwards is quiet rather than loud.
+
+| Variable | Production | Preview | Development |
+|---|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | set | set | set |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | set | set | set |
+| `SUPABASE_SERVICE_ROLE_KEY` | set (server only) | set (server only) | only if a job needs it |
+| `KC_ROOT_DOMAIN` | `kingdom-creatives.com` | `kingdom-creatives.com` | `kingdom-creatives.com` |
+| `KC_DEFAULT_CHURCH_SLUG` | **unset** | `church-for-truckers` | `church-for-truckers` |
+| `KC_ALLOW_CHURCH_QUERY_OVERRIDE` | **unset** | `1` | `1` |
+
+### Why the default slug is unset in production
+
+Rule 4 is gated on `isPlatformHost()`, so the fallback never fires for a real
+custom domain - `example.com` pointed at the deployment resolves to nothing and
+404s. That much is safe either way. The problem is narrower and easy to miss:
+
+**Vercel assigns a `*.vercel.app` domain to the production deployment too**, and
+`isPlatformHost()` returns true for anything ending `.vercel.app`. Set the
+default slug in Production and `kingdom-creatives-platform.vercel.app` serves
+Church for Truckers' entire site under a hostname that is not theirs -
+publicly reachable, indexable, and duplicating the real domain.
+
+`isPlatformHost()` also returns true for an **empty** host (`if (!host) return
+true`). Vercel always sets `Host`, so this is theoretical, but if it ever
+happened the fallback would serve CFT where the correct answer is 404 - masking
+exactly the resolution failure you would want to see.
+
+Preview is the opposite case: preview URLs *are* `*.vercel.app`, which is what
+rule 4 exists for. Set it there.
+
+### Why the query override is unset in production
+
+`lib/tenant.ts` reads it as a strict equality:
+
+```ts
+const allowOverride = process.env.KC_ALLOW_CHURCH_QUERY_OVERRIDE === "1";
+```
+
+Absent means off - `undefined === "1"` is `false` - so omitting the variable
+fails closed. Only the exact string `"1"` enables it; `true`, `yes` and `on` all
+read as off.
+
+With the flag off, `?church=<slug>` is never interpolated into a query, and the
+lookup cache key excludes the parameter entirely:
+
+```ts
+const cacheKey = `${host}|${allowOverride ? (overrideSlug ?? "") : ""}`;
+```
+
+So the parameter can neither resolve a tenant nor poison the cache entry for a
+hostname. `proxy.ts` still reads it unconditionally and hands it to
+`resolveTenant()`; the gate is in the resolver, not the caller.
+
+### What production depends on instead
+
+With both unset, only rules 2 and 3 resolve, and each has a prerequisite:
+
+- **Rule 2** needs `KC_ROOT_DOMAIN` set, or `subdomainSlug()` returns null and
+  `{slug}.kingdom-creatives.com` never matches.
+- **Rule 3** needs `churches.custom_domain` populated for each church. A church
+  whose column is null 404s on its own domain the moment DNS points at us.
+  Check this before a cutover, not during one.
+- The bare apex `kingdom-creatives.com` matches no rule and 404s. That is
+  intended until the Phase E platform layer exists.
+
+Two consequences of failing closed, both the behaviour we want:
+
+- A Supabase outage makes the lookup return "could not ask" rather than "no such
+  church", and that answer is deliberately not cached. An outage produces 404s,
+  never a wrong church pinned for the cache TTL.
+- On an unmatched host the public site 404s, but the portal does not: with no
+  tenant, `requirePortalUser()` redirects to `/portal/login`, which renders
+  without chrome. Access is still gated per church id, so this is a different
+  shape of failure rather than a leak.
+
 ## Theming
 
 `app/(public)/layout.tsx` reads the tenant's `church_theme` row and emits the
