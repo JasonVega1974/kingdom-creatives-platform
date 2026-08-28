@@ -37,13 +37,7 @@ export const NAV: NavGroup[] = [
         built: false,
         blurb: "Write a sermon with help, then save it straight to your library.",
       },
-      {
-        href: "/portal/sermons",
-        label: "Sermon Library",
-        icon: "\u{1F4DA}",
-        built: false,
-        blurb: "Every sermon you have preached, with its video and notes.",
-      },
+      { href: "/portal/sermons", label: "Sermon Library", icon: "\u{1F4DA}", built: true },
       {
         href: "/portal/notes",
         label: "My Notes",

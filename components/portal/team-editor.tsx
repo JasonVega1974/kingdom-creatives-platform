@@ -121,13 +121,19 @@ function PersonCard({
             <p className="text-sm text-[var(--kc-ink-soft)]">{person.roleTitle}</p>
           ) : null}
           <p className="mt-1 text-xs text-[var(--kc-ink-soft)]">
-            {person.visible ? "Showing on your website" : "Hidden from your website"}
+            {person.visible
+              ? "On your team page"
+              : "Not on your team page yet"}
           </p>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
           <MoveButtons personId={person.id} isFirst={isFirst} isLast={isLast} />
-          <VisibleToggle personId={person.id} visible={person.visible} />
+          <VisibleToggle
+            personId={person.id}
+            name={person.name}
+            visible={person.visible}
+          />
           <button
             type="button"
             onClick={() => setOpen((value) => !value)}
@@ -160,42 +166,65 @@ function PersonCard({
 /**
  * Show/hide.
  *
- * Optimistic-ish: the switch flips immediately and reverts if the action
- * reports a refusal. A toggle that waits for a round trip feels broken, and a
- * toggle that lies is worse - so it does revert rather than silently disagree
- * with the database.
+ * A CHECKBOX, not a button labelled with the current state. A button reading
+ * "Hidden" is ambiguous - it could mean "this is hidden" or "click to hide it",
+ * and Jason hit exactly that on 2026-08-28 and had to ask twice which it was.
+ * A checkbox affords "click to change" on its own, so the text beside it is
+ * free to describe the state rather than the action.
+ *
+ * Matches the toggle in Edit My Website deliberately. Two controls that do the
+ * same thing in the same product should not look different, and this is the
+ * pattern the Sermon Library, Events and Groups tabs copy next.
+ *
+ * The visible label is aria-hidden and a screen reader gets the sr-only text
+ * instead, because "Shown" alone does not say what it applies to.
+ *
+ * Flips immediately and REVERTS if the action reports a refusal. A toggle that
+ * waits for a round trip feels broken; one that lies is worse.
  */
-function VisibleToggle({ personId, visible }: { personId: string; visible: boolean }) {
+function VisibleToggle({
+  personId,
+  name,
+  visible,
+}: {
+  personId: string;
+  name: string;
+  visible: boolean;
+}) {
   const [shown, setShown] = useState(visible);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  function toggle() {
+    const next = !shown;
+    setShown(next);
+    setError(null);
+
+    startTransition(async () => {
+      const result = await setPersonVisible(personId, next);
+      if (!result.ok) {
+        setShown(!next);
+        setError(result.error);
+      }
+    });
+  }
+
   return (
     <div className="flex items-center gap-2">
-      <button
-        type="button"
-        disabled={pending}
-        aria-pressed={shown}
-        onClick={() => {
-          const next = !shown;
-          setShown(next);
-          setError(null);
-          startTransition(async () => {
-            const result = await setPersonVisible(personId, next);
-            if (!result.ok) {
-              setShown(!next);
-              setError(result.error);
-            }
-          });
-        }}
-        className={
-          shown
-            ? "rounded-[var(--kc-radius)] bg-[var(--kc-brand)] px-3 py-1.5 text-sm font-semibold text-[var(--kc-brand-contrast)] disabled:opacity-60"
-            : "rounded-[var(--kc-radius)] border border-[var(--kc-line)] px-3 py-1.5 text-sm disabled:opacity-60"
-        }
-      >
-        {shown ? "Shown" : "Hidden"}
-      </button>
+      <label className="flex cursor-pointer items-center gap-2 text-sm">
+        <span className="sr-only">Show {name} on the website</span>
+        <input
+          type="checkbox"
+          checked={shown}
+          disabled={pending}
+          onChange={toggle}
+          className="h-5 w-5 accent-[var(--kc-brand)]"
+        />
+        <span aria-hidden className="w-14 text-[var(--kc-ink-soft)]">
+          {shown ? "Shown" : "Hidden"}
+        </span>
+      </label>
+
       {error ? (
         <span role="alert" className="text-xs text-red-700">
           {error}

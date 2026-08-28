@@ -50,3 +50,24 @@ export const SAVE_IDLE: SaveState = Object.freeze({
 export type TeamState = { ok: boolean; error: string | null };
 
 export const TEAM_IDLE: TeamState = Object.freeze({ ok: false, error: null });
+
+/**
+ * The three values sermons.status accepts, per the column comment in
+ * migration 01. The public policy from draft 20 admits 'published' only;
+ * 'archived' is withdrawn-but-kept, deliberately not publicly readable.
+ *
+ * Here rather than in the actions file because a "use server" module may
+ * export only async functions - the same constraint that put the IDLE
+ * constants here. Both the action and the picker import it, so the list
+ * cannot drift between what the UI offers and what the action accepts.
+ */
+export const SERMON_STATUSES = ["draft", "published", "archived"] as const;
+
+export type SermonStatus = (typeof SERMON_STATUSES)[number];
+
+/** Pastor-facing wording. Never "draft/published/archived" in the UI. */
+export const SERMON_STATUS_LABELS: Record<SermonStatus, string> = {
+  draft: "Not on your website yet",
+  published: "On your website",
+  archived: "Taken down (kept here)",
+};
