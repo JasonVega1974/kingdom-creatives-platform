@@ -14,6 +14,7 @@ import {
   EmptyList,
   Field,
   SaveRow,
+  SelectField,
   TextArea,
 } from "@/components/portal/editor-kit";
 import {
@@ -51,13 +52,23 @@ export type SermonRow = {
   preachedAt: string;
   durationMin: string;
   youtubeId: string;
+  churchLinkId: string | null;
   status: SermonStatus;
 };
 
-export function SermonLibrary({ sermons }: { sermons: SermonRow[] }) {
+/** A church's video channels, from church_links. Labels are the pastor's. */
+export type Channel = { id: string; label: string };
+
+export function SermonLibrary({
+  sermons,
+  channels,
+}: {
+  sermons: SermonRow[];
+  channels: Channel[];
+}) {
   return (
     <div className="space-y-5">
-      <AddSermonCard />
+      <AddSermonCard channels={channels} />
 
       {sermons.length === 0 ? (
         <EmptyList>
@@ -65,19 +76,21 @@ export function SermonLibrary({ sermons }: { sermons: SermonRow[] }) {
           until you switch it on.
         </EmptyList>
       ) : (
-        sermons.map((sermon) => <SermonCard key={sermon.id} sermon={sermon} />)
+        sermons.map((sermon) => (
+          <SermonCard key={sermon.id} sermon={sermon} channels={channels} />
+        ))
       )}
     </div>
   );
 }
 
-function AddSermonCard() {
+function AddSermonCard({ channels }: { channels: Channel[] }) {
   const [state, action] = useActionState(addSermon, TEAM_IDLE);
 
   return (
     <AddCard label="+ Add a sermon">
       <form action={action} className="space-y-4">
-        <SermonFields />
+        <SermonFields channels={channels} />
         <p className="text-sm text-[var(--kc-ink-soft)]">
           New sermons stay off your website until you switch them on, so you can
           add the video and notes first.
@@ -88,7 +101,13 @@ function AddSermonCard() {
   );
 }
 
-function SermonCard({ sermon }: { sermon: SermonRow }) {
+function SermonCard({
+  sermon,
+  channels,
+}: {
+  sermon: SermonRow;
+  channels: Channel[];
+}) {
   const [state, action] = useActionState(updateSermon, TEAM_IDLE);
   const [open, setOpen] = useState(false);
 
@@ -129,7 +148,7 @@ function SermonCard({ sermon }: { sermon: SermonRow }) {
       {open ? (
         <form action={action} className="mt-5 space-y-4 border-t border-[var(--kc-line)] pt-5">
           <input type="hidden" name="id" value={sermon.id} />
-          <SermonFields sermon={sermon} />
+          <SermonFields sermon={sermon} channels={channels} />
           <SaveRow label="Save" state={state} />
         </form>
       ) : null}
@@ -138,7 +157,13 @@ function SermonCard({ sermon }: { sermon: SermonRow }) {
 }
 
 /** The editable fields, shared by the add form and the edit form. */
-function SermonFields({ sermon }: { sermon?: SermonRow }) {
+function SermonFields({
+  sermon,
+  channels,
+}: {
+  sermon?: SermonRow;
+  channels: Channel[];
+}) {
   return (
     <>
       <Field name="title" label="Title" defaultValue={sermon?.title} required />
@@ -172,6 +197,19 @@ function SermonFields({ sermon }: { sermon?: SermonRow }) {
         type="number"
         defaultValue={sermon?.durationMin}
       />
+      {/* Only shown when the church has more than one channel. A picker with
+          a single option is a question with one answer. */}
+      {channels.length > 1 ? (
+        <SelectField
+          name="church_link_id"
+          label="Which channel"
+          options={[
+            { value: "", label: "Not from a channel" },
+            ...channels.map((channel) => ({ value: channel.id, label: channel.label })),
+          ]}
+          defaultValue={sermon?.churchLinkId ?? ""}
+        />
+      ) : null}
       <TextArea name="summary" label="Short summary" defaultValue={sermon?.summary} />
     </>
   );

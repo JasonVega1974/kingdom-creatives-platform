@@ -1,7 +1,12 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do.
+   Verified: all four tables writable by a pastor, and a hidden staff row
+   stays invisible to anon. No RLS work was needed before the tabs. */
+
 /* ============================================================
    DRAFT 22 - can a pastor actually write the collection tables? (AUDIT)
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Writes nothing: every probe rolls back.
 
    >>> RUN THE SECTIONS SEPARATELY. <<<

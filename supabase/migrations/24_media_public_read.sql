@@ -1,7 +1,12 @@
+/* APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+   Moved from supabase/drafts/ after the run. History, not a to-do.
+   Verified: a photo picked without being ticked into the gallery now shows
+   on the public site. Round trip confirmed end to end. */
+
 /* ============================================================
    DRAFT 24 - church_media public read is too narrow (FF-42)
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  APPLIED 2026-08-28.
    Requires: draft 23 (applied 2026-08-28).
 
    >>> RUN THE SECTIONS SEPARATELY. Section 4 is the probe. <<<

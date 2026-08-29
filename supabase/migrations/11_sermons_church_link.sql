@@ -1,7 +1,12 @@
+-- APPLIED 2026-08-28 against project cyyxhhwuyeyvewqrhewt.
+-- Moved from supabase/drafts/ after the run. History, not a to-do.
+-- Verified composite: sermons_church_link_fkey FOREIGN KEY
+-- (church_link_id, church_id) REFERENCES church_links(id, church_id).
+
 -- ============================================================
 -- DRAFT 11 - sermons.church_link_id
 -- Project:  cyyxhhwuyeyvewqrhewt
--- Status:   NOT RUN. Jason reviews and runs manually.
+-- Status:   APPLIED 2026-08-28.
 -- Requires: draft 09 (church_links) to have been run first.
 -- Required for: the Sermon Library tab, and the nightly YouTube sync.
 -- ============================================================

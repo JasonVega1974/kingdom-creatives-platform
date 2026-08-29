@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 
 import { churchTag } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import { nullableUuid } from "@/lib/portal/collection-write";
 import { SERMON_STATUSES, type TeamState } from "@/lib/portal/form-state";
 import { createClient } from "@/lib/supabase/server";
 
@@ -25,6 +26,15 @@ import { createClient } from "@/lib/supabase/server";
  * publicly readable: that was settled 2026-08-28 as the restrictive choice, on
  * the grounds that republishing something deliberately retired is worse than
  * having to un-archive it.
+ *
+ * `church_link_id` records WHICH CHANNEL a sermon came from - CFT has two,
+ * "Preaching" and "Bible Studies". The label comes from church_links, so
+ * nothing is hardcoded and a church with three channels needs no change.
+ *
+ * It is written here rather than left to the future sync job on purpose: draft
+ * 11 was run early specifically so channels are recorded from the first manual
+ * entry. A column nothing populates would have achieved nothing except making
+ * the backfill later look optional.
  *
  * NOT EDITED HERE: body, devotional, kids_lesson, small_group_questions,
  * social_posts, bulletin_notes and slide_content. Those are Sermon Builder
@@ -141,6 +151,7 @@ export async function addSermon(
       preached_at: nullableText(formData, "preached_at"),
       duration_min: nullableMinutes(formData, "duration_min"),
       youtube_id: youtubeId(formData),
+      church_link_id: nullableUuid(formData, "church_link_id"),
       status: "draft",
       created_by: session.userId,
     })
@@ -176,6 +187,7 @@ export async function updateSermon(
       preached_at: nullableText(formData, "preached_at"),
       duration_min: nullableMinutes(formData, "duration_min"),
       youtube_id: youtubeId(formData),
+      church_link_id: nullableUuid(formData, "church_link_id"),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

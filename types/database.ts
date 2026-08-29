@@ -899,6 +899,7 @@ export type Database = {
           body: string | null
           bulletin_notes: string | null
           church_id: string
+          church_link_id: string | null
           created_at: string | null
           created_by: string | null
           devotional: string | null
@@ -924,6 +925,7 @@ export type Database = {
           body?: string | null
           bulletin_notes?: string | null
           church_id: string
+          church_link_id?: string | null
           created_at?: string | null
           created_by?: string | null
           devotional?: string | null
@@ -949,6 +951,7 @@ export type Database = {
           body?: string | null
           bulletin_notes?: string | null
           church_id?: string
+          church_link_id?: string | null
           created_at?: string | null
           created_by?: string | null
           devotional?: string | null
@@ -977,6 +980,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "churches"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sermons_church_link_fkey"
+            columns: ["church_link_id", "church_id"]
+            isOneToOne: false
+            referencedRelation: "church_links"
+            referencedColumns: ["id", "church_id"]
           },
         ]
       }
