@@ -65,13 +65,7 @@ export const NAV: NavGroup[] = [
         built: false,
         blurb: "Your YouTube channels and any video you want on the site.",
       },
-      {
-        href: "/portal/announcements",
-        label: "Announcements",
-        icon: "\u{1F4E3}",
-        built: false,
-        blurb: "The notices on your bulletin board.",
-      },
+      { href: "/portal/announcements", label: "Announcements", icon: "\u{1F4E3}", built: true },
       {
         href: "/portal/prayer",
         label: "Prayer Wall",
@@ -85,13 +79,7 @@ export const NAV: NavGroup[] = [
         icon: "\u{1F9ED}",
         built: true,
       },
-      {
-        href: "/portal/ministries",
-        label: "Ministries",
-        icon: "\u{1F932}",
-        built: false,
-        blurb: "The ministries listed on your About page.",
-      },
+      { href: "/portal/ministries", label: "Ministries", icon: "\u{1F932}", built: true },
     ],
   },
   {
@@ -110,13 +98,6 @@ export const NAV: NavGroup[] = [
         icon: "\u{1F4C5}",
         built: true,
       },
-      {
-        href: "/portal/calendar",
-        label: "Calendar",
-        icon: "\u{1F5D3}",
-        built: false,
-        blurb: "The month view of your events.",
-      },
       { href: "/portal/team", label: "Our Team", icon: "\u{1F465}", built: true },
     ],
   },
@@ -128,7 +109,19 @@ export const NAV: NavGroup[] = [
         label: "Giving",
         icon: "\u{1F49B}",
         built: false,
-        blurb: "Your giving link and what has come in.",
+        /*
+         * Blurb narrowed 2026-08-28. It used to promise "and what has come in",
+         * which cannot be delivered: the prototype's gift list is a Stripe
+         * feature by its own words, gifts.stripe_session_id says the same in
+         * the schema, and FF-32 decided Tithe.ly - which does not push into our
+         * database. Draft 25 confirmed gifts is empty with no data source.
+         *
+         * The giving LINK is editable today, in Church Details. This tab stays
+         * listed because built-in giving is a real Phase E possibility, but it
+         * must not advertise a report nothing can fill.
+         */
+        blurb:
+          "Built-in giving, if you ever want donations handled on your own site. Your giving link is in Church Details.",
       },
       {
         href: "/portal/documents",

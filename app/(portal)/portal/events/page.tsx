@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { EventsCalendar } from "@/components/portal/events-calendar";
 import { EventsEditor, type EventRow } from "@/components/portal/events-editor";
+import Link from "next/link";
 import { requirePortalUser } from "@/lib/portal/auth";
 import type { LibraryItem } from "@/components/portal/media-picker";
 import { createClient } from "@/lib/supabase/server";
@@ -15,8 +17,14 @@ export const metadata: Metadata = { title: "Events" };
  * details, and needs to see that something is unpublished in order to publish
  * it. Soonest first so the next thing is at the top.
  */
-export default async function EventsPage() {
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; month?: string }>;
+}) {
   const session = await requirePortalUser();
+  const params = await searchParams;
+  const isMonth = params.view === "month";
 
   const supabase = await createClient();
 
@@ -70,8 +78,50 @@ export default async function EventsPage() {
 
   return (
     <Shell>
-      <EventsEditor events={events} library={library} />
+      <ViewToggle isMonth={isMonth} />
+
+      {isMonth ? (
+        <EventsCalendar events={events} month={monthFrom(params.month)} />
+      ) : (
+        <EventsEditor events={events} library={library} />
+      )}
     </Shell>
+  );
+}
+
+/**
+ * The month to display, from `?month=YYYY-MM`.
+ *
+ * Anything missing or unparseable falls back to the current month rather than
+ * erroring - a hand-edited URL should show a calendar, not a stack trace.
+ */
+function monthFrom(value: string | undefined): Date {
+  const match = /^(\d{4})-(\d{2})$/.exec(value ?? "");
+  if (match) {
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+    if (month >= 1 && month <= 12) return new Date(Date.UTC(year, month - 1, 1));
+  }
+
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}
+
+/** List or month. Plain links, so the choice is shareable and needs no JS. */
+function ViewToggle({ isMonth }: { isMonth: boolean }) {
+  const base =
+    "rounded-[var(--kc-radius)] px-3 py-1.5 text-sm border border-[var(--kc-line)]";
+  const on = `${base} bg-[var(--kc-brand)] font-semibold text-[var(--kc-brand-contrast)]`;
+
+  return (
+    <div className="mb-6 flex gap-2">
+      <Link href="?" className={isMonth ? base : on}>
+        List
+      </Link>
+      <Link href="?view=month" className={isMonth ? on : base}>
+        Month
+      </Link>
+    </div>
   );
 }
 

@@ -7,6 +7,7 @@ import {
 } from "@/components/portal/details-forms";
 import { parseServiceTimes } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import { LinksPanel, type LinkRow } from "@/components/portal/links-panel";
 import type { LibraryItem } from "@/components/portal/media-picker";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_THEME } from "@/lib/theme";
@@ -42,6 +43,23 @@ export default async function DetailsPage() {
     altText: row.alt_text ?? "",
   }));
 
+  const { data: linkRows } = await supabase
+    .from("church_links")
+    .select("id, kind, platform, label, url, external_id, is_primary")
+    .eq("church_id", church.id)
+    .order("kind", { ascending: true })
+    .order("sort_order", { ascending: true });
+
+  const links: LinkRow[] = (linkRows ?? []).map((row) => ({
+    id: row.id,
+    kind: row.kind,
+    platform: row.platform,
+    label: row.label,
+    url: row.url,
+    externalId: row.external_id ?? "",
+    isPrimary: row.is_primary,
+  }));
+
   return (
     <div className="max-w-3xl">
       <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
@@ -72,10 +90,7 @@ export default async function DetailsPage() {
           library={library}
         />
 
-        {/* Social, video and giving links live in church_links, which now
-            exists - draft 09 applied 2026-08-27, seeded by draft 10. Nothing
-            edits it yet, so the pastor cannot change his own giving link or
-            YouTube channels. That editor belongs here, as a fourth panel. */}
+        <LinksPanel links={links} />
         <section className="rounded-[var(--kc-radius)] border border-dashed border-[var(--kc-line)] p-5">
           <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-semibold">
             Social, video and giving links
