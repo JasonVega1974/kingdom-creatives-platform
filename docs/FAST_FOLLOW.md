@@ -1193,6 +1193,10 @@ Shape: a rewrite/redirect rule in `vercel.ts` matching the subdomain host for
 everything except `/portal`. Verify after cutover that a signed-in portal
 session on the subdomain survives.
 
+**Sequenced in `docs/CUTOVER_PLAN.md` step 5** - after the apex is verified
+working, not before. A redirect added early would send traffic to a hostname
+that is not serving yet.
+
 ---
 
 ## FF-38 - event times are stored as UTC wall-clock, not real instants
