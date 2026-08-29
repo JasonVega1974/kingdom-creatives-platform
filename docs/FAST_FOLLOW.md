@@ -1372,3 +1372,29 @@ dimensions and paths are readable.
 If that ever matters, the fix is a private bucket with signed URLs for
 unreferenced media - a bigger change than a policy, and not worth making before
 someone actually wants it.
+
+---
+
+## FF-43 - no password reset in the app
+
+**File:** `app/(portal)/portal/login/page.tsx`, `components/portal/login-form.tsx`
+**Raised:** 2026-08-28
+**Must fix by:** before Phase E provisions churches self-serve.
+
+There is no "forgot password" anywhere in the portal. A pastor who forgets his
+password is stuck until someone resets it in the Supabase dashboard.
+
+Fine at one church with Jason a phone call away. Not fine the moment churches
+are provisioned without a person attached to each one - a locked-out pastor with
+nobody to ask is a support failure that reads as the product being broken.
+
+Supabase provides `resetPasswordForEmail()` and a recovery flow; it needs a
+route to land on, an email template, and a page that consumes the recovery
+token. Not large, but it is real work and needs the Brevo sender decided first,
+since the default Supabase sender will land in spam from a domain nobody
+recognises.
+
+**Related, same category:** there is no sign-up, deliberately - a church portal
+is not something strangers register for, and `12_grant_portal_access.sql` says
+so. Password reset is the one self-service flow that has to exist without
+opening that door.

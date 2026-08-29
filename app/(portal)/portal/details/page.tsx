@@ -72,10 +72,10 @@ export default async function DetailsPage() {
           library={library}
         />
 
-        {/* Social, video and giving links are multi-valued and live in
-            church_links, which does not exist in the database yet - see
-            supabase/drafts/09_church_links.sql. Saying so beats shipping a
-            form that silently drops the second YouTube channel. */}
+        {/* Social, video and giving links live in church_links, which now
+            exists - draft 09 applied 2026-08-27, seeded by draft 10. Nothing
+            edits it yet, so the pastor cannot change his own giving link or
+            YouTube channels. That editor belongs here, as a fourth panel. */}
         <section className="rounded-[var(--kc-radius)] border border-dashed border-[var(--kc-line)] p-5">
           <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-semibold">
             Social, video and giving links
