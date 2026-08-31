@@ -120,9 +120,19 @@ export const PAGES: PageDef[] = [
         key: "get_connected",
         label: "Get connected",
         description: "The strip pointing visitors to groups and studies",
+        /*
+         * These were `headline` and `body`, which the seed does not store -
+         * it holds `eyebrow`, `heading` and `cards`. The portal showed two
+         * empty boxes that wrote keys nothing renders, so editing them looked
+         * like it saved and changed nothing.
+         *
+         * `cards` is deliberately absent: it is a list of objects and the
+         * section editor only edits scalars. The three cards are not editable
+         * from the portal yet - see FF-45.
+         */
         fields: [
-          { key: "headline", label: "Title", kind: "text" },
-          { key: "body", label: "Text", kind: "textarea" },
+          { key: "eyebrow", label: "Small line above the title", kind: "text" },
+          { key: "heading", label: "Title", kind: "text" },
         ],
       },
       {

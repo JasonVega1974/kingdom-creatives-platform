@@ -543,7 +543,10 @@ function Bulletin({
   const { announcements, prayer } = context.collections;
 
   return (
-    <div style={{ padding: "0 0 84px" }}>
+    /* Anchor target for "Add a request", which links to #prayer. The prayer
+       wall is this section, on the home page - not /visit, where the seed
+       pointed it. */
+    <div id="prayer" style={{ padding: "0 0 84px" }}>
       <div className="wrap">
         <div style={{ marginBottom: "40px" }}>
           {content.eyebrow ? <span className="eyebrow">{content.eyebrow}</span> : null}
@@ -771,7 +774,10 @@ function MinistriesSection({
   const { heading, lede, empty } = sectionContent(section.content);
 
   return (
-    <div className="wrap-narrow" style={{ paddingBottom: "60px" }}>
+    /* Anchor target. "Where gifts go" on the home page links to /about#ministries
+       - without this it lands at the top of /about and a visitor reads the
+       church's founding story before reaching the ministry list. */
+    <div id="ministries" className="wrap-narrow" style={{ paddingBottom: "60px" }}>
       {heading ? <h2 style={{ marginTop: "40px" }}>{heading}</h2> : null}
       {lede ? <p className="lede">{lede}</p> : null}
       <div style={{ marginTop: "24px" }}>

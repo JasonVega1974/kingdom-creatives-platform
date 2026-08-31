@@ -1402,3 +1402,94 @@ recognises.
 is not something strangers register for, and `12_grant_portal_access.sql` says
 so. Password reset is the one self-service flow that has to exist without
 opening that door.
+
+---
+
+## FF-45 - the "Three ways in" cards are not editable in the portal
+
+**File:** `lib/portal/sections.ts`, `supabase/migrations/04_cft_sections_seed.sql`
+**Raised:** 2026-08-31
+**Must fix by:** not urgent - but it is why FF-46 needed SQL rather than a portal edit.
+
+`get_connected` stores `eyebrow`, `heading` and `cards`. The registry declared
+`headline` and `body` - **neither of which the seed has**. So Edit My Website
+showed two empty boxes writing keys nothing renders: editing them appeared to
+save and changed nothing on the page.
+
+Corrected 2026-08-31 to `eyebrow` and `heading`, which are real.
+
+`cards` is still not editable, and that is the remaining gap. It is a list of
+objects (kicker, title, body, href) and the section editor only edits scalars -
+`FieldKind` is `text | textarea | image | url`. Changing a card's destination
+therefore needs SQL, which is how FF-46 had to be fixed.
+
+The same limit applies to every list-shaped section: `faq.items`,
+`timeline.stops`, `beliefs.items`, `expect.items`, `mile_stats.items`,
+`other_ways.items`. All render; none can be edited. That is a bigger gap than
+this entry and worth its own decision - a repeating-group editor, or accepting
+that structured content is seeded and only prose is pastor-editable.
+
+---
+
+## FF-46 - two of the three "Three ways in" links went to the wrong place
+
+**File:** live data; fix drafted in `supabase/drafts/26_fix_get_connected_links.sql`
+**Raised:** 2026-08-31 by Jason
+**Must fix by:** before cutover - these are on the home page.
+
+The hrefs live in `church_sections.content`, not in code.
+
+| Card | Was | Should be | Verdict |
+|---|---|---|---|
+| Find your convoy | `/groups` | `/groups` | correct, untouched |
+| Where gifts go | `/about` | `/about#ministries` | right page, wrong landing |
+| Add a request | `/visit` | `#prayer` | **wrong page** |
+
+**The prayer card is the real bug.** `/visit` holds `page_hero`, `expect`, `faq`
+and `visit_form` - verified by fetching it, where "prayer" appears only in prose
+and a form placeholder. The prayer wall is the `bulletin` section on the HOME
+page, the same page the card sits on. A visitor clicking "Add a request" landed
+on the Plan-a-Visit form, which asks different questions entirely.
+
+It came from the prototype faithfully - that pointed at `#/visit` too, in a
+mockup where every page was one scrolling document and the distinction did not
+exist.
+
+`/about` was never wrong as a page: ministries do render there. It landed at the
+top, so someone asking "where do gifts go" read the founding story and a
+statement of faith first. Anchor targets `#ministries` and `#prayer` were added
+in the same change.
+
+**Not the Prayer Wall placeholder.** Two different things share that name: the
+PUBLIC prayer wall (home bulletin) is built and works; the PORTAL Prayer Wall
+tab is a placeholder. The link was pointing at the wrong page, which is a
+separate fault from anything unfinished. See FF-47 for what is unfinished.
+
+---
+
+## FF-47 - a prayer request can be submitted but never approved
+
+**File:** `lib/portal/nav.ts` (`/portal/prayer`, `built: false`)
+**Raised:** 2026-08-31, while tracing FF-46
+**Must fix by:** before the prayer wall is advertised to anyone.
+
+The public prayer form works. A submission lands in `prayer_requests` as
+`status = 'pending'`, exactly as designed, and the seed promises the visitor
+"Requests are read by a person before they appear here."
+
+**Nobody can read them.** The public site shows `status = 'approved'` only, and
+the sole route from pending to approved is the portal's Prayer Wall tab, which
+is a placeholder. So:
+
+- the wall is permanently empty, whatever anyone submits
+- a visitor sees their request vanish and no acknowledgement it was received
+- the promise in the seed's own copy is not currently true
+
+Not a data problem - `prayer_requests: member full access` means a pastor could
+approve one in SQL. There is simply no screen.
+
+**This does not block FF-46.** The form works and submissions are stored, so
+pointing the card at it is right. But the loop does not close until the Prayer
+Wall tab ships, and that tab is now more urgent than its "coming soon" label
+suggests: it is the only thing standing between a submitted request and the wall
+it was submitted to.
