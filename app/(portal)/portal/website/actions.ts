@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 
 import { churchTag } from "@/lib/church";
 import { requirePortalUser } from "@/lib/portal/auth";
+import { textToField, wouldFlatten } from "@/lib/portal/field-values";
 import type { SaveState } from "@/lib/portal/form-state";
 import { findSection } from "@/lib/portal/sections";
 import { createClient } from "@/lib/supabase/server";
@@ -91,10 +92,16 @@ export async function saveSectionContent(
     return { ok: false, error: "That section has no editable text.", savedAt: null };
   }
 
-  const allowed = new Set(def.fields.map((f) => f.key));
-  const clean: Record<string, string> = {};
+  const kinds = new Map(def.fields.map((f) => [f.key, f.kind]));
+
+  // Box text -> stored value, per field kind. Getting this wrong destroys
+  // content rather than merely mis-saving it, so the conversion and its
+  // inverse live together in field-values.ts. See FF-48.
+  const clean: Record<string, Json> = {};
   for (const [key, value] of Object.entries(values)) {
-    if (allowed.has(key)) clean[key] = value;
+    const kind = kinds.get(key);
+    if (kind === undefined) continue;
+    clean[key] = textToField(value, kind);
   }
 
   if (Object.keys(clean).length === 0) {
@@ -126,6 +133,30 @@ export async function saveSectionContent(
     existing.content && typeof existing.content === "object" && !Array.isArray(existing.content)
       ? (existing.content as Record<string, Json | undefined>)
       : {};
+
+  /*
+   * LAST LINE OF DEFENCE. Even with the registry correct, a future field could
+   * be declared scalar over a key stored as a list or an object - and the
+   * failure mode is silent content loss, which is the worst kind to ship.
+   *
+   * So a write that would replace a list or an object with a plain string is
+   * refused here rather than performed. It costs one comparison per field and
+   * it means this class of bug can only ever be a save that did not happen,
+   * never a page that quietly emptied.
+   */
+  for (const [key, incoming] of Object.entries(clean)) {
+    if (wouldFlatten(current[key], incoming)) {
+      console.error(
+        `[portal] refused to overwrite structured "${key}" on ${pageSlug}.${sectionKey} with a plain value - the field kind and the stored shape disagree`,
+      );
+      return {
+        ok: false,
+        error:
+          "That part of the page holds a list, and this box would have replaced it with plain text. Nothing was saved - please tell Kingdom Creatives.",
+        savedAt: null,
+      };
+    }
+  }
 
   const { error } = await supabase
     .from("church_sections")

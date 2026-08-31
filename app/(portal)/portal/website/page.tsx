@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import type { LibraryItem } from "@/components/portal/media-picker";
 import { SectionEditor, type EditableSection } from "@/components/portal/section-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
+import { fieldToText } from "@/lib/portal/field-values";
 import { PAGES, describeUnknownSection, findPage, findSection } from "@/lib/portal/sections";
 import { createClient } from "@/lib/supabase/server";
 
@@ -81,7 +82,7 @@ export default async function WebsitePage({
       // tab or not yet described. Either way there is no text box to show.
       fields: (def.fields ?? []).map((field) => ({
         ...field,
-        value: typeof content[field.key] === "string" ? (content[field.key] as string) : "",
+        value: fieldToText(content[field.key], field.kind),
       })),
     };
   });

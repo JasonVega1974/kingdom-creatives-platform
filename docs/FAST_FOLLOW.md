@@ -1493,3 +1493,113 @@ pointing the card at it is right. But the loop does not close until the Prayer
 Wall tab ships, and that tab is now more urgent than its "coming soon" label
 suggests: it is the only thing standing between a submitted request and the wall
 it was submitted to.
+
+---
+
+## FF-48 - CLOSED - the About text box wiped the paragraphs it was supposed to edit
+
+**File:** `lib/portal/sections.ts`, `app/(portal)/portal/website/actions.ts`,
+`app/(portal)/portal/website/page.tsx`, `components/portal/section-editor.tsx`
+**Raised:** 2026-08-31 by Jason, as an active data-loss bug
+**Closed:** 2026-08-31, same session. Fix and verification below.
+
+### What it was
+
+`home.about_strip.body` is stored as a LIST of paragraphs. The section registry
+declared it `kind: "textarea"` - a scalar. Nothing reconciled the two, so:
+
+1. the read side coerced the list to `""` (it was not a string), and the box
+   rendered EMPTY even though it held two paragraphs;
+2. the pastor typed into what looked like a blank field and saved;
+3. the write side stored that string over the array;
+4. `AboutStrip` reads the key with `strings()`, which returns `[]` for anything
+   that is not an array - so the section rendered nothing at all;
+5. the portal reported **"Saved."**
+
+Silent, total, and reported as success. The one failure mode that gives a user
+no signal anything went wrong.
+
+### Why nothing caught it
+
+Both halves were independently well-typed. `tsc` was happy: the read side
+correctly produced a `string`, the write side correctly consumed one. They were
+just describing different shapes for the same key, and no type connected them.
+The registry was the only thing that could have connected them, and the registry
+was wrong.
+
+Same shape as FF-45: a registry entry that does not match the data it claims to
+edit. This one was worse because the mismatch was destructive rather than inert.
+
+### What was wrong, per section
+
+A three-way audit (registry field names vs seeded content vs live content) over
+every section on all eleven pages found six faults in four sections:
+
+| Section | Field | Fault |
+|---|---|---|
+| `home.about_strip` | `body` | **DESTRUCTIVE** - `textarea` over a `list[str]` |
+| `home.about_strip` | `headline` | phantom - the data has `heading` |
+| `home.giving_band` | `headline` | phantom - the data has `heading` |
+| `give.give_band` | `headline` | phantom - the data has `heading` |
+| `visit.expect` | `headline` | phantom - the data has `heading` |
+| `visit.expect` | `body` | phantom - the data has `items` |
+
+Phantom fields are not destructive but they are their own bug: the box appears,
+accepts text, reports success, and changes nothing on the page. Four of the five
+were a `headline`/`heading` slip - the same word, the wrong one, never checked
+against the data.
+
+### The fix
+
+1. **Registry corrected** - real key names, and `about_strip.body` declared with
+   a new `kind: "paragraphs"`. `visit.expect` keeps only `heading`; its `items`
+   are a list of objects the editor cannot represent (FF-45).
+2. **`lib/portal/field-values.ts` (new)** - `fieldToText` and `textToField`, the
+   read and write conversions, as a stated inverse pair in ONE file. They were
+   two independent copies in two files, and the bug was the copies disagreeing.
+   Both call sites now import from here, so they cannot drift apart again.
+3. **`wouldFlatten` guard** - `saveSectionContent` refuses any write that would
+   replace a stored list or object with a plain string, independent of the field
+   kinds. A future mis-declared field can now only ever cause a save that
+   visibly did not happen, never a page that quietly emptied.
+4. **The editor renders `paragraphs`** as a tall textarea, blank line between
+   paragraphs.
+
+### Verification (ground rule 4a)
+
+- Anon read of the four live sections: **http 200, 4 rows**.
+- Live `home.about_strip.body` was checked against the seed and is **intact** -
+  two paragraphs, byte-identical. The bug was reachable but had not yet fired on
+  production data, so no restoration SQL is needed.
+- The real exported functions round-tripped over the real live content:
+  **24/24 pass** - unchanged saves preserve all paragraphs, edits add/replace
+  correctly, stray blank lines do not produce empty entries, scalars are
+  untouched, and the guard refuses to flatten all nine structured keys that
+  exist live while permitting normal scalar and null writes.
+- All three pages fetched and their stored values found in the rendered HTML:
+  **9/9**.
+- Audit re-run after the fix: **0 phantom, 0 destructive, 16 clean sections.**
+
+### What this does not cover
+
+An end-to-end save driven through the authenticated portal UI was not performed
+- that needs the pastor login. What was verified is the exact conversion code
+the save calls, over the exact live data, plus the guard that sits in front of
+the write. The chain from stored value to rendered page is confirmed; the click
+that triggers it is not.
+
+### Known limit left standing
+
+Twelve sections render structured content with no portal fields at all:
+`about.about_ctas`, `about.beliefs`, `about.timeline`, `bible.reader`,
+`events.event_filters`, `give.other_ways`, `groups.group_filters`,
+`home.events_preview`, `home.mile_stats`, `visit.faq`, `visit.visit_form`,
+`worship.worship_filters`. Not a bug - no box is shown, so nothing can be lost.
+Sized here so the gap is known. That is FF-45's remaining scope.
+
+### Rule this earns
+
+**Any registry field must be checked against the data it claims to edit before
+it ships** - both that the key exists, and that its stored shape matches the
+declared kind. A field name that looks obviously right (`headline` for a
+heading) is exactly the one that does not get checked.

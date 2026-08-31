@@ -228,10 +228,13 @@ function FieldEditor({
         )}
       </label>
 
-      {field.kind === "textarea" ? (
+      {field.kind === "textarea" || field.kind === "paragraphs" ? (
+        /* `paragraphs` is the same box, taller, because what it holds is longer
+           and a pastor needs to see where the blank lines fall - they are what
+           separates one paragraph from the next when this is saved. */
         <textarea
           id={inputId}
-          rows={3}
+          rows={field.kind === "paragraphs" ? 8 : 3}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           className={shared}

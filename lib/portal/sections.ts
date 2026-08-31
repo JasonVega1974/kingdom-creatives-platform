@@ -21,8 +21,20 @@
  * site - it simply cannot be edited in the portal until described here.
  */
 
-/** Which editor the portal shows for a content field. */
-export type FieldKind = "text" | "textarea" | "image" | "url";
+/**
+ * Which editor the portal shows for a content field.
+ *
+ * `paragraphs` is a textarea whose value is stored as an ARRAY of paragraph
+ * strings, not one string. It exists because home.about_strip.body is a list
+ * and was declared `textarea`: the editor sent a string, the save overwrote the
+ * array with it, and the renderer - which reads the key with strings() - got []
+ * back and showed nothing. The home page's two About paragraphs would vanish
+ * and the portal would say "Saved". See FF-48.
+ *
+ * ANY key stored as a list of plain strings must be declared `paragraphs`, not
+ * `textarea`. Declaring it `textarea` is silently destructive.
+ */
+export type FieldKind = "text" | "textarea" | "paragraphs" | "image" | "url";
 
 export type SectionField = {
   /** Key inside church_sections.content. */
@@ -88,9 +100,18 @@ export const PAGES: PageDef[] = [
         key: "about_strip",
         label: "Who we are",
         description: "A short introduction under the banner",
+        /*
+         * `heading`, not `headline` - the data has never had a `headline`, so
+         * that box saved and changed nothing. `body` is a LIST of paragraphs
+         * and must be `paragraphs`; as `textarea` it destroyed them on save.
+         */
         fields: [
-          { key: "headline", label: "Title", kind: "text" },
-          { key: "body", label: "Text", kind: "textarea" },
+          { key: "eyebrow", label: "Small line above the title", kind: "text" },
+          { key: "heading", label: "Title", kind: "text" },
+          { key: "lead_in", label: "Opening line", kind: "textarea" },
+          { key: "body", label: "Text", kind: "paragraphs", hint: "blank line between paragraphs" },
+          { key: "verse", label: "Verse", kind: "textarea" },
+          { key: "verse_cite", label: "Verse reference", kind: "text" },
         ],
       },
       {
@@ -139,9 +160,13 @@ export const PAGES: PageDef[] = [
         key: "giving_band",
         label: "Giving",
         description: "Your Give button and the words around it",
+        /* `heading`, not `headline`. The amount picker's fields are not offered
+           - they are deliberately unrendered, see FF-32. */
         fields: [
-          { key: "headline", label: "Title", kind: "text" },
+          { key: "eyebrow", label: "Small line above the title", kind: "text" },
+          { key: "heading", label: "Title", kind: "text" },
           { key: "body", label: "Text", kind: "textarea" },
+          { key: "note", label: "Small print under the button", kind: "textarea" },
         ],
       },
     ],
@@ -155,10 +180,13 @@ export const PAGES: PageDef[] = [
         key: "expect",
         label: "What to expect",
         description: "What happens when someone shows up for the first time",
-        fields: [
-          { key: "headline", label: "Title", kind: "text" },
-          { key: "body", label: "Text", kind: "textarea" },
-        ],
+        /*
+         * Both declared fields were phantom - the data has `heading` and
+         * `items`, never `headline` or `body`. `items` is a list of objects
+         * (icon, title, body) and the editor only handles scalars, so the five
+         * entries stay seeded-only. See FF-45.
+         */
+        fields: [{ key: "heading", label: "Title", kind: "text" }],
       },
       { key: "faq", label: "Common questions", description: "The question-and-answer list" },
       { key: "visit_form", label: "Let us know you're coming", description: "The form a visitor fills in", auto: true },
@@ -240,9 +268,12 @@ export const PAGES: PageDef[] = [
         key: "give_band",
         label: "Giving",
         description: "Your Give button and the words around it",
+        /* `heading`, not `headline`. `bullets` is a list and is not offered
+           here - see the structured-content limit in FF-45. */
         fields: [
-          { key: "headline", label: "Title", kind: "text" },
+          { key: "heading", label: "Title", kind: "text" },
           { key: "body", label: "Text", kind: "textarea" },
+          { key: "note", label: "Small print under the button", kind: "textarea" },
         ],
       },
       { key: "other_ways", label: "Other ways to give", description: "Mail, in person, anything that is not the button" },
