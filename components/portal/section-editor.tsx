@@ -7,6 +7,7 @@ import {
   saveSectionContent,
   setSectionVisible,
 } from "@/app/(portal)/portal/website/actions";
+import { MediaUrlField, type LibraryItem } from "@/components/portal/media-picker";
 import { SAVE_IDLE, type SaveState } from "@/lib/portal/form-state";
 import type { FieldKind } from "@/lib/portal/sections";
 
@@ -31,13 +32,20 @@ export type EditableSection = {
 /** How long after the last keystroke a save fires. Matches the prototype. */
 const AUTOSAVE_DELAY_MS = 800;
 
-export function SectionEditor({ sections }: { sections: EditableSection[] }) {
+export function SectionEditor({
+  sections,
+  library,
+}: {
+  sections: EditableSection[];
+  library: LibraryItem[];
+}) {
   return (
     <ol className="space-y-3">
       {sections.map((section, index) => (
         <li key={section.id}>
           <SectionCard
             section={section}
+            library={library}
             isFirst={index === 0}
             isLast={index === sections.length - 1}
           />
@@ -49,10 +57,12 @@ export function SectionEditor({ sections }: { sections: EditableSection[] }) {
 
 function SectionCard({
   section,
+  library,
   isFirst,
   isLast,
 }: {
   section: EditableSection;
+  library: LibraryItem[];
   isFirst: boolean;
   isLast: boolean;
 }) {
@@ -146,6 +156,7 @@ function SectionCard({
               key={field.key}
               section={section}
               field={field}
+              library={library}
               onSaved={setStatus}
             />
           ))}
@@ -160,10 +171,12 @@ function SectionCard({
 function FieldEditor({
   section,
   field,
+  library,
   onSaved,
 }: {
   section: EditableSection;
   field: EditableField;
+  library: LibraryItem[];
   onSaved: (state: SaveState) => void;
 }) {
   const [value, setValue] = useState(field.value);
@@ -223,16 +236,24 @@ function FieldEditor({
           onChange={(e) => onChange(e.target.value)}
           className={shared}
         />
+      ) : field.kind === "image" ? (
+        /* The Photos tab has shipped, so this is a picker rather than a box
+           asking a pastor to copy a storage URL by hand - which is exactly the
+           fiddly step nobody does. The text input is still there underneath
+           for a link hosted elsewhere. */
+        <MediaUrlField
+          id={inputId}
+          value={value}
+          library={library}
+          onChange={onChange}
+          className={shared}
+        />
       ) : (
         <input
           id={inputId}
           type={field.kind === "url" ? "url" : "text"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          // Image fields hold a stored path today. Until the Photos tab ships
-          // there is no picker to open, so this stays a plain box rather than
-          // pretending to be one.
-          placeholder={field.kind === "image" ? "Paste a photo link for now" : undefined}
           className={shared}
         />
       )}

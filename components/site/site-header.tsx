@@ -1,79 +1,211 @@
 import Image from "next/image";
-
-import { mediaUrl } from "@/lib/portal/media";
+import Link from "next/link";
 
 import type { Church, ChurchTheme } from "@/lib/church";
+import { mediaUrl } from "@/lib/portal/media";
 
 /**
- * Phase A header: church identity only.
+ * ============================================================
+ * SITE HEADER - the only way to reach the other ten pages
+ * ============================================================
  *
- * Nav groups (Visit / Watch / Connect / Grow / Give), the language picker and
- * the Portal button land in Phase B/C - see BUILD_BRIEF_ADDENDUM_01 section B.
+ * This was a Phase A stub - logo and tagline, with a comment saying the nav
+ * groups "land in Phase B/C". Phase B came and went and they did not, so the
+ * live site had no navigation at all: a visitor on the home page could not
+ * reach /about, /visit or /give except by typing the URL.
+ *
+ * The grouping is ADDENDUM_01 section B - "Visit, Watch (sermons/worship),
+ * Connect (groups/events/team), Grow (bible/devotionals), Give" - because
+ * eleven pages cannot be eleven top-level links.
+ *
+ * NO JAVASCRIPT. The prototype's dropdown is pure CSS: `li:hover > .dropdown`
+ * and `li:focus-within > .dropdown`, so it opens on hover AND on keyboard
+ * focus. The mobile menu is a <details> rather than the prototype's scripted
+ * class toggle, which means it works with JavaScript off and needs no client
+ * component. This whole header stays a Server Component.
+ *
+ * NOT PORTED from the prototype: the language picker, which is not built and
+ * would be a control that does nothing.
  */
+
+type NavChild = { href: string; label: string };
+type NavEntry = { label: string; href?: string; children?: NavChild[] };
+
+/**
+ * The nav, as real routes.
+ *
+ * The prototype's hrefs are hash routes (`#/visit`) for a single-file mockup.
+ * These are the actual Next routes, so they prefetch, they work with
+ * JavaScript off, and a middle-click opens a real page.
+ */
+const NAV: NavEntry[] = [
+  { label: "Visit", href: "/visit" },
+  {
+    label: "Watch",
+    children: [
+      { href: "/sermons", label: "Sermons" },
+      { href: "/worship", label: "Worship Library" },
+    ],
+  },
+  {
+    label: "Connect",
+    children: [
+      { href: "/groups", label: "Groups & Bible Studies" },
+      { href: "/events", label: "Events" },
+      { href: "/team", label: "Our Team" },
+      { href: "/about", label: "About Us" },
+    ],
+  },
+  {
+    label: "Grow",
+    children: [
+      { href: "/bible", label: "Bible" },
+      { href: "/devotionals", label: "Devotionals" },
+    ],
+  },
+  { label: "Give", href: "/give" },
+];
+
 export function SiteHeader({
   church,
   theme,
+  activeSlug,
 }: {
   church: Church;
   theme: ChurchTheme | null;
+  /**
+   * The page being rendered, so its link can be marked current. Passed from
+   * the page rather than read from a hook - this is a Server Component, and
+   * usePathname would make the whole header a client bundle for one class.
+   */
+  activeSlug?: string;
 }) {
   const name = church.name ?? church.slug;
 
-  return (
-    <header className="sticky top-0 z-50 border-b border-line bg-paper/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-[1120px] items-center gap-3 px-6 py-4">
-        {theme?.church_media ? (
-          /* A library logo is in our own bucket, which next.config allow-lists,
-             so it goes through next/image properly. */
-          <Image
-            src={mediaUrl(theme.church_media.storage_path)}
-            alt={name}
-            width={48}
-            height={48}
-            className="h-12 w-auto"
-          />
-        ) : theme?.logo_url ? (
-          <Image
-            src={theme.logo_url}
-            alt={name}
-            width={48}
-            height={48}
-            className="h-12 w-auto"
-            /* Unoptimized on purpose: logo_url is a free-text column, so it can
-               point outside next.config's remotePatterns and would otherwise
-               throw. Retired with FF-40, once every logo is a library item. */
-            unoptimized
-          />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-[var(--kc-radius)] bg-brand font-display text-xl text-brand-contrast"
-          >
-            {initials(name)}
-          </span>
-        )}
+  const isActive = (href: string) => href === `/${activeSlug ?? ""}`;
 
-        <div className="min-w-0">
-          <p className="truncate font-display text-lg leading-tight text-ink">{name}</p>
-          {church.tagline ? (
-            <p className="truncate font-utility text-[11px] uppercase tracking-[0.14em] text-ink-soft">
-              {church.tagline}
-            </p>
-          ) : null}
-        </div>
+  return (
+    <header>
+      <div className="wrap nav">
+        <Link className="logo" href="/" aria-label={`${name} home`}>
+          <Logo theme={theme} name={name} />
+          {church.tagline ? <span className="logo-tag">{church.tagline}</span> : null}
+        </Link>
+
+        <ul className="nav-links">
+          {NAV.map((entry) =>
+            entry.children ? (
+              <li key={entry.label}>
+                {/*
+                  A button, not a link: it opens a menu rather than going
+                  anywhere, and the CSS opens it on focus-within so keyboard
+                  users get the same behaviour as a hover.
+                */}
+                <button className="navtop" aria-haspopup="true" type="button">
+                  {entry.label}
+                </button>
+                <div className="dropdown">
+                  {entry.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className={isActive(child.href) ? "active" : undefined}
+                      aria-current={isActive(child.href) ? "page" : undefined}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              </li>
+            ) : (
+              <li key={entry.label}>
+                <Link
+                  href={entry.href!}
+                  className={isActive(entry.href!) ? "active" : undefined}
+                  aria-current={isActive(entry.href!) ? "page" : undefined}
+                >
+                  {entry.label}
+                </Link>
+              </li>
+            ),
+          )}
+        </ul>
+
+        {/* The pastor's way in. noindex is set on the portal itself. */}
+        <Link className="btn btn-solid portal-btn" href="/portal">
+          Portal
+        </Link>
+
+        <details className="mobile-menu">
+          <summary className="menu-btn" aria-label="Menu">
+            Menu
+          </summary>
+
+          <nav className="mobile-nav">
+            {NAV.map((entry) =>
+              entry.children ? (
+                <div key={entry.label}>
+                  <div className="mgroup">{entry.label}</div>
+                  {entry.children.map((child) => (
+                    <Link key={child.href} href={child.href}>
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Link key={entry.label} href={entry.href!}>
+                  {entry.label}
+                </Link>
+              ),
+            )}
+          </nav>
+        </details>
       </div>
     </header>
   );
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    // \p{L}, not [a-z]: a church named "Agape Iglesia" with an accented first
-    // letter, or a non-Latin name, would otherwise be filtered out entirely and
-    // render an empty brand-coloured box.
-    .filter((word) => /\p{L}/u.test(word[0] ?? ""))
-    .slice(0, 2)
-    .map((word) => word[0]!.toUpperCase())
-    .join("");
+/**
+ * The church's mark.
+ *
+ * A library logo goes through next/image - our own bucket is allow-listed. A
+ * hand-pasted logo_url does not, because it can point at any host and
+ * next/image throws on one that is not allow-listed (FF-40). With neither, the
+ * prototype's text mark carries the church's name.
+ */
+function Logo({ theme, name }: { theme: ChurchTheme | null; name: string }) {
+  if (theme?.church_media) {
+    return (
+      <Image
+        src={mediaUrl(theme.church_media.storage_path)}
+        alt={name}
+        width={48}
+        height={48}
+        style={{ height: "48px", width: "auto" }}
+      />
+    );
+  }
+
+  if (theme?.logo_url) {
+    return (
+      <Image
+        src={theme.logo_url}
+        alt={name}
+        width={48}
+        height={48}
+        style={{ height: "48px", width: "auto" }}
+        unoptimized
+      />
+    );
+  }
+
+  return (
+    <span className="logo-mark">
+      {name.split(/\s+/).map((word, index) => (
+        <span key={index} style={{ display: "block" }}>
+          {word}
+        </span>
+      ))}
+    </span>
+  );
 }

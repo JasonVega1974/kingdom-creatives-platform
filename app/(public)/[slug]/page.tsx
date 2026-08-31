@@ -108,7 +108,7 @@ export default async function PublicPage({
 
   return (
     <>
-      <SiteHeader church={site.church} theme={site.theme} />
+      <SiteHeader church={site.church} theme={site.theme} activeSlug={page.slug} />
 
       <main>
         {sections.length > 0 ? (

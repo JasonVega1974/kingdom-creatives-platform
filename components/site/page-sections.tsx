@@ -28,6 +28,23 @@ export function PageSections({
   sections: SectionRow[];
   context: SectionContext;
 }) {
+  // THE BANNER IS ALWAYS FIRST, whatever sort_order says.
+  //
+  // `hero` and `page_hero` are the page's banner. There is no arrangement in
+  // which one belongs below the content, and on 2026-08-31 the live home page
+  // rendered its hero third because something had moved it - most likely a
+  // stray click on the move arrows in Edit My Website, where the hero is the
+  // first card and "move down" is right beside it.
+  //
+  // Sorting here rather than repairing the row means a misclick cannot break
+  // the most important element on the page, and it stays fixed for every
+  // church rather than just this one. The pastor can still HIDE the banner -
+  // that is the visible toggle, and it is a real choice. Where it sits is not.
+  const ordered = [
+    ...sections.filter((s) => s.section_key === "hero" || s.section_key === "page_hero"),
+    ...sections.filter((s) => s.section_key !== "hero" && s.section_key !== "page_hero"),
+  ];
+
   const groups = LAYOUT_GROUPS[pageSlug] ?? [];
 
   // Every key claimed by a group, so the ungrouped pass can skip them.
@@ -39,13 +56,13 @@ export function PageSections({
   const anchorFor = (index: number) =>
     groups.findIndex((g) => {
       const keys = new Set(g.columns.flat());
-      const first = sections.findIndex((s) => keys.has(s.section_key));
+      const first = ordered.findIndex((s) => keys.has(s.section_key));
       return first === index;
     });
 
   return (
     <>
-      {sections.map((section, index) => {
+      {ordered.map((section, index) => {
         const groupIndex = anchorFor(index);
 
         if (groupIndex !== -1) {
@@ -55,7 +72,7 @@ export function PageSections({
               {group.columns.map((column, columnIndex) => (
                 <div key={columnIndex}>
                   {column.map((key) => {
-                    const row = sections.find((s) => s.section_key === key);
+                    const row = ordered.find((s) => s.section_key === key);
                     if (!row) return null;
                     return (
                       <SectionRenderer

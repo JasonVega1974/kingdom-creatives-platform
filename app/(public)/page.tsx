@@ -51,7 +51,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <SiteHeader church={site.church} theme={site.theme} />
+      <SiteHeader church={site.church} theme={site.theme} activeSlug={"home"} />
 
       <main>
         <PageSections pageSlug={"home"} sections={sections} context={context} />

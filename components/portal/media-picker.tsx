@@ -181,3 +181,120 @@ function Preview({
     </div>
   );
 }
+
+/**
+ * ============================================================
+ * MEDIA URL FIELD - the picker for section content images
+ * ============================================================
+ *
+ * A section's image lives in `church_sections.content` as a URL string, not as
+ * a media_id: the content column is jsonb the pastor edits field by field, and
+ * there is no FK to hang a composite reference on. So this picker writes the
+ * library item's PUBLIC URL rather than its id.
+ *
+ * That is a deliberate difference from MediaPicker above, which posts a
+ * media_id into a form. Both exist because the two storage shapes are
+ * genuinely different, not by accident.
+ *
+ * The text box stays. A pasted link from anywhere still works - some churches
+ * will have a logo hosted elsewhere - and removing it would take away an
+ * option the field already had. The picker is the easy path, not the only one.
+ */
+export function MediaUrlField({
+  id,
+  value,
+  library,
+  onChange,
+  className,
+}: {
+  id: string;
+  value: string;
+  library: LibraryItem[];
+  onChange: (next: string) => void;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-start gap-3">
+        {value ? (
+          /* Unoptimized: the value can be any URL, and next/image throws on a
+             host that is not allow-listed. */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={value}
+            alt=""
+            className="aspect-[4/3] w-28 rounded-[var(--kc-radius)] border border-[var(--kc-line)] object-cover"
+          />
+        ) : (
+          <div className="flex aspect-[4/3] w-28 items-center justify-center rounded-[var(--kc-radius)] border border-dashed border-[var(--kc-line)] text-xs text-[var(--kc-ink-soft)]">
+            No photo
+          </div>
+        )}
+
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen((current) => !current)}
+            className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] px-3 py-1.5 text-sm"
+          >
+            {open ? "Close" : value ? "Change photo" : "Choose a photo"}
+          </button>
+
+          {value ? (
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="text-sm text-[var(--kc-ink-soft)] underline underline-offset-4"
+            >
+              Remove photo
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      {open ? (
+        <div className="mt-3 rounded-[var(--kc-radius)] border border-[var(--kc-line)] p-3">
+          {library.length === 0 ? (
+            <p className="py-3 text-center text-sm text-[var(--kc-ink-soft)]">
+              No photos yet. Add some in the Photos tab, then come back here.
+            </p>
+          ) : (
+            <ul className="grid max-h-60 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
+              {library.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(mediaUrl(item.storagePath));
+                      setOpen(false);
+                    }}
+                    className="block w-full overflow-hidden rounded-[var(--kc-radius)] border border-[var(--kc-line)]"
+                  >
+                    <Image
+                      src={mediaUrl(item.storagePath)}
+                      alt={item.altText || item.title || "Library photo"}
+                      width={160}
+                      height={120}
+                      className="aspect-[4/3] w-full object-cover"
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+
+      <input
+        id={id}
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="or paste a photo link"
+        className={className}
+      />
+    </div>
+  );
+}

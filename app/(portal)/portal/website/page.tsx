@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import type { LibraryItem } from "@/components/portal/media-picker";
 import { SectionEditor, type EditableSection } from "@/components/portal/section-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
 import { PAGES, describeUnknownSection, findPage, findSection } from "@/lib/portal/sections";
@@ -27,6 +28,22 @@ export default async function WebsitePage({
   const page = findPage(params.page ?? "") ?? PAGES[0];
 
   const supabase = await createClient();
+
+  // The picker for image fields needs the library. One extra query per page
+  // load, which beats a client-side fetch and keeps the editor server-rendered.
+  const { data: libraryRows } = await supabase
+    .from("church_media")
+    .select("id, storage_path, title, alt_text")
+    .eq("church_id", session.site.church.id)
+    .order("created_at", { ascending: false });
+
+  const library: LibraryItem[] = (libraryRows ?? []).map((row) => ({
+    id: row.id,
+    storagePath: row.storage_path,
+    title: row.title ?? "",
+    altText: row.alt_text ?? "",
+  }));
+
   const { data: rows, error } = await supabase
     .from("church_sections")
     .select("id, section_key, content, visible, sort_order")
@@ -77,7 +94,7 @@ export default async function WebsitePage({
           will all appear here.
         </p>
       ) : (
-        <SectionEditor sections={sections} />
+        <SectionEditor sections={sections} library={library} />
       )}
     </Shell>
   );
