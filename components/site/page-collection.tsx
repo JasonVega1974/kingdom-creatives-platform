@@ -75,10 +75,11 @@ export function PageCollection({
   return null;
 }
 
+/** The prototype's centred container, so these lists line up with the rest. */
 function Band({ children }: { children: React.ReactNode }) {
   return (
-    <section className="px-6 pb-14">
-      <div className="mx-auto max-w-[1120px]">{children}</div>
-    </section>
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
+      {children}
+    </div>
   );
 }

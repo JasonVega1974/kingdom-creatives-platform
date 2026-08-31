@@ -12,55 +12,66 @@ import { PUBLIC_FORM_IDLE, type PublicFormState } from "@/lib/site/form-state";
  * ============================================================
  *
  * Both post to Server Actions in app/(public)/actions.ts, which write to
- * `contacts` and `prayer_requests`. Not to Web3Forms - see the banner at the
- * top of prototypes/cft-site-orange.html for why the prototype's version is
- * not the spec.
+ * `contacts` and `prayer_requests`. NOT to Web3Forms - see the banner at the
+ * top of prototypes/cft-site-orange.html for why the prototype's version is not
+ * the spec.
+ *
+ * Markup and class names are the prototype's (.formcard, .field); styling lives
+ * in app/(public)/site.css.
  *
  * Every label, placeholder and option comes from the seeded section content, so
- * a pastor can reword the whole form in the portal. Nothing here is a
- * hardcoded string a church cannot change.
+ * a pastor can reword the whole form in the portal. Nothing here is a hardcoded
+ * string a church cannot change.
  *
  * The success message rides along in a hidden field rather than being fetched
- * again in the action: it is seeded content the page already has, and passing
- * it avoids a second query per submission. It is display-only text - the action
- * never trusts it for anything but what to echo back.
+ * again in the action: it is seeded content the page already has. It is
+ * display-only - the action never trusts it for anything but what to echo back.
  */
-
-const FIELD =
-  "w-full rounded-[var(--kc-radius)] border border-line bg-surface px-3 py-2 outline-none focus:border-brand";
 
 /** Hidden from people, tempting to naive bots. Never remove without replacing. */
 function Honeypot() {
   return (
-    <div aria-hidden="true" className="absolute left-[-9999px] h-0 w-0 overflow-hidden">
+    <div
+      aria-hidden="true"
+      style={{ position: "absolute", left: "-9999px", width: 0, height: 0, overflow: "hidden" }}
+    >
       <label htmlFor="botcheck">Leave this blank</label>
       <input id="botcheck" name="botcheck" type="text" tabIndex={-1} autoComplete="off" />
     </div>
   );
 }
 
-function SubmitRow({ label, state }: { label: string; state: PublicFormState }) {
+function SubmitRow({
+  label,
+  state,
+  full,
+}: {
+  label: string;
+  state: PublicFormState;
+  full?: boolean;
+}) {
   const { pending } = useFormStatus();
 
   return (
-    <div className="mt-5 flex flex-wrap items-center gap-3">
+    <div style={{ marginTop: "8px" }}>
       <button
         type="submit"
         disabled={pending}
-        className="rounded-[var(--kc-radius)] bg-brand px-5 py-2.5 font-semibold text-brand-contrast disabled:opacity-60"
+        className="btn btn-gold"
+        style={full ? { width: "100%" } : undefined}
       >
         {pending ? "Sending..." : label}
       </button>
 
       {!pending && state.error ? (
-        <span role="alert" className="text-sm text-red-700">
+        <p role="alert" className="hint" style={{ color: "#B3261E" }}>
           {state.error}
-        </span>
+        </p>
       ) : null}
       {!pending && state.ok && state.message ? (
-        <span role="status" className="text-sm text-ink-soft">
+        <p role="status" className="hint">
           {state.message}
-        </span>
+        </p>
       ) : null}
     </div>
   );
@@ -82,52 +93,56 @@ export function VisitForm({
 }) {
   const [state, action] = useActionState(submitVisit, PUBLIC_FORM_IDLE);
 
-  // A submitted form keeps its confirmation and clears its boxes. React 19
-  // resets an uncontrolled form after the action resolves, which is what we
-  // want here - the next visitor at the same truck stop should not find the
+  // React 19 resets an uncontrolled form after the action resolves, which is
+  // what we want: the next visitor at the same truck stop should not find the
   // last one's details still in the fields.
   return (
-    <form action={action} className="relative space-y-4">
-      <Honeypot />
-      <input type="hidden" name="success_message" value={content.success ?? ""} />
+    <div className="formcard">
+      {content.title ? <h3>{content.title}</h3> : null}
+      {content.sub ? <p className="sub">{content.sub}</p> : null}
 
-      <Field
-        name="name"
-        label={content.name_label ?? "Your name"}
-        placeholder={content.name_placeholder}
-        required
-      />
-      <Field
-        name="contact"
-        label={content.contact_label ?? "Email or phone"}
-        placeholder={content.contact_placeholder}
-        required
-      />
+      <form action={action} style={{ position: "relative" }}>
+        <Honeypot />
+        <input type="hidden" name="success_message" value={content.success ?? ""} />
 
-      {whenOptions.length > 0 ? (
-        <Select name="when" label={content.when_label ?? "Which Sunday?"} options={whenOptions} />
-      ) : null}
-      {rigOptions.length > 0 ? (
-        <Select name="rig" label={content.rig_label ?? "What are you driving?"} options={rigOptions} />
-      ) : null}
-
-      <div>
-        <label htmlFor="note" className="mb-1 block text-sm font-medium">
-          {content.note_label ?? "Anything we should know?"}
-        </label>
-        <textarea
-          id="note"
-          name="note"
-          rows={3}
-          placeholder={content.note_placeholder}
-          className={FIELD}
+        <Field
+          name="name"
+          label={content.name_label ?? "Your name"}
+          placeholder={content.name_placeholder}
+          required
         />
-      </div>
+        <Field
+          name="contact"
+          label={content.contact_label ?? "Email or phone"}
+          placeholder={content.contact_placeholder}
+          required
+        />
 
-      <SubmitRow label={content.submit_label ?? "Send"} state={state} />
+        {whenOptions.length > 0 ? (
+          <Select
+            name="when"
+            label={content.when_label ?? "Which Sunday?"}
+            options={whenOptions}
+          />
+        ) : null}
+        {rigOptions.length > 0 ? (
+          <Select
+            name="rig"
+            label={content.rig_label ?? "Bringing a rig?"}
+            options={rigOptions}
+          />
+        ) : null}
 
-      {content.hint ? <p className="text-sm text-ink-soft">{content.hint}</p> : null}
-    </form>
+        <div className="field">
+          <label htmlFor="note">{content.note_label ?? "Anything we should know?"}</label>
+          <textarea id="note" name="note" rows={3} placeholder={content.note_placeholder} />
+        </div>
+
+        <SubmitRow label={content.submit_label ?? "Send"} state={state} full />
+
+        {content.hint ? <p className="hint">{content.hint}</p> : null}
+      </form>
+    </div>
   );
 }
 
@@ -136,20 +151,27 @@ export function VisitForm({
  *
  * The prototype collects this with browser prompt() dialogs. Those block the
  * page, cannot be styled, and are unusable with a screen reader. A <details>
- * needs no JavaScript, is keyboard accessible, and keeps the wall itself
- * readable while the form is closed - which matters more here than anywhere,
- * since the list above it is the point of the section.
+ * needs no JavaScript, is keyboard accessible, and keeps the wall readable
+ * while the form is closed - which matters more here than anywhere, since the
+ * list above it is the point of the section.
  */
 export function PrayerForm({ content }: { content: Record<string, string> }) {
   const [state, action] = useActionState(submitPrayer, PUBLIC_FORM_IDLE);
 
   return (
-    <details className="mt-5 rounded-[var(--kc-radius)] border border-line bg-surface p-4">
-      <summary className="cursor-pointer list-none font-semibold text-brand marker:hidden">
+    <details style={{ marginTop: "14px" }}>
+      <summary
+        style={{
+          cursor: "pointer",
+          listStyle: "none",
+          fontWeight: 600,
+          color: "var(--kc-brand)",
+        }}
+      >
         {content.prayer_cta ?? "Add a request"}
       </summary>
 
-      <form action={action} className="relative mt-4 space-y-4">
+      <form action={action} style={{ position: "relative", marginTop: "14px" }}>
         <Honeypot />
         <input type="hidden" name="success_message" value={content.prayer_success ?? ""} />
 
@@ -159,11 +181,9 @@ export function PrayerForm({ content }: { content: Record<string, string> }) {
           placeholder="or leave blank to stay anonymous"
         />
 
-        <div>
-          <label htmlFor="body" className="mb-1 block text-sm font-medium">
-            What would you like prayer for?
-          </label>
-          <textarea id="body" name="body" rows={4} required className={FIELD} />
+        <div className="field">
+          <label htmlFor="body">What would you like prayer for?</label>
+          <textarea id="body" name="body" rows={4} required />
         </div>
 
         <SubmitRow label="Send request" state={state} />
@@ -186,17 +206,14 @@ function Field({
   required?: boolean;
 }) {
   return (
-    <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium">
-        {label}
-      </label>
+    <div className="field">
+      <label htmlFor={name}>{label}</label>
       <input
         id={name}
         name={name}
         type="text"
         placeholder={placeholder}
         required={required}
-        className={FIELD}
       />
     </div>
   );
@@ -212,11 +229,9 @@ function Select({
   options: string[];
 }) {
   return (
-    <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium">
-        {label}
-      </label>
-      <select id={name} name={name} className={FIELD} defaultValue="">
+    <div className="field">
+      <label htmlFor={name}>{label}</label>
+      <select id={name} name={name} defaultValue="">
         <option value="">No preference</option>
         {options.map((option) => (
           <option key={option} value={option}>

@@ -5,7 +5,7 @@ import {
   COLLECTIONS_BY_PAGE,
   PageCollection,
 } from "@/components/site/page-collection";
-import { SectionRenderer } from "@/components/site/section-renderer";
+import { PageSections } from "@/components/site/page-sections";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
@@ -112,9 +112,7 @@ export default async function PublicPage({
 
       <main>
         {sections.length > 0 ? (
-          sections.map((section) => (
-            <SectionRenderer key={section.id} section={section} context={context} />
-          ))
+          <PageSections pageSlug={page.slug} sections={sections} context={context} />
         ) : (
           <EmptyPage label={page.label} />
         )}

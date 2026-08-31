@@ -6,15 +6,11 @@ import {
   MinistryList,
   VideoGrid,
 } from "@/components/site/collections";
+import { PrayerForm, VisitForm } from "@/components/site/public-forms";
+import { getBibleProvider, normalizeBook, normalizeChapter } from "@/lib/bible";
 import type { Church } from "@/lib/church";
 import { parseServiceTimes } from "@/lib/church";
 import type { Collections } from "@/lib/collections";
-import { PrayerForm, VisitForm } from "@/components/site/public-forms";
-import {
-  getBibleProvider,
-  normalizeBook,
-  normalizeChapter,
-} from "@/lib/bible";
 import type { ChurchLink } from "@/lib/links";
 import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/sections";
 
@@ -26,26 +22,17 @@ import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/secti
  * The switch `lib/portal/sections.ts` refers to when it says "add its renderer
  * in the Phase B section switch". One entry per section_key.
  *
+ * THE MARKUP AND CLASS NAMES ARE THE PROTOTYPE'S, and the styling lives in
+ * app/(public)/site.css, ported mechanically from the same file. An earlier
+ * pass wrote these in Tailwind against the theme tokens; it carried the right
+ * words and the right colours and did not look like the design, because the
+ * eyebrow rule, the logbook, the mile-marker plates and the dark bands are too
+ * specific to re-derive by eye.
+ *
  * WHO DECIDES WHAT RENDERS. The database, not the registry. A row in
  * church_sections renders if this switch knows its key; the registry governs
- * whether a pastor can EDIT it in the portal. The two are deliberately
- * independent, so a section can ship to the public site before it is
- * editable, or be described for the portal before its renderer exists.
- *
- * An unknown key renders nothing in production. In development it renders a
- * labelled placeholder instead, so an unbuilt section is visible while
- * building rather than silently absent - which would look identical to a
- * section that failed to load.
- *
- * STEP 2 SCOPE: every prose section across all eleven pages. What still falls
- * through to the placeholder is deliberate and falls in two groups:
- *
- *   - collection-backed (step 3): latest_sermon, events_preview, bulletin,
- *     ministries list, group/event/worship filters
- *   - interactive (step 4+): visit_form, reader, and the giving amount picker
- *
- * The giving sections are a special case: their PROSE renders here, and only
- * the amount picker is held back. See GivingBand below.
+ * whether a pastor can EDIT it. An unknown key renders nothing in production
+ * and a labelled placeholder in development.
  */
 
 export type SectionContext = {
@@ -56,16 +43,57 @@ export type SectionContext = {
   /** Only the collections this page asked for are populated. */
   collections: Collections;
   /**
-   * The active `?filter=` value, or null for "all".
-   *
-   * Filters run through the URL rather than client state on purpose: the
-   * result is linkable, survives a reload, and works with JavaScript off.
-   * The lists stay Server Components either way.
+   * The active `?filter=` value, or null for "all". Filters run through the URL
+   * rather than client state: linkable, survives a reload, works with
+   * JavaScript off, and the lists stay Server Components.
    */
   filter: string | null;
   /** ?book= and ?chapter= for the Bible reader. Null when absent. */
   book: string | null;
   chapter: string | null;
+  /**
+   * True while rendering inside a LAYOUT_GROUPS column.
+   *
+   * A grouped section omits its own `.wrap`, because the group wrapper already
+   * supplies one. Without this, every grouped section would nest a second
+   * centred container inside a grid cell and the columns would not line up.
+   */
+  grouped?: boolean;
+};
+
+/**
+ * ============================================================
+ * LAYOUT GROUPS - sections the prototype places side by side
+ * ============================================================
+ *
+ * The prototype puts some sections in two-column grids: About beside its stat
+ * tiles, "what to expect" beside the visit form, the Bible reader beside its
+ * sidebar. Those are separate rows in church_sections, each with its own sort
+ * order and visibility, so a renderer cannot simply nest the next one.
+ *
+ * This is the declarative answer, and it is DATA rather than coupling: a page
+ * lists which section keys share a grid and in which column. Anything not named
+ * here renders in its normal place, in order. Hide a key in the portal and the
+ * group quietly renders one column - nothing breaks and no renderer has to know
+ * about another.
+ *
+ * `className` is the prototype's own grid class, styled in site.css.
+ */
+export type LayoutGroup = {
+  className: string;
+  /** One entry per column; each column lists the section keys it holds. */
+  columns: string[][];
+};
+
+export const LAYOUT_GROUPS: Record<string, LayoutGroup[]> = {
+  home: [{ className: "wrap about-grid", columns: [["about_strip"], ["mile_stats"]] }],
+  visit: [{ className: "wrap split", columns: [["expect", "faq"], ["visit_form"]] }],
+  bible: [
+    {
+      className: "wrap bible-shell",
+      columns: [["reader"], ["verse_of_day", "reading_plan", "ylcc_bridge"]],
+    },
+  ],
 };
 
 export function SectionRenderer({
@@ -79,19 +107,27 @@ export function SectionRenderer({
     case "hero":
       return <HomeHero section={section} context={context} />;
     case "page_hero":
-      return <Hero section={section} large={false} />;
+      return <PageHero section={section} />;
 
     case "about_strip":
-      return <AboutStrip section={section} />;
+      return <AboutStrip section={section} context={context} />;
     case "mile_stats":
-      return <MileStats section={section} />;
+      return <MileStats section={section} context={context} />;
     case "get_connected":
       return <GetConnected section={section} />;
+    case "latest_sermon":
+      return <LatestSermon section={section} context={context} />;
+    case "events_preview":
+      return <EventsPreview section={section} context={context} />;
+    case "bulletin":
+      return <Bulletin section={section} context={context} />;
 
     case "expect":
-      return <IconList section={section} />;
+      return <Expect section={section} context={context} />;
     case "faq":
-      return <Faq section={section} />;
+      return <Faq section={section} context={context} />;
+    case "visit_form":
+      return <VisitFormSection section={section} context={context} />;
 
     case "timeline":
       return <Timeline section={section} />;
@@ -102,32 +138,20 @@ export function SectionRenderer({
     case "about_ctas":
       return <CtaRow section={section} />;
 
+    case "reader":
+      return <BibleReader section={section} context={context} />;
     case "verse_of_day":
-      return <VerseOfDay section={section} />;
+      return <VerseOfDay section={section} context={context} />;
     case "reading_plan":
     case "ylcc_bridge":
-      return <CalloutCard section={section} />;
+      return <CalloutCard section={section} context={context} />;
 
-    // The filter strips themselves are interactive and belong to step 4. The
-    // LIST each one heads is the page's actual content, so it renders now -
-    // an events page with working filters and no events would be backwards.
     case "group_filters":
       return <GroupsSection section={section} context={context} />;
     case "event_filters":
       return <EventsSection section={section} context={context} />;
     case "worship_filters":
       return <WorshipSection section={section} context={context} />;
-
-    case "latest_sermon":
-      return <LatestSermon section={section} context={context} />;
-    case "events_preview":
-      return <EventsPreview section={section} context={context} />;
-    case "bulletin":
-      return <Bulletin section={section} context={context} />;
-    case "visit_form":
-      return <VisitFormSection section={section} />;
-    case "reader":
-      return <BibleReader section={section} context={context} />;
 
     case "giving_band":
     case "give_band":
@@ -141,54 +165,53 @@ export function SectionRenderer({
 }
 
 // ---------------------------------------------------------------
-// Layout primitives. Every section is a full-width band with the same
-// centred measure, so the page reads as one column at every breakpoint.
-// ---------------------------------------------------------------
-
-function Band({
-  children,
-  tint = false,
-}: {
-  children: React.ReactNode;
-  tint?: boolean;
-}) {
-  return (
-    <section className={tint ? "bg-paper-dim px-6 py-14" : "px-6 py-14"}>
-      <div className="mx-auto max-w-[1120px]">{children}</div>
-    </section>
-  );
-}
-
-function Eyebrow({ children }: { children: string }) {
-  return (
-    <p className="font-utility text-xs uppercase tracking-[0.14em] text-brand">{children}</p>
-  );
-}
-
-function Heading({ children }: { children: string }) {
-  return <h2 className="mt-3 text-[clamp(26px,3.4vw,38px)] text-ink">{children}</h2>;
-}
-
-// ---------------------------------------------------------------
-// Sections
+// Wrappers
 // ---------------------------------------------------------------
 
 /**
- * The home hero, as the prototype draws it.
+ * The prototype's centred container.
+ *
+ * Skipped when grouped: the LAYOUT_GROUPS wrapper already supplies `.wrap`, and
+ * nesting a second one inside a grid cell breaks the columns.
+ */
+function Wrap({
+  context,
+  className,
+  style,
+  children,
+}: {
+  context: SectionContext;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  if (context.grouped) return <>{children}</>;
+
+  return (
+    <div className={className ? `wrap ${className}` : "wrap"} style={style}>
+      {children}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------
+// Heroes
+// ---------------------------------------------------------------
+
+/**
+ * The home hero.
  *
  * Three parts: a full-bleed banner, the welcome copy with its buttons, and the
- * "driver's log" - the church's service times as a timetable panel beside the
- * copy.
+ * "driver's log" - the church's service times as a timetable panel.
  *
  * THE LOGBOOK READS churches.service_times, not the section content. The seed
- * supplies only its heading and timezone (`logbook_title`, `logbook_tz`); the
- * rows are the same service times the pastor edits in Church Details, so the
- * hero cannot drift from the rest of the site. Nothing rendered these before -
- * they were seeded and ignored.
+ * supplies only its heading and timezone; the rows are the same service times
+ * the pastor edits in Church Details, so the hero cannot drift from the rest of
+ * the site.
  *
- * The visible heading is the banner image, so the H1 is screen-reader only.
- * That is the prototype's own structure: a page still needs exactly one H1 and
- * it should say what the banner says.
+ * The visible heading is the banner image, so the H1 is screen-reader only -
+ * the prototype's own structure. A page still needs exactly one H1, and it
+ * should say what the banner says.
  */
 function HomeHero({
   section,
@@ -213,9 +236,8 @@ function HomeHero({
 
         {image_desktop ? (
           <div className="hero-banner">
-            {/* Unoptimized: the banner is a full-bleed art-directed image and
-                next/image would need its intrinsic size, which the section
-                content does not carry. */}
+            {/* Unoptimized: an art-directed full-bleed banner whose intrinsic
+                size the section content does not carry. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image_desktop} alt={headline ?? ""} />
           </div>
@@ -225,21 +247,7 @@ function HomeHero({
           <div>
             {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
             {lede ? <p className="lede">{lede}</p> : null}
-            {ctas.length > 0 ? (
-              <div className="hero-ctas">
-                {ctas.map((cta, index) =>
-                  cta.label && cta.href ? (
-                    <Link
-                      key={index}
-                      href={cta.href}
-                      className={cta.style === "ghost" ? "btn btn-ghost" : "btn btn-gold"}
-                    >
-                      {cta.label}
-                    </Link>
-                  ) : null,
-                )}
-              </div>
-            ) : null}
+            {ctas.length > 0 ? <div className="hero-ctas">{ctaLinks(ctas, true)}</div> : null}
           </div>
 
           {services.length > 0 ? (
@@ -252,9 +260,7 @@ function HomeHero({
                 <div key={index} className="logbook-row">
                   <span className="k">{[slot.day, slot.time].filter(Boolean).join(" ")}</span>
                   <span className="v">
-                    {slot.streaming ? (
-                      <span className="live-dot" aria-hidden="true" />
-                    ) : null}
+                    {slot.streaming ? <span className="live-dot" aria-hidden="true" /> : null}
                     {slot.label ?? ""}
                   </span>
                 </div>
@@ -267,70 +273,69 @@ function HomeHero({
   );
 }
 
-function Hero({ section, large }: { section: SectionRow; large: boolean }) {
+/** Every inner page opens with this. */
+function PageHero({ section }: { section: SectionRow }) {
   const { eyebrow, headline, lede } = sectionContent(section.content);
-  const ctas = rows(section.content, "ctas");
-
-  // A hero with no headline is a seeding mistake, not a layout to render
-  // around. Drop it rather than emit an empty band.
   if (!headline) return null;
 
   return (
-    <section className={large ? "px-6 pt-16 pb-20 sm:pt-24" : "px-6 pt-12 pb-10 sm:pt-16"}>
-      <div className="mx-auto max-w-[1120px]">
-        {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-
-        <h1
-          className={
-            large
-              ? "mt-4 text-[clamp(38px,5.2vw,58px)] text-ink"
-              : "mt-3 text-[clamp(30px,4vw,44px)] text-ink"
-          }
-        >
-          {headline}
-        </h1>
-
-        {lede ? <p className="mt-4 max-w-[58ch] text-lg text-ink-soft">{lede}</p> : null}
-
-        {ctas.length > 0 ? <CtaButtons ctas={ctas} /> : null}
-      </div>
-    </section>
+    <div className="wrap page-hero">
+      {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+      <h1>{headline}</h1>
+      {lede ? <p className="lede">{lede}</p> : null}
+    </div>
   );
 }
 
-function AboutStrip({ section }: { section: SectionRow }) {
+// ---------------------------------------------------------------
+// Home
+// ---------------------------------------------------------------
+
+function AboutStrip({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
   const { eyebrow, heading, lead_in, verse, verse_cite } = sectionContent(section.content);
   const paragraphs = strings(section.content, "body");
   const cta = obj(section.content, "cta");
 
+  const body = (
+    <>
+      {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+      {heading ? <h2>{heading}</h2> : null}
+
+      {lead_in ? (
+        <p>
+          <strong>{lead_in}</strong>
+        </p>
+      ) : null}
+      {paragraphs.map((paragraph, index) => (
+        <p key={index}>{paragraph}</p>
+      ))}
+
+      {verse ? (
+        <blockquote className="verse">
+          {verse}
+          {verse_cite ? <cite>{verse_cite}</cite> : null}
+        </blockquote>
+      ) : null}
+
+      {cta.href && cta.label ? (
+        <Link href={cta.href} className="btn btn-ghost">
+          {cta.label}
+        </Link>
+      ) : null}
+    </>
+  );
+
+  if (context.grouped) return <div>{body}</div>;
+
   return (
     <div className="about-strip">
-      <div className="wrap">
-        {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
-        {heading ? <h2>{heading}</h2> : null}
-
-        {lead_in ? (
-          <p>
-            <strong>{lead_in}</strong>
-          </p>
-        ) : null}
-        {paragraphs.map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
-
-        {verse ? (
-          <blockquote className="verse">
-            {verse}
-            {verse_cite ? <cite>{verse_cite}</cite> : null}
-          </blockquote>
-        ) : null}
-
-        {cta.href && cta.label ? (
-          <Link href={cta.href} className="btn btn-ghost">
-            {cta.label}
-          </Link>
-        ) : null}
-      </div>
+      <div className="wrap">{body}</div>
     </div>
   );
 }
@@ -338,31 +343,36 @@ function AboutStrip({ section }: { section: SectionRow }) {
 /**
  * The mile-marker stat tiles.
  *
- * `marker` becomes the data-mm attribute the CSS prints in the corner - the
- * prototype styles it through ::before with attr(), so the value has to be an
- * attribute rather than a child element.
- *
- * The prototype puts these beside the About copy in a two-column grid. They are
- * separate rows in church_sections with their own sort order and visibility, so
- * they render as their own band here and stack instead. Pairing them would mean
- * one renderer consuming the next section, which is more coupling than the
- * layout is worth.
+ * `marker` becomes data-mm, which the CSS prints in the corner through
+ * ::before with attr() - so it has to be an attribute, not a child element.
  */
-function MileStats({ section }: { section: SectionRow }) {
+function MileStats({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
   const items = rows(section.content, "items");
   if (items.length === 0) return null;
 
-  return (
-    <div className="wrap" style={{ paddingBottom: "76px" }}>
-      <div className="mile-stats">
-        {items.map((item, index) => (
-          <div key={index} className="mile" data-mm={item.marker ?? ""}>
-            <b>{item.value}</b>
-            <span>{item.label}</span>
-          </div>
-        ))}
-      </div>
+  const grid = (
+    <div className="mile-stats">
+      {items.map((item, index) => (
+        <div key={index} className="mile" data-mm={item.marker ?? ""}>
+          <b>{item.value}</b>
+          <span>{item.label}</span>
+        </div>
+      ))}
     </div>
+  );
+
+  if (context.grouped) return grid;
+
+  return (
+    <Wrap context={context} style={{ paddingBottom: "76px" }}>
+      {grid}
+    </Wrap>
   );
 }
 
@@ -411,267 +421,12 @@ function GetConnected({ section }: { section: SectionRow }) {
   );
 }
 
-/** "What to expect" - a titled list where each entry carries a small marker. */
-function IconList({ section }: { section: SectionRow }) {
-  const { heading } = sectionContent(section.content);
-  const items = rows(section.content, "items");
-
-  return (
-    <Band>
-      {heading ? <Heading>{heading}</Heading> : null}
-
-      <ul className="mt-8 grid gap-6 md:grid-cols-2">
-        {items.map((item, index) => (
-          <li key={index} className="flex gap-4">
-            {item.icon ? (
-              <span
-                aria-hidden="true"
-                className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-wash font-utility text-sm text-brand"
-              >
-                {item.icon}
-              </span>
-            ) : null}
-            <div>
-              <h3 className="text-lg text-ink">{item.title}</h3>
-              {item.body ? <p className="mt-1 text-sm text-ink-soft">{item.body}</p> : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Band>
-  );
-}
-
-function Faq({ section }: { section: SectionRow }) {
-  const { heading } = sectionContent(section.content);
-  const items = rows(section.content, "items");
-
-  return (
-    <Band tint>
-      {heading ? <Heading>{heading}</Heading> : null}
-
-      {/* <details> rather than a scripted accordion: it is keyboard and screen
-          reader accessible for free, and works with JavaScript disabled. */}
-      <div className="mt-8 divide-y divide-line border-y border-line">
-        {items.map((item, index) => (
-          <details key={index} className="group py-4">
-            <summary className="cursor-pointer list-none text-lg text-ink marker:hidden">
-              <span className="inline-block w-5 font-utility text-brand transition-transform group-open:rotate-90">
-                &gt;
-              </span>
-              {item.q}
-            </summary>
-            {item.a ? <p className="mt-3 pl-5 text-ink-soft">{item.a}</p> : null}
-          </details>
-        ))}
-      </div>
-    </Band>
-  );
-}
-
-function Timeline({ section }: { section: SectionRow }) {
-  const stops = rows(section.content, "stops");
-  if (stops.length === 0) return null;
-
-  return (
-    <Band>
-      <ol className="relative border-l border-line pl-8">
-        {stops.map((stop, index) => (
-          <li key={index} className="pb-10 last:pb-0">
-            <span
-              aria-hidden="true"
-              className="absolute -left-[7px] mt-1.5 h-3.5 w-3.5 rounded-full border-2 border-paper bg-brand"
-            />
-            {stop.year ? (
-              <p className="font-utility text-xs uppercase tracking-[0.16em] text-brand">
-                {stop.year}
-                {stop.marker ? <span className="ml-2 text-ink-soft">{stop.marker}</span> : null}
-              </p>
-            ) : null}
-            <h3 className="mt-1 text-xl text-ink">{stop.title}</h3>
-            {stop.body ? <p className="mt-2 max-w-[62ch] text-ink-soft">{stop.body}</p> : null}
-          </li>
-        ))}
-      </ol>
-    </Band>
-  );
-}
-
-function Beliefs({ section }: { section: SectionRow }) {
-  const { heading, lede } = sectionContent(section.content);
-  const items = rows(section.content, "items");
-
-  return (
-    <Band tint>
-      {heading ? <Heading>{heading}</Heading> : null}
-      {lede ? <p className="mt-4 max-w-[62ch] text-lg text-ink-soft">{lede}</p> : null}
-
-      <div className="mt-8 grid gap-5 md:grid-cols-2">
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className="rounded-[var(--kc-radius)] border border-line bg-surface p-5"
-          >
-            <h3 className="text-lg text-ink">{item.title}</h3>
-            {item.body ? <p className="mt-2 text-sm text-ink-soft">{item.body}</p> : null}
-          </div>
-        ))}
-      </div>
-    </Band>
-  );
-}
-
-/** Ministries: the intro copy, then the list it introduces. */
-function MinistriesSection({
-  section,
-  context,
-}: {
-  section: SectionRow;
-  context: SectionContext;
-}) {
-  const { heading, lede, empty } = sectionContent(section.content);
-
-  return (
-    <Band>
-      {heading ? <Heading>{heading}</Heading> : null}
-      {lede ? <p className="mt-4 max-w-[62ch] text-lg text-ink-soft">{lede}</p> : null}
-      <div className="mt-8">
-        <MinistryList
-          ministries={context.collections.ministries}
-          empty={empty ?? "Ministry list coming soon."}
-        />
-      </div>
-    </Band>
-  );
-}
-
-function GroupsSection({
-  section,
-  context,
-}: {
-  section: SectionRow;
-  context: SectionContext;
-}) {
-  const { empty, link_label } = sectionContent(section.content);
-  const filters = rows(section.content, "filters");
-  const groups = context.filter
-    ? context.collections.groups.filter((g) => g.location_type === context.filter)
-    : context.collections.groups;
-
-  return (
-    <Band>
-      <FilterStrip filters={filters} active={context.filter} />
-      <GroupList
-        groups={groups}
-        empty={empty ?? "No groups listed yet."}
-        linkLabel={link_label ?? "Join online"}
-      />
-    </Band>
-  );
-}
-
-function EventsSection({
-  section,
-  context,
-}: {
-  section: SectionRow;
-  context: SectionContext;
-}) {
-  const { empty } = sectionContent(section.content);
-  const filters = rows(section.content, "filters");
-  const events = context.filter
-    ? context.collections.events.filter((e) => e.event_type === context.filter)
-    : context.collections.events;
-
-  return (
-    <Band>
-      <FilterStrip filters={filters} active={context.filter} />
-      <EventList
-        events={events}
-        empty={empty ?? "Nothing on the calendar yet."}
-      />
-    </Band>
-  );
-}
-
-function WorshipSection({
-  section,
-  context,
-}: {
-  section: SectionRow;
-  context: SectionContext;
-}) {
-  const { empty, play_label } = sectionContent(section.content);
-  const filters = rows(section.content, "filters");
-  const videos = context.filter
-    ? context.collections.videos.filter((v) => v.category === context.filter)
-    : context.collections.videos;
-
-  return (
-    <Band>
-      <FilterStrip filters={filters} active={context.filter} />
-      <VideoGrid
-        videos={videos}
-        empty={empty ?? "No worship videos yet."}
-        playLabel={play_label ?? "Play"}
-      />
-    </Band>
-  );
-}
-
-/**
- * The filter strip above a list.
- *
- * Plain links carrying `?filter=`, not client state. The result is linkable and
- * shareable, survives a reload, needs no JavaScript, and keeps the list a
- * Server Component. `value: "all"` clears the filter rather than setting one.
- *
- * Which column each strip filters is the list section's business, not this
- * component's: groups by location_type, events by event_type, videos by
- * category. The seed supplies only labels and values.
- */
-function FilterStrip({
-  filters,
-  active,
-}: {
-  filters: Record<string, string>[];
-  active: string | null;
-}) {
-  const usable = filters.filter((f) => f.label && f.value);
-  if (usable.length === 0) return null;
-
-  return (
-    <div className="mb-8 flex flex-wrap gap-2">
-      {usable.map((filter) => {
-        const isAll = filter.value === "all";
-        const isActive = isAll ? active === null : active === filter.value;
-
-        return (
-          <Link
-            key={filter.value}
-            href={isAll ? "?" : `?filter=${encodeURIComponent(filter.value)}`}
-            aria-current={isActive ? "true" : undefined}
-            className={
-              isActive
-                ? "rounded-full bg-brand px-4 py-1.5 font-utility text-xs uppercase tracking-[0.14em] text-brand-contrast"
-                : "rounded-full border border-line px-4 py-1.5 font-utility text-xs uppercase tracking-[0.14em] text-ink-soft hover:border-brand hover:text-brand"
-            }
-          >
-            {filter.label}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
 /**
  * Home: this week's message, in the prototype's dark band.
  *
- * The prototype draws a play-button thumbnail; that is a facade for the YouTube
- * player and belongs with the sermon work rather than here, so the card links
- * out to the video instead. Everything else - the band, the meta line, the
- * archive link - is the prototype's.
+ * The prototype draws a play-button facade over a thumbnail. That facade is a
+ * YouTube-player concern and belongs with the sermon work, so this links out
+ * instead - the band, the meta line and the archive link are the prototype's.
  */
 function LatestSermon({
   section,
@@ -763,211 +518,19 @@ function EventsPreview({
   return (
     <div style={{ padding: "84px 0" }}>
       <div className="wrap">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "end",
-            gap: "24px",
-            marginBottom: "40px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div>
-            {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
-            {heading ? <h2>{heading}</h2> : null}
-          </div>
-          {cta.href && cta.label ? (
-            <Link href={cta.href} className="btn btn-ghost">
-              {cta.label}
-            </Link>
-          ) : null}
-        </div>
-
-        {events.length === 0 ? (
-          <p style={{ color: "var(--kc-ink-soft)" }}>
-            {empty ?? "Nothing on the calendar yet."}
-          </p>
-        ) : (
-          <div className="event-list">
-            {events.map((event) => {
-              const when = new Date(event.starts_at);
-              const valid = !Number.isNaN(when.getTime());
-
-              return (
-                <article key={event.id} className="event">
-                  <div className="mm-plate" aria-hidden="true">
-                    <div className="mo">
-                      {valid
-                        ? when.toLocaleDateString("en-US", {
-                            timeZone: "UTC",
-                            month: "short",
-                          })
-                        : ""}
-                    </div>
-                    <div className="day">{valid ? when.getUTCDate() : ""}</div>
-                  </div>
-                  <div>
-                    <h3>{event.title}</h3>
-                    {event.location ? (
-                      <p className="where">{event.location}</p>
-                    ) : null}
-                    {event.description ? <p>{event.description}</p> : null}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+        <SplitHead eyebrow={eyebrow} heading={heading} cta={cta} />
+        <EventList events={events} empty={empty ?? "Nothing on the calendar yet."} />
       </div>
     </div>
   );
 }
 
 /**
- * The Bible reader.
- *
- * An async Server Component that fetches its own passage rather than having the
- * page do it: the book list and defaults are section content, so only this
- * component knows what to ask for. No key reaches the browser - the provider
- * module is server-only.
- *
- * Navigation runs through the URL (?book=&chapter=), same as the list filters:
- * linkable, shareable, survives a reload, works with JavaScript off. The form
- * below submits with GET for exactly that reason.
- *
- * Both inputs are attacker-controlled, so both are normalised against the
- * church's own seeded book list and a 1-150 chapter range before anything
- * reaches a provider URL.
- */
-async function BibleReader({
-  section,
-  context,
-}: {
-  section: SectionRow;
-  context: SectionContext;
-}) {
-  const content = sectionContent(section.content);
-  const books = strings(section.content, "books");
-
-  const fallbackBook = content.default_book ?? books[0] ?? "John";
-  const fallbackChapter = Number.parseInt(content.default_chapter ?? "1", 10) || 1;
-
-  const book = normalizeBook(context.book, books, fallbackBook);
-  const chapter = normalizeChapter(context.chapter, fallbackChapter);
-
-  const provider = getBibleProvider();
-  const reading = await provider.fetchPassage(book, chapter);
-
-  return (
-    <Band>
-      <form method="get" className="flex flex-wrap items-end gap-3">
-        <div>
-          <label htmlFor="book" className="mb-1 block text-sm font-medium">
-            Book
-          </label>
-          <select
-            id="book"
-            name="book"
-            defaultValue={book}
-            className="rounded-[var(--kc-radius)] border border-line bg-surface px-3 py-2"
-          >
-            {books.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="chapter" className="mb-1 block text-sm font-medium">
-            Chapter
-          </label>
-          <input
-            id="chapter"
-            name="chapter"
-            type="number"
-            min={1}
-            max={150}
-            defaultValue={chapter}
-            className="w-24 rounded-[var(--kc-radius)] border border-line bg-surface px-3 py-2"
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="rounded-[var(--kc-radius)] bg-brand px-5 py-2.5 font-semibold text-brand-contrast"
-        >
-          {content.load_label ?? "Read"}
-        </button>
-      </form>
-
-      {reading ? (
-        <article className="mt-8">
-          <h3 className="text-2xl text-ink">
-            {reading.reference}
-            <span className="ml-3 font-utility text-xs uppercase tracking-[0.16em] text-brand">
-              {reading.translation}
-            </span>
-          </h3>
-
-          {content.default_subtitle ? (
-            <p className="mt-1 text-sm text-ink-soft">{content.default_subtitle}</p>
-          ) : null}
-
-          <p className="mt-5 max-w-[68ch] text-lg leading-relaxed text-ink">
-            {reading.text}
-          </p>
-
-          {/* Licence condition for several providers, not decoration. Printed
-              verbatim as the adapter returned it - see lib/bible.ts. */}
-          <p className="mt-6 font-utility text-xs text-ink-soft">{reading.attribution}</p>
-        </article>
-      ) : (
-        <p className="mt-8 rounded-[var(--kc-radius)] border border-dashed border-line px-5 py-8 text-center text-ink-soft">
-          {content.error ?? "That passage could not be loaded right now."}
-        </p>
-      )}
-    </Band>
-  );
-}
-
-/**
- * Plan a Visit.
- *
- * Every label, placeholder and option is seeded content, so a pastor can reword
- * the whole form from the portal. The option lists are read with strings()
- * because sectionContent() keeps only scalars and would drop them.
- */
-function VisitFormSection({ section }: { section: SectionRow }) {
-  const content = sectionContent(section.content);
-
-  return (
-    <Band tint>
-      {content.title ? <Heading>{content.title}</Heading> : null}
-      {content.sub ? (
-        <p className="mt-3 max-w-[62ch] text-ink-soft">{content.sub}</p>
-      ) : null}
-
-      <div className="mt-8 max-w-xl">
-        <VisitForm
-          content={content}
-          whenOptions={strings(section.content, "when_options")}
-          rigOptions={strings(section.content, "rig_options")}
-        />
-      </div>
-    </Band>
-  );
-}
-
-/**
  * Home: the bulletin board - announcements and the prayer wall.
  *
- * Two cards side by side, as the prototype draws it. The prayer form is a
- * <details> inside the second card rather than the prototype's prompt()
- * dialogs - see FF-34 for why the CTA was held back until the insert policy
- * could refuse a pre-approved submission.
+ * The prayer form is a <details> inside the second card rather than the
+ * prototype's prompt() dialogs. See FF-34 for why the CTA was held back until
+ * the insert policy could refuse a pre-approved submission.
  */
 function Bulletin({
   section,
@@ -1029,14 +592,22 @@ function Bulletin({
               </p>
             )}
 
-            <div className="card-foot" style={{ paddingTop: "16px" }}>
-              <span>{content.prayer_note ?? ""}</span>
-            </div>
+            {content.prayer_note ? (
+              <div className="card-foot" style={{ paddingTop: "16px" }}>
+                <span>{content.prayer_note}</span>
+              </div>
+            ) : null}
 
             <PrayerForm content={content} />
 
             {content.prayer_pending_note ? (
-              <p style={{ marginTop: "12px", fontSize: "14px", color: "var(--kc-ink-soft)" }}>
+              <p
+                style={{
+                  marginTop: "12px",
+                  fontSize: "14px",
+                  color: "var(--kc-ink-soft)",
+                }}
+              >
                 {content.prayer_pending_note}
               </p>
             ) : null}
@@ -1047,53 +618,416 @@ function Bulletin({
   );
 }
 
+// ---------------------------------------------------------------
+// Visit
+// ---------------------------------------------------------------
+
+/** "What to expect" - each entry carries an emoji marker in a rounded tile. */
+function Expect({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { heading } = sectionContent(section.content);
+  const items = rows(section.content, "items");
+
+  return (
+    <Wrap context={context}>
+      {heading ? (
+        <h2 style={{ fontSize: "26px", marginBottom: "18px" }}>{heading}</h2>
+      ) : null}
+      <div className="expect">
+        {items.map((item, index) => (
+          <div key={index} className="expect-item">
+            <div className="ico" aria-hidden="true">
+              {item.icon ?? ""}
+            </div>
+            <div>
+              <h3>{item.title}</h3>
+              {item.body ? <p>{item.body}</p> : null}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Wrap>
+  );
+}
+
+/**
+ * Native <details>, as the prototype uses.
+ *
+ * Keyboard and screen-reader accessible for free, and it works with JavaScript
+ * off. The +/- marker is drawn by CSS on summary::after.
+ */
+function Faq({ section, context }: { section: SectionRow; context: SectionContext }) {
+  const { heading } = sectionContent(section.content);
+  const items = rows(section.content, "items");
+
+  return (
+    <Wrap context={context}>
+      <div className="faq">
+        {heading ? (
+          <h2 style={{ fontSize: "26px", marginBottom: "18px" }}>{heading}</h2>
+        ) : null}
+        <div>
+          {items.map((item, index) => (
+            <details key={index}>
+              <summary>{item.q}</summary>
+              {item.a ? <p>{item.a}</p> : null}
+            </details>
+          ))}
+        </div>
+      </div>
+    </Wrap>
+  );
+}
+
+/**
+ * Plan a Visit.
+ *
+ * Every label, placeholder and option is seeded content, so a pastor can reword
+ * the whole form from the portal. The option lists are read with strings()
+ * because sectionContent() keeps only scalars and would drop them.
+ */
+function VisitFormSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const content = sectionContent(section.content);
+
+  return (
+    <Wrap context={context}>
+      <VisitForm
+        content={content}
+        whenOptions={strings(section.content, "when_options")}
+        rigOptions={strings(section.content, "rig_options")}
+      />
+    </Wrap>
+  );
+}
+
+// ---------------------------------------------------------------
+// About
+// ---------------------------------------------------------------
+
+/** The dated history, as a vertical rule with dots. */
+function Timeline({ section }: { section: SectionRow }) {
+  const stops = rows(section.content, "stops");
+  if (stops.length === 0) return null;
+
+  return (
+    <div className="wrap-narrow">
+      <div className="timeline">
+        {stops.map((stop, index) => (
+          <div key={index} className="tstop">
+            {stop.year || stop.marker ? (
+              <div className="yr">
+                {[stop.year, stop.marker].filter(Boolean).join(" - ")}
+              </div>
+            ) : null}
+            <h3>{stop.title}</h3>
+            {stop.body ? <p>{stop.body}</p> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Beliefs({ section }: { section: SectionRow }) {
+  const { heading, lede } = sectionContent(section.content);
+  const items = rows(section.content, "items");
+
+  return (
+    <div className="wrap-narrow" style={{ paddingBottom: "40px" }}>
+      {heading ? <h2 style={{ marginTop: "56px" }}>{heading}</h2> : null}
+      {lede ? <p className="lede">{lede}</p> : null}
+
+      <div className="beliefs">
+        {items.map((item, index) => (
+          <div key={index} className="belief">
+            <h3>{item.title}</h3>
+            {item.body ? <p>{item.body}</p> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Ministries: the intro copy, then the list it introduces. */
+function MinistriesSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { heading, lede, empty } = sectionContent(section.content);
+
+  return (
+    <div className="wrap-narrow" style={{ paddingBottom: "60px" }}>
+      {heading ? <h2 style={{ marginTop: "40px" }}>{heading}</h2> : null}
+      {lede ? <p className="lede">{lede}</p> : null}
+      <div style={{ marginTop: "24px" }}>
+        <MinistryList
+          ministries={context.collections.ministries}
+          empty={empty ?? "Ministry list coming soon."}
+        />
+      </div>
+    </div>
+  );
+}
+
 function CtaRow({ section }: { section: SectionRow }) {
   const ctas = rows(section.content, "ctas");
   if (ctas.length === 0) return null;
 
   return (
-    <Band>
-      <CtaButtons ctas={ctas} />
-    </Band>
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
+      <div className="hero-ctas">{ctaLinks(ctas, false)}</div>
+    </div>
   );
 }
 
-function VerseOfDay({ section }: { section: SectionRow }) {
+// ---------------------------------------------------------------
+// Bible
+// ---------------------------------------------------------------
+
+/**
+ * The Bible reader.
+ *
+ * An async Server Component that fetches its own passage: the book list and
+ * defaults are section content, so only this component knows what to ask for.
+ * No key reaches the browser - the provider module is server-only.
+ *
+ * Navigation runs through the URL (?book=&chapter=), same as the list filters:
+ * linkable, survives a reload, works with JavaScript off. The form submits with
+ * GET for exactly that reason.
+ *
+ * Both inputs are attacker-controlled, so both are normalised against the
+ * church's own seeded book list and a 1-150 chapter range before anything
+ * reaches a provider URL.
+ */
+async function BibleReader({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const content = sectionContent(section.content);
+  const books = strings(section.content, "books");
+
+  const fallbackBook = content.default_book ?? books[0] ?? "John";
+  const fallbackChapter = Number.parseInt(content.default_chapter ?? "1", 10) || 1;
+
+  const book = normalizeBook(context.book, books, fallbackBook);
+  const chapter = normalizeChapter(context.chapter, fallbackChapter);
+
+  const provider = getBibleProvider();
+  const reading = await provider.fetchPassage(book, chapter);
+
+  const body = (
+    <div className="reader">
+      <form method="get" className="reader-controls">
+        <label className="sr-only" htmlFor="book">
+          Book
+        </label>
+        <select id="book" name="book" defaultValue={book}>
+          {books.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+
+        <label className="sr-only" htmlFor="chapter">
+          Chapter
+        </label>
+        <select id="chapter" name="chapter" defaultValue={String(chapter)}>
+          {Array.from({ length: 150 }, (_, index) => index + 1).map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+
+        <button type="submit" className="chip">
+          {content.load_label ?? "Load passage"}
+        </button>
+      </form>
+
+      {reading ? (
+        <>
+          <h3>{reading.reference}</h3>
+          <div className="trans">
+            {[content.default_subtitle, reading.translation].filter(Boolean).join(" - ")}
+          </div>
+          <div className="vtext">
+            <p>{reading.text}</p>
+          </div>
+          {/* A licence condition for several providers, not decoration -
+              printed verbatim as the adapter returned it. */}
+          <p className="give-note">{reading.attribution}</p>
+        </>
+      ) : (
+        <p className="vtext">
+          {content.error ?? "That passage could not be loaded right now."}
+        </p>
+      )}
+    </div>
+  );
+
+  if (context.grouped) return body;
+  return <div className="wrap">{body}</div>;
+}
+
+function VerseOfDay({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
   const { title, verse, reference } = sectionContent(section.content);
   if (!verse) return null;
 
-  return (
-    <Band tint>
-      {title ? <Eyebrow>{title}</Eyebrow> : null}
-      <blockquote className="mt-3 max-w-[62ch]">
-        <p className="text-[clamp(20px,2.4vw,26px)] text-ink italic">{verse}</p>
-        {reference ? (
-          <cite className="mt-3 block font-utility text-xs uppercase not-italic tracking-[0.14em] text-brand">
-            {reference}
-          </cite>
-        ) : null}
-      </blockquote>
-    </Band>
+  const card = (
+    <div className="side-card">
+      {title ? <h4>{title}</h4> : null}
+      <p
+        style={{
+          fontFamily: "var(--kc-font-display)",
+          fontStyle: "italic",
+          fontSize: "17px",
+          color: "var(--kc-ink)",
+          margin: "8px 0",
+        }}
+      >
+        {verse}
+      </p>
+      {reference ? <p>{reference}</p> : null}
+    </div>
   );
+
+  if (context.grouped) return card;
+  return <div className="wrap">{card}</div>;
 }
 
 /** reading_plan and ylcc_bridge share a shape: title, body, optional CTA. */
-function CalloutCard({ section }: { section: SectionRow }) {
+function CalloutCard({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
   const { title, body, cta_label, cta_href } = sectionContent(section.content);
   if (!title && !body) return null;
 
+  // ylcc_bridge is the branded card in the prototype's sidebar.
+  const branded = section.section_key === "ylcc_bridge";
+
+  const card = (
+    <div className={branded ? "side-card ylcc" : "side-card"}>
+      {title ? <h4>{title}</h4> : null}
+      {body ? <p>{body}</p> : null}
+      {cta_label ? (
+        <Link href={cta_href ?? "#"} className="btn btn-ghost btn-sm">
+          {cta_label}
+        </Link>
+      ) : null}
+    </div>
+  );
+
+  if (context.grouped) return card;
+  return <div className="wrap">{card}</div>;
+}
+
+// ---------------------------------------------------------------
+// Collection pages
+// ---------------------------------------------------------------
+
+function GroupsSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { empty, link_label } = sectionContent(section.content);
+  const filters = rows(section.content, "filters");
+  const groups = context.filter
+    ? context.collections.groups.filter((g) => g.location_type === context.filter)
+    : context.collections.groups;
+
   return (
-    <Band>
-      <div className="rounded-[var(--kc-radius)] border border-line bg-surface p-6">
-        {title ? <h3 className="text-xl text-ink">{title}</h3> : null}
-        {body ? <p className="mt-2 max-w-[62ch] text-ink-soft">{body}</p> : null}
-        {cta_label ? (
-          <CtaButtons ctas={[{ label: cta_label, href: cta_href ?? "", style: "ghost" }]} />
-        ) : null}
-      </div>
-    </Band>
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
+      <FilterStrip filters={filters} active={context.filter} />
+      <GroupList
+        groups={groups}
+        empty={empty ?? "No groups listed yet."}
+        linkLabel={link_label ?? "Join online"}
+      />
+    </div>
   );
 }
+
+function EventsSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { empty } = sectionContent(section.content);
+  const filters = rows(section.content, "filters");
+  const events = context.filter
+    ? context.collections.events.filter((e) => e.event_type === context.filter)
+    : context.collections.events;
+
+  return (
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
+      <FilterStrip filters={filters} active={context.filter} />
+      <EventList events={events} empty={empty ?? "Nothing on the calendar yet."} />
+    </div>
+  );
+}
+
+function WorshipSection({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { empty, play_label } = sectionContent(section.content);
+  const filters = rows(section.content, "filters");
+  const videos = context.filter
+    ? context.collections.videos.filter((v) => v.category === context.filter)
+    : context.collections.videos;
+
+  return (
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
+      <FilterStrip filters={filters} active={context.filter} />
+      <VideoGrid
+        videos={videos}
+        empty={empty ?? "No worship videos yet."}
+        playLabel={play_label ?? "Play"}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------
+// Give
+// ---------------------------------------------------------------
 
 /**
  * The giving band - prose and one button out to Tithe.ly.
@@ -1102,20 +1036,24 @@ function CalloutCard({ section }: { section: SectionRow }) {
  * in church_links. No Stripe, no amount picker, no custom-amount field.
  *
  * The prototype's give-card holds a frequency toggle and an amount ladder, and
- * the seed carries the values for both. They are DELIBERATELY NOT RENDERED and
- * are not a bug to fix: amount and frequency are chosen on the Tithe.ly form
- * itself, so collecting them here would be decorative. The card keeps its
- * shape and holds the button. See FF-32.
- *
- * A church with no giving link gets no button rather than a dead one.
+ * the seed carries values for both. They are DELIBERATELY NOT RENDERED and are
+ * not a bug: amount and frequency are chosen on the Tithe.ly form itself, so
+ * collecting them here would be decorative. The card keeps its shape and holds
+ * the button. See FF-32.
  */
-function GivingBand({ section, giving }: { section: SectionRow; giving: ChurchLink | null }) {
+function GivingBand({
+  section,
+  giving,
+}: {
+  section: SectionRow;
+  giving: ChurchLink | null;
+}) {
   const { eyebrow, heading, body, note, card_title } = sectionContent(section.content);
   const bullets = strings(section.content, "bullets");
   const link = obj(section.content, "link");
 
   return (
-    <div className="wrap">
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
       <div className="give-band on-dark">
         <div className="giving-grid">
           <div>
@@ -1166,16 +1104,16 @@ function OtherWays({ section }: { section: SectionRow }) {
   if (items.length === 0) return null;
 
   return (
-    <Band>
-      <div className="grid gap-5 md:grid-cols-3">
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
+      <div className="other-ways">
         {items.map((item, index) => (
-          <div key={index}>
-            <h3 className="text-lg text-ink">{item.title}</h3>
-            {item.body ? <p className="mt-2 text-sm text-ink-soft">{item.body}</p> : null}
+          <div key={index} className="card" style={{ padding: "22px 24px" }}>
+            <h3 style={{ fontSize: "18px", marginBottom: "6px" }}>{item.title}</h3>
+            {item.body ? <p style={{ fontSize: "15px" }}>{item.body}</p> : null}
           </div>
         ))}
       </div>
-    </Band>
+    </div>
   );
 }
 
@@ -1184,61 +1122,133 @@ function OtherWays({ section }: { section: SectionRow }) {
 // ---------------------------------------------------------------
 
 /**
- * Button row. `style: "solid" | "ghost"` comes from the seed.
+ * The filter strip above a list.
  *
- * next/link for internal hrefs, a plain anchor for anything absolute - Link
- * prefetching an external URL is wasted work.
+ * Plain links carrying `?filter=`, not client state: linkable, shareable,
+ * survives a reload, needs no JavaScript, and keeps the list a Server
+ * Component. `value: "all"` clears the filter rather than setting one.
  */
-function CtaButtons({ ctas }: { ctas: Record<string, string>[] }) {
-  const usable = ctas.filter((cta) => cta.label && cta.href);
+function FilterStrip({
+  filters,
+  active,
+}: {
+  filters: Record<string, string>[];
+  active: string | null;
+}) {
+  const usable = filters.filter((f) => f.label && f.value);
   if (usable.length === 0) return null;
 
   return (
-    <div className="mt-8 flex flex-wrap gap-3">
-      {usable.map((cta, index) => {
-        const className =
-          cta.style === "ghost"
-            ? "inline-flex items-center rounded-[var(--kc-radius)] border border-line px-5 py-2.5 text-ink"
-            : "inline-flex items-center rounded-[var(--kc-radius)] bg-brand px-5 py-2.5 font-semibold text-brand-contrast";
+    <div className="chiprow">
+      {usable.map((filter) => {
+        const isAll = filter.value === "all";
+        const isActive = isAll ? active === null : active === filter.value;
 
-        return cta.href.startsWith("/") ? (
-          <Link key={index} href={cta.href} className={className}>
-            {cta.label}
-          </Link>
-        ) : (
-          <a
-            key={index}
-            href={cta.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={className}
+        return (
+          <Link
+            key={filter.value}
+            href={isAll ? "?" : `?filter=${encodeURIComponent(filter.value)}`}
+            aria-current={isActive ? "true" : undefined}
+            className={isActive ? "chip sel" : "chip"}
           >
-            {cta.label}
-          </a>
+            {filter.label}
+          </Link>
         );
       })}
     </div>
   );
 }
 
+/** A heading block with an optional button pushed to the right. */
+function SplitHead({
+  eyebrow,
+  heading,
+  cta,
+}: {
+  eyebrow?: string;
+  heading?: string;
+  cta: Record<string, string>;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "end",
+        gap: "24px",
+        marginBottom: "40px",
+        flexWrap: "wrap",
+      }}
+    >
+      <div>
+        {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+        {heading ? <h2>{heading}</h2> : null}
+      </div>
+      {cta.href && cta.label ? (
+        <Link href={cta.href} className="btn btn-ghost">
+          {cta.label}
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 /**
- * Development-only marker for a section that has a database row but no
- * renderer yet.
+ * Button row from a seeded `ctas` list.
  *
- * Renders nothing in production, so shipping a page with unbuilt sections
+ * `style: "solid" | "ghost"` comes from the seed. On the hero the solid variant
+ * is the prototype's gold button; elsewhere it is the brand fill.
+ */
+function ctaLinks(ctas: Record<string, string>[], gold: boolean) {
+  return ctas
+    .filter((cta) => cta.label && cta.href)
+    .map((cta, index) => {
+      const className =
+        cta.style === "ghost" ? "btn btn-ghost" : gold ? "btn btn-gold" : "btn btn-solid";
+
+      return cta.href.startsWith("/") ? (
+        <Link key={index} href={cta.href} className={className}>
+          {cta.label}
+        </Link>
+      ) : (
+        <a
+          key={index}
+          href={cta.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={className}
+        >
+          {cta.label}
+        </a>
+      );
+    });
+}
+
+/**
+ * Development-only marker for a section with a database row and no renderer.
+ *
+ * Renders nothing in production, so shipping a page with an unbuilt section
  * degrades to "that part is missing" rather than "that part is a debug box".
  */
 function UnbuiltSection({ sectionKey }: { sectionKey: string }) {
   if (process.env.NODE_ENV === "production") return null;
 
   return (
-    <section className="px-6 py-3">
-      <div className="mx-auto max-w-[1120px] rounded-[var(--kc-radius)] border border-dashed border-line bg-brand-wash/40 px-4 py-3">
-        <p className="font-utility text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-          section not built yet
-          <span className="ml-2 normal-case tracking-normal text-brand">{sectionKey}</span>
-        </p>
+    <div className="wrap" style={{ padding: "12px 24px" }}>
+      <div
+        style={{
+          border: "1px dashed var(--kc-line)",
+          borderRadius: "var(--kc-radius)",
+          padding: "12px 16px",
+          fontFamily: "var(--kc-font-utility)",
+          fontSize: "11px",
+          textTransform: "uppercase",
+          letterSpacing: "0.16em",
+          color: "var(--kc-ink-soft)",
+        }}
+      >
+        section not built yet <span style={{ color: "var(--kc-brand)" }}>{sectionKey}</span>
       </div>
-    </section>
+    </div>
   );
 }

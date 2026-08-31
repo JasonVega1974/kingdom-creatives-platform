@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-import { mediaUrl } from "@/lib/portal/media";
 import type {
   ChurchEvent,
   Group,
@@ -9,26 +8,37 @@ import type {
   StaffMember,
   Video,
 } from "@/lib/collections";
+import { mediaUrl } from "@/lib/portal/media";
 
 /**
  * ============================================================
  * COLLECTION LISTS - the rows behind the list pages
  * ============================================================
  *
- * Every list here takes its empty-state string from the seed rather than
- * hardcoding one. Draft 04 wrote a specific sentence per page - "No sermons
- * posted yet", "The crew page is being built" - and those are the pastor's
- * words, editable in the portal. A hardcoded fallback would quietly override
- * an edit nobody could then find.
+ * Markup and class names are the prototype's; the styling lives in
+ * app/(public)/site.css.
+ *
+ * Every list takes its empty-state string from the seed rather than hardcoding
+ * one. Draft 04 wrote a specific sentence per page - "No sermons posted yet",
+ * "The crew page is being built" - and those are the pastor's words, editable
+ * in the portal. A hardcoded fallback would quietly override an edit nobody
+ * could then find.
  *
  * An empty collection is a normal state, not a failure: KC_MASTER_TODO section
- * C has the pastor and board still sending real material. These pages are
- * expected to render empty for a while.
+ * C has the pastor and board still sending real material.
  */
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <p className="rounded-[var(--kc-radius)] border border-dashed border-line px-5 py-8 text-center text-ink-soft">
+    <p
+      style={{
+        border: "1px dashed var(--kc-line)",
+        borderRadius: "var(--kc-radius)",
+        padding: "32px 20px",
+        textAlign: "center",
+        color: "var(--kc-ink-soft)",
+      }}
+    >
       {children}
     </p>
   );
@@ -41,11 +51,22 @@ function formatDate(value: string | null, withTime = false): string {
   if (Number.isNaN(date.getTime())) return "";
 
   return date.toLocaleDateString("en-US", {
+    timeZone: "UTC",
     month: "short",
     day: "numeric",
     year: "numeric",
     ...(withTime ? { hour: "numeric", minute: "2-digit" } : {}),
   });
+}
+
+/** "Ray Delgado" -> "RD". The prototype's fallback when there is no photo. */
+function initialsOf(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 // ---------------------------------------------------------------
@@ -54,51 +75,58 @@ export function StaffGrid({ staff, empty }: { staff: StaffMember[]; empty: strin
   if (staff.length === 0) return <EmptyState>{empty}</EmptyState>;
 
   return (
-    <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {staff.map((person) => (
-        <li
-          key={person.id}
-          className="rounded-[var(--kc-radius)] border border-line bg-surface p-5"
-        >
-          {/* FF-40 precedence: the library photo wins, photo_url is the
-              fallback for a link someone pasted before the Photos tab existed.
-              The fallback is unoptimized because a pasted URL can point at any
-              host, and next/image throws on one that is not allow-listed. */}
-          {person.church_media ? (
-            <Image
-              src={mediaUrl(person.church_media.storage_path)}
-              alt={person.church_media.alt_text ?? ""}
-              width={96}
-              height={96}
-              className="mb-4 h-24 w-24 rounded-full object-cover"
-            />
-          ) : person.photo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={person.photo_url}
-              alt=""
-              className="mb-4 h-24 w-24 rounded-full object-cover"
-            />
-          ) : null}
+    <div className="team-grid">
+      {staff.map((person) => {
+        const photo = person.church_media
+          ? mediaUrl(person.church_media.storage_path)
+          : null;
 
-          <h3 className="text-lg text-ink">{person.name}</h3>
-          {person.role_title ? (
-            <p className="font-utility text-xs uppercase tracking-[0.14em] text-brand">
-              {person.role_title}
-            </p>
-          ) : null}
-          {person.bio ? <p className="mt-3 text-sm text-ink-soft">{person.bio}</p> : null}
-          {person.email ? (
-            <a
-              href={`mailto:${person.email}`}
-              className="mt-3 inline-block text-sm text-brand underline underline-offset-4"
-            >
-              {person.email}
-            </a>
-          ) : null}
-        </li>
-      ))}
-    </ul>
+        return (
+          <article key={person.id} className="person">
+            <div className="person-photo">
+              {/* FF-40 precedence: the library photo wins; photo_url is the
+                  fallback for a link pasted before the Photos tab existed, and
+                  is unoptimized because it can point at any host. With neither,
+                  the prototype shows initials over the brand gradient. */}
+              {photo ? (
+                <Image
+                  src={photo}
+                  alt={person.church_media?.alt_text ?? ""}
+                  fill
+                  style={{ objectFit: "cover" }}
+                />
+              ) : person.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={person.photo_url}
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <span className="initials">{initialsOf(person.name)}</span>
+              )}
+            </div>
+
+            <div className="person-body">
+              <h3>{person.name}</h3>
+              {person.role_title ? <div className="role">{person.role_title}</div> : null}
+              {person.bio ? <p>{person.bio}</p> : null}
+              {person.email ? (
+                <p>
+                  <a href={`mailto:${person.email}`}>{person.email}</a>
+                </p>
+              ) : null}
+            </div>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -114,58 +142,45 @@ export function GroupList({
   if (groups.length === 0) return <EmptyState>{empty}</EmptyState>;
 
   return (
-    <ul className="grid gap-5 md:grid-cols-2">
+    <div className="cardgrid">
       {groups.map((group) => {
-        // "Tuesdays - 7:00 PM CT", skipping whatever is missing.
+        // "Tuesdays 7:00 PM CT", skipping whatever is missing.
         const when = [group.meeting_day, group.meeting_time, group.meeting_tz]
           .filter(Boolean)
-          .join(" - ");
+          .join(" ");
         const where = group.location_detail ?? group.location_type;
 
         return (
-          <li
-            key={group.id}
-            className="rounded-[var(--kc-radius)] border border-line bg-surface p-5"
-          >
-            <h3 className="text-lg text-ink">{group.name}</h3>
-            {group.leader_name ? (
-              <p className="font-utility text-xs uppercase tracking-[0.14em] text-brand">
-                {group.leader_name}
-              </p>
-            ) : null}
-            {group.description ? (
-              <p className="mt-3 text-sm text-ink-soft">{group.description}</p>
-            ) : null}
+          <article key={group.id} className="card group-card">
+            <div className="card-body">
+              <h3>{group.name}</h3>
+              {group.leader_name ? (
+                <span className="card-kicker">{group.leader_name}</span>
+              ) : null}
+              {group.description ? <p>{group.description}</p> : null}
 
-            <dl className="mt-4 space-y-1 font-utility text-xs text-ink-soft">
-              {when ? (
-                <div className="flex gap-2">
-                  <dt className="sr-only">Meets</dt>
-                  <dd>{when}</dd>
+              <div className="sched">
+                {when ? <span>{when}</span> : null}
+                {where ? <span>{where}</span> : null}
+              </div>
+
+              {group.meeting_link ? (
+                <div className="card-foot">
+                  <a
+                    href={group.meeting_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ghost btn-sm"
+                  >
+                    {linkLabel}
+                  </a>
                 </div>
               ) : null}
-              {where ? (
-                <div className="flex gap-2">
-                  <dt className="sr-only">Where</dt>
-                  <dd>{where}</dd>
-                </div>
-              ) : null}
-            </dl>
-
-            {group.meeting_link ? (
-              <a
-                href={group.meeting_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-block text-sm text-brand underline underline-offset-4"
-              >
-                {linkLabel}
-              </a>
-            ) : null}
-          </li>
+            </div>
+          </article>
         );
       })}
-    </ul>
+    </div>
   );
 }
 
@@ -173,52 +188,42 @@ export function EventList({ events, empty }: { events: ChurchEvent[]; empty: str
   if (events.length === 0) return <EmptyState>{empty}</EmptyState>;
 
   return (
-    <ul className="divide-y divide-line border-y border-line">
-      {events.map((event) => (
-        <li key={event.id} className="flex flex-wrap gap-x-8 gap-y-3 py-6">
-          {event.church_media ? (
-            <Image
-              src={mediaUrl(event.church_media.storage_path)}
-              alt={event.church_media.alt_text ?? ""}
-              width={160}
-              height={120}
-              className="aspect-[4/3] w-32 shrink-0 rounded-[var(--kc-radius)] object-cover"
-            />
-          ) : null}
+    <div className="event-list">
+      {events.map((event) => {
+        const when = new Date(event.starts_at);
+        const valid = !Number.isNaN(when.getTime());
 
-          <div className="w-32 shrink-0">
-            <time
-              dateTime={event.starts_at}
-              className="font-utility text-sm text-brand"
-            >
-              {formatDate(event.starts_at, true)}
-            </time>
-          </div>
+        return (
+          <article key={event.id} className="event">
+            <div className="mm-plate" aria-hidden="true">
+              <div className="mo">
+                {valid
+                  ? when.toLocaleDateString("en-US", { timeZone: "UTC", month: "short" })
+                  : ""}
+              </div>
+              <div className="day">{valid ? when.getUTCDate() : ""}</div>
+            </div>
 
-          <div className="min-w-0 flex-1">
-            <h3 className="text-lg text-ink">{event.title}</h3>
-            {event.location ? (
-              <p className="font-utility text-xs uppercase tracking-[0.14em] text-ink-soft">
-                {event.location}
-              </p>
-            ) : null}
-            {event.description ? (
-              <p className="mt-2 max-w-[62ch] text-sm text-ink-soft">{event.description}</p>
-            ) : null}
+            <div>
+              <h3>{event.title}</h3>
+              {event.location ? <p className="where">{event.location}</p> : null}
+              {event.description ? <p>{event.description}</p> : null}
+            </div>
+
             {event.registration_url ? (
               <a
                 href={event.registration_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-3 inline-block text-sm text-brand underline underline-offset-4"
+                className="btn btn-ghost btn-sm"
               >
                 Register
               </a>
             ) : null}
-          </div>
-        </li>
-      ))}
-    </ul>
+          </article>
+        );
+      })}
+    </div>
   );
 }
 
@@ -234,27 +239,20 @@ export function SermonList({
   if (sermons.length === 0) return <EmptyState>{empty}</EmptyState>;
 
   return (
-    <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="cardgrid">
       {sermons.map((sermon) => (
-        <li
-          key={sermon.id}
-          className="overflow-hidden rounded-[var(--kc-radius)] border border-line bg-surface"
-        >
+        <article key={sermon.id} className="card">
           <Thumbnail
             youtubeId={sermon.youtube_id}
             thumbnailUrl={sermon.thumbnail_url}
             title={sermon.title}
           />
 
-          <div className="p-5">
-            {sermon.series ? (
-              <p className="font-utility text-[11px] uppercase tracking-[0.16em] text-brand">
-                {sermon.series}
-              </p>
-            ) : null}
-            <h3 className="mt-1 text-lg text-ink">{sermon.title}</h3>
+          <div className="card-body">
+            {sermon.series ? <span className="card-kicker">{sermon.series}</span> : null}
+            <h3>{sermon.title}</h3>
 
-            <p className="mt-1 font-utility text-xs text-ink-soft">
+            <p className="where">
               {[
                 formatDate(sermon.preached_at),
                 sermon.scripture_ref,
@@ -264,24 +262,24 @@ export function SermonList({
                 .join(" - ")}
             </p>
 
-            {sermon.summary ? (
-              <p className="mt-3 text-sm text-ink-soft">{sermon.summary}</p>
-            ) : null}
+            {sermon.summary ? <p>{sermon.summary}</p> : null}
 
             {sermon.youtube_id ? (
-              <a
-                href={`https://www.youtube.com/watch?v=${sermon.youtube_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-block text-sm text-brand underline underline-offset-4"
-              >
-                {watchLabel}
-              </a>
+              <div className="card-foot">
+                <a
+                  href={`https://www.youtube.com/watch?v=${sermon.youtube_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-ghost btn-sm"
+                >
+                  {watchLabel}
+                </a>
+              </div>
             ) : null}
           </div>
-        </li>
+        </article>
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -297,41 +295,34 @@ export function VideoGrid({
   if (videos.length === 0) return <EmptyState>{empty}</EmptyState>;
 
   return (
-    <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="cardgrid">
       {videos.map((video) => (
-        <li
-          key={video.id}
-          className="overflow-hidden rounded-[var(--kc-radius)] border border-line bg-surface"
-        >
+        <article key={video.id} className="card">
           <Thumbnail
             youtubeId={video.youtube_id}
             thumbnailUrl={video.thumbnail_url}
             title={video.title}
           />
 
-          <div className="p-5">
-            {video.category ? (
-              <p className="font-utility text-[11px] uppercase tracking-[0.16em] text-brand">
-                {video.category}
-              </p>
-            ) : null}
-            <h3 className="mt-1 text-lg text-ink">{video.title}</h3>
-            {video.description ? (
-              <p className="mt-2 text-sm text-ink-soft">{video.description}</p>
-            ) : null}
+          <div className="card-body">
+            {video.category ? <span className="card-kicker">{video.category}</span> : null}
+            <h3>{video.title}</h3>
+            {video.description ? <p>{video.description}</p> : null}
 
-            <a
-              href={video.video_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-block text-sm text-brand underline underline-offset-4"
-            >
-              {playLabel}
-            </a>
+            <div className="card-foot">
+              <a
+                href={video.video_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost btn-sm"
+              >
+                {playLabel}
+              </a>
+            </div>
           </div>
-        </li>
+        </article>
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -345,29 +336,28 @@ export function MinistryList({
   if (ministries.length === 0) return <EmptyState>{empty}</EmptyState>;
 
   return (
-    <ul className="grid gap-5 md:grid-cols-3">
+    <div className="cardgrid">
       {ministries.map((ministry) => (
-        <li
-          key={ministry.id}
-          className="rounded-[var(--kc-radius)] border border-line bg-surface p-5"
-        >
-          <h3 className="text-lg text-ink">{ministry.name}</h3>
-          {ministry.description ? (
-            <p className="mt-2 text-sm text-ink-soft">{ministry.description}</p>
-          ) : null}
-          {ministry.website_url ? (
-            <a
-              href={ministry.website_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-block text-sm text-brand underline underline-offset-4"
-            >
-              Visit site
-            </a>
-          ) : null}
-        </li>
+        <article key={ministry.id} className="card">
+          <div className="card-body">
+            <h3>{ministry.name}</h3>
+            {ministry.description ? <p>{ministry.description}</p> : null}
+            {ministry.website_url ? (
+              <div className="card-foot">
+                <a
+                  href={ministry.website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-ghost btn-sm"
+                >
+                  Visit site
+                </a>
+              </div>
+            ) : null}
+          </div>
+        </article>
       ))}
-    </ul>
+    </div>
   );
 }
 
@@ -376,8 +366,8 @@ export function MinistryList({
  *
  * A stored thumbnail wins; otherwise YouTube's own still, which needs no API
  * key and no request from our side. Both hosts are allow-listed in
- * next.config.ts - an image from anywhere else would fail the loader, which is
- * the intended behaviour rather than something to work around.
+ * next.config.ts - an image from anywhere else fails the loader, which is the
+ * intended behaviour rather than something to work around.
  *
  * Renders a plain tinted block when there is neither, so the card keeps its
  * shape instead of collapsing.
@@ -392,18 +382,13 @@ function Thumbnail({
   title: string;
 }) {
   const src =
-    thumbnailUrl ??
-    (youtubeId ? `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg` : null);
+    thumbnailUrl ?? (youtubeId ? `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg` : null);
 
-  if (!src) return <div aria-hidden="true" className="aspect-video bg-brand-wash" />;
+  if (!src) return <div aria-hidden="true" className="card-media" />;
 
   return (
-    <Image
-      src={src}
-      alt={title}
-      width={480}
-      height={270}
-      className="aspect-video w-full object-cover"
-    />
+    <div className="card-media">
+      <Image src={src} alt={title} fill style={{ objectFit: "cover" }} />
+    </div>
   );
 }

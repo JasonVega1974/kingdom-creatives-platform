@@ -6,7 +6,7 @@
  * Ported mechanically from prototypes/cft-site-orange.html, which is the
  * design spec. Selectors are scoped under `.kc-site` (the wrapper in
  * app/(public)/layout.tsx) so nothing here can reach the portal, and every
- * `var(--foo)` was rewritten to `var(--kc-foo)` so these rules read the same
+ * every unprefixed token was rewritten to its --kc- equivalent so these rules read the same
  * per-church theme tokens as everything else - change a church's brand colour
  * and this follows it.
  *
@@ -66,10 +66,13 @@
 
 .kc-site .btn-sm {padding:9px 18px;font-size:14px}
 
+.kc-site .mobile-nav .mgroup {font-family:var(--kc-font-utility);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--kc-ink-soft);padding:16px 4px 4px}
+
+.kc-site .page-hero {padding:64px 0 44px}
+
 .kc-site .page-hero .lede {margin-top:14px}
 
-.kc-site /* ============================================================ HOME ============================================================ */
-.hero {padding:0 0 30px}
+.kc-site .hero {padding:0 0 30px}
 
 .kc-site .hero-banner {width:100vw;margin-left:calc(50% - 50vw);position:relative;background:#EC5D1B}
 
@@ -149,8 +152,7 @@
 
 .kc-site .archive-link:hover {text-decoration:underline}
 
-.kc-site /* ============================================================ SHARED CARDS / GRIDS ============================================================ */
-.cardgrid {display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.kc-site .cardgrid {display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 
 .kc-site .cardgrid.two {grid-template-columns:repeat(2,1fr)}
 
@@ -158,16 +160,31 @@
 
 .kc-site .card:hover {transform:translateY(-3px);box-shadow:var(--kc-shadow)}
 
+.kc-site .card-media {aspect-ratio:16/9;background:var(--kc-brand-deep);position:relative}
+
+.kc-site .card-media svg {width:100%;height:100%}
+
+.kc-site .card-body {padding:20px 22px 22px;display:flex;flex-direction:column;gap:8px;flex:1}
+
+.kc-site .card-body h3 {font-size:20px}
+
+.kc-site .card-body p {font-size:15px;color:var(--kc-ink-soft)}
+
 .kc-site .card-kicker {font-family:var(--kc-font-utility);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--kc-brand)}
 
 .kc-site .card-foot {margin-top:auto;padding-top:12px;display:flex;justify-content:space-between;align-items:center;font-family:var(--kc-font-utility);font-size:12.5px;color:var(--kc-ink-soft)}
+
+.kc-site .chiprow {display:flex;gap:10px;flex-wrap:wrap;margin:26px 0 34px}
+
+.kc-site .chip {font-family:var(--kc-font-utility);font-size:12.5px;letter-spacing:.06em;border:1.5px solid var(--kc-line);background:var(--kc-surface);color:var(--kc-ink-soft);border-radius:999px;padding:9px 18px;cursor:pointer;transition:all .15s}
+
+.kc-site .chip:hover {border-color:var(--kc-brand);color:var(--kc-brand)}
 
 .kc-site .chip.sel {background:var(--kc-brand);border-color:var(--kc-brand);color:#FDFBF5}
 
 .kc-site .tag {font-family:var(--kc-font-utility);font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:var(--kc-paper-dim);border:1px solid var(--kc-line);border-radius:999px;padding:6px 13px;color:var(--kc-brand);white-space:nowrap}
 
-.kc-site /* ============================================================ EVENTS ============================================================ */
-.event-list {display:grid;gap:14px}
+.kc-site .event-list {display:grid;gap:14px}
 
 .kc-site .event {display:grid;grid-template-columns:110px 1fr auto;gap:26px;align-items:center;background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:var(--kc-radius);padding:22px 26px;transition:transform .18s ease,box-shadow .18s ease}
 
@@ -183,10 +200,111 @@
 
 .kc-site .event .where {font-family:var(--kc-font-utility);font-size:13px;color:var(--kc-ink-soft)}
 
+.kc-site .split {display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:start}
+
+.kc-site .expect {display:grid;gap:14px;margin-top:8px}
+
+.kc-site .expect-item {display:grid;grid-template-columns:52px 1fr;gap:18px;background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:var(--kc-radius);padding:20px 22px}
+
+.kc-site .expect-item .ico {width:52px;height:52px;border-radius:12px;background:var(--kc-paper-dim);display:grid;place-items:center;font-size:22px}
+
+.kc-site .expect-item h3 {font-size:18px;margin-bottom:3px}
+
+.kc-site .expect-item p {font-size:15px;color:var(--kc-ink-soft)}
+
+.kc-site .formcard {background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:16px;padding:30px;box-shadow:var(--kc-shadow);position:sticky;top:94px}
+
+.kc-site .formcard h3 {font-size:22px;margin-bottom:6px}
+
+.kc-site .formcard .sub {font-size:14.5px;color:var(--kc-ink-soft);margin-bottom:22px}
+
+.kc-site .field {margin-bottom:16px}
+
+.kc-site .field label {display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+
+.kc-site .field input, .kc-site .field select, .kc-site .field textarea {width:100%;font-family:var(--kc-font-body);font-size:15.5px;border:1.5px solid var(--kc-line);border-radius:10px;padding:12px 14px;background:var(--kc-paper);color:var(--kc-ink)}
+
+.kc-site .field input:focus, .kc-site .field select:focus, .kc-site .field textarea:focus {outline:3px solid var(--kc-accent);outline-offset:1px;border-color:var(--kc-brand)}
+
+.kc-site .field .hint {font-size:12.5px;color:var(--kc-ink-soft);margin-top:5px}
+
+.kc-site .faq {margin-top:56px}
+
+.kc-site .faq details {border:1px solid var(--kc-line);border-radius:var(--kc-radius);background:var(--kc-surface);padding:0 22px;margin-bottom:12px}
+
+.kc-site .faq summary {font-weight:600;font-size:16.5px;padding:18px 0;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+
+.kc-site .faq summary::after {content:"+";font-family:var(--kc-font-utility);font-size:20px;color:var(--kc-brand)}
+
+.kc-site .faq details[open] summary::after {content:"–"}
+
+.kc-site .faq details p {padding:0 0 18px;color:var(--kc-ink-soft);font-size:15.5px}
+
+.kc-site .team-grid {display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+
+.kc-site .person {background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:var(--kc-radius);overflow:hidden;transition:transform .18s ease,box-shadow .18s ease}
+
+.kc-site .person:hover {transform:translateY(-3px);box-shadow:var(--kc-shadow)}
+
+.kc-site .person-photo {aspect-ratio:1/1;background:linear-gradient(160deg,var(--kc-brand),var(--kc-brand-deep));display:grid;place-items:center;position:relative}
+
+.kc-site .person-photo .initials {font-family:var(--kc-font-display);font-size:56px;color:#2B1005;font-weight:500}
+
+.kc-site .person-photo .cbtag {position:absolute;bottom:12px;left:12px;font-family:var(--kc-font-utility);font-size:10.5px;letter-spacing:.1em;background:rgba(36,16,4,.8);color:#F7EBE1;border:1px solid rgba(255,255,255,.2);padding:5px 9px;border-radius:5px}
+
+.kc-site .person-body {padding:20px 22px}
+
+.kc-site .person-body h3 {font-size:20px}
+
+.kc-site .person-body .role {font-family:var(--kc-font-utility);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--kc-brand);margin:4px 0 10px}
+
+.kc-site .person-body p {font-size:14.5px;color:var(--kc-ink-soft)}
+
+.kc-site .group-card .sched {display:flex;gap:14px;font-family:var(--kc-font-utility);font-size:12.5px;color:var(--kc-ink-soft);flex-wrap:wrap}
+
+.kc-site .group-media {aspect-ratio:16/8;display:grid;place-items:center;position:relative}
+
+.kc-site .group-media .big {font-size:44px}
+
+.kc-site .bible-shell {display:grid;grid-template-columns:1fr 320px;gap:40px;align-items:start}
+
+.kc-site .reader {background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:16px;padding:40px 46px;box-shadow:0 1px 3px rgba(60,24,8,.06)}
+
+.kc-site .reader-controls {display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap}
+
+.kc-site .reader-controls select {font-family:var(--kc-font-utility);font-size:14px;border:1.5px solid var(--kc-line);border-radius:10px;padding:10px 14px;background:var(--kc-paper);color:var(--kc-ink);cursor:pointer}
+
+.kc-site .reader h3 {font-family:var(--kc-font-display);font-size:30px;margin-bottom:6px}
+
+.kc-site .reader .trans {font-family:var(--kc-font-utility);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--kc-ink-soft);margin-bottom:24px}
+
+.kc-site .vtext {font-family:var(--kc-font-display);font-size:19.5px;line-height:1.75;color:var(--kc-ink)}
+
+.kc-site .vtext sup {font-family:var(--kc-font-utility);font-size:11px;color:var(--kc-brand);margin-right:6px;font-weight:500}
+
+.kc-site .vtext p {margin-bottom:14px}
+
+.kc-site .side-card {background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:var(--kc-radius);padding:24px;margin-bottom:18px}
+
+.kc-site .side-card h4 {font-size:17px;margin-bottom:8px}
+
+.kc-site .side-card p {font-size:14.5px;color:var(--kc-ink-soft)}
+
+.kc-site .ylcc {background:linear-gradient(160deg,var(--kc-brand),var(--kc-brand-deep));color:#F7EBE1;border:0}
+
+.kc-site .ylcc h4 {color:#F4F1E7}
+
+.kc-site .ylcc p {color:#E6CDBB}
+
 .kc-site .ylcc .btn {margin-top:14px}
 
-.kc-site /* ============================================================ GIVE ============================================================ */
-.give-band {background:var(--kc-brand);color:#F4F1E7;border-radius:20px;padding:56px;position:relative;overflow:hidden}
+.kc-site .devo-featured {background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:16px;padding:40px 46px;margin-bottom:36px;box-shadow:0 1px 3px rgba(60,24,8,.06)}
+
+.kc-site .devo-featured .vtext {font-size:18px}
+
+.kc-site .devo-meta {font-family:var(--kc-font-utility);font-size:12.5px;color:var(--kc-ink-soft);display:flex;gap:16px;margin:8px 0 20px;flex-wrap:wrap}
+
+.kc-site .give-band {background:var(--kc-brand);color:#F4F1E7;border-radius:20px;padding:56px;position:relative;overflow:hidden}
 
 .kc-site .give-band::before {content:"";position:absolute;right:-6%;top:-30%;width:44%;height:160%;border-left:2px dashed rgba(255,255,255,.14);border-radius:50%;transform:rotate(14deg);pointer-events:none}
 
@@ -218,6 +336,36 @@
 
 .kc-site .give-note {font-size:12.5px;color:var(--kc-ink-soft);margin-top:14px;line-height:1.5}
 
+.kc-site .other-ways {display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:44px}
+
+.kc-site .timeline {position:relative;margin:44px 0;padding-left:34px}
+
+.kc-site .timeline::before {content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:repeating-linear-gradient(180deg,var(--kc-accent) 0 9px,transparent 9px 17px)}
+
+.kc-site .tstop {position:relative;margin-bottom:34px}
+
+.kc-site .tstop::before {content:"";position:absolute;left:-32px;top:6px;width:14px;height:14px;border-radius:50%;background:var(--kc-paper);border:3px solid var(--kc-brand)}
+
+.kc-site .tstop .yr {font-family:var(--kc-font-utility);font-size:12px;letter-spacing:.14em;color:var(--kc-brand);text-transform:uppercase}
+
+.kc-site .tstop h3 {font-size:20px;margin:4px 0 6px}
+
+.kc-site .tstop p {font-size:15.5px;color:var(--kc-ink-soft);max-width:60ch}
+
+.kc-site .beliefs {display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+
+.kc-site .belief {background:var(--kc-surface);border:1px solid var(--kc-line);border-radius:var(--kc-radius);padding:22px 24px}
+
+.kc-site .belief h3 {font-size:17.5px;margin-bottom:6px;color:var(--kc-brand)}
+
+.kc-site .belief p {font-size:14.5px;color:var(--kc-ink-soft)}
+
+.kc-site .map-zone {border-radius:var(--kc-radius);overflow:hidden;border:1px solid rgba(255,255,255,.14);aspect-ratio:16/10;position:relative;background:#2A1207}
+
+.kc-site .map-zone svg {position:absolute;inset:0;width:100%;height:100%}
+
+.kc-site .map-pin-label {position:absolute;left:12px;bottom:12px;font-family:var(--kc-font-utility);font-size:11.5px;letter-spacing:.06em;background:rgba(36,16,4,.85);border:1px solid rgba(255,255,255,.16);padding:7px 11px;border-radius:6px;color:#F7EBE1}
+
 .kc-site .give-band .eyebrow {color:#3B1505}
 
 .kc-site .give-band .eyebrow::before {background:repeating-linear-gradient(90deg,#3B1505 0 8px,transparent 8px 14px)}
@@ -226,6 +374,22 @@
 
 .kc-site .give-band h2 {color:#FFF8F0}
 
+.kc-site .toast .tick {color:var(--kc-brand-soft)}
+
+.kc-site .zones-toggle {position:fixed;right:22px;bottom:22px;z-index:150;font-family:var(--kc-font-utility);font-size:12.5px;letter-spacing:.05em;background:var(--kc-brand-night);color:#F7EBE1;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:11px 18px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.3);display:flex;gap:8px;align-items:center}
+
+.kc-site .zones-toggle:hover {background:var(--kc-brand-deep)}
+
+.kc-site .zones-toggle .dot {width:8px;height:8px;border-radius:50%;background:#A97350}
+
+.kc-site body.show-zones .zones-toggle .dot {background:var(--kc-brand-soft)}
+
+@media (max-width:1000px) {
+  .kc-site .hero-grid, .kc-site .about-grid, .kc-site .sermon-grid, .kc-site .giving-grid, .kc-site .split, .kc-site .bible-shell {grid-template-columns:1fr;gap:44px}
+  .kc-site .cardgrid, .kc-site .team-grid {grid-template-columns:1fr 1fr}
+  .kc-site .formcard {position:static}
+}
+
 @media (max-width:640px) {
   .kc-site .cardgrid, .kc-site .cardgrid.two, .kc-site .team-grid, .kc-site .beliefs, .kc-site .other-ways {grid-template-columns:1fr}
   .kc-site .event {grid-template-columns:84px 1fr;gap:18px}
@@ -233,4 +397,6 @@
   .kc-site .amounts {grid-template-columns:repeat(2,1fr)}
   .kc-site .mile-stats {grid-template-columns:1fr 1fr}
   .kc-site .give-band {padding:36px 24px}
+  .kc-site .reader {padding:28px 22px}
+  .kc-site .devo-featured {padding:28px 22px}
 }

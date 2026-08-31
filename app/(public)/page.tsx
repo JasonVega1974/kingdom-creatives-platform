@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { SectionRenderer } from "@/components/site/section-renderer";
+import { PageSections } from "@/components/site/page-sections";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
@@ -54,9 +54,7 @@ export default async function HomePage() {
       <SiteHeader church={site.church} theme={site.theme} />
 
       <main>
-        {sections.map((section) => (
-          <SectionRenderer key={section.id} section={section} context={context} />
-        ))}
+        <PageSections pageSlug={"home"} sections={sections} context={context} />
       </main>
 
       <SiteFooter church={site.church} />
