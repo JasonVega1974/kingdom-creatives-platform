@@ -60,7 +60,7 @@ export default async function GroupsPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
+      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
         Groups &amp; Studies
       </h1>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">

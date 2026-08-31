@@ -42,8 +42,10 @@ export const DEFAULT_THEME = {
   color_primary: "#1F4D3A", // pine green
   color_secondary: "#C9A227", // muted brass
   color_accent: "#FDFBF5", // near-white, for text on brand fills
-  font_heading: "Fraunces",
-  font_body: "Source Sans 3",
+  // Retained so an upsert that carries these across has something sane to
+  // write. Not read for rendering any more - see PLATFORM_FONT.
+  font_heading: "Plus Jakarta Sans",
+  font_body: "Plus Jakarta Sans",
 } satisfies Pick<
   ChurchTheme,
   "color_primary" | "color_secondary" | "color_accent" | "font_heading" | "font_body"
@@ -60,25 +62,28 @@ export const DEFAULT_THEME = {
  * fetched at request time.
  */
 export const FONT_STACKS: Record<string, { var: string; role: "display" | "body" | "both" }> = {
-  fraunces: { var: "--font-fraunces", role: "display" },
-  lora: { var: "--font-lora", role: "display" },
-  "source sans 3": { var: "--font-source-sans", role: "body" },
-  "source sans pro": { var: "--font-source-sans", role: "body" },
-  inter: { var: "--font-inter", role: "both" },
+  "plus jakarta sans": { var: "--font-jakarta", role: "both" },
   "ibm plex mono": { var: "--font-plex-mono", role: "body" },
 };
 
-const DISPLAY_FALLBACK = "Georgia, 'Times New Roman', serif";
-const BODY_FALLBACK = "system-ui, -apple-system, 'Segoe UI', sans-serif";
-
-function normalizeFontKey(name: string | null | undefined): string {
-  return (name ?? "").trim().toLowerCase();
-}
-
-function fontStack(name: string | null | undefined, fallbackName: string, fallbackStack: string): string {
-  const entry = FONT_STACKS[normalizeFontKey(name)] ?? FONT_STACKS[normalizeFontKey(fallbackName)];
-  return entry ? `var(${entry.var}), ${fallbackStack}` : fallbackStack;
-}
+/**
+ * The platform typeface. One face for headings and body, everywhere.
+ *
+ * DECIDED 2026-08-31: Plus Jakarta Sans replaces the Fraunces / Source Sans 3
+ * pairing across the public site and the portal.
+ *
+ * THIS IGNORES church_theme.font_heading AND font_body. Those columns still
+ * exist and still hold "Fraunces" / "Source Sans 3" for CFT; nothing reads them
+ * for the display or body role any more. That is a deliberate consequence of
+ * "one font, platform-wide" - per-church typography and a single platform
+ * typeface cannot both be true. See FF-44 before reviving them.
+ *
+ * The columns are NOT dropped: that is a schema change, and there is no cost to
+ * leaving them. saveBranding still carries them across on upsert, so a future
+ * decision to restore per-church fonts would find the values intact.
+ */
+const PLATFORM_FONT =
+  "var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
 
 /** #abc / #aabbcc / aabbcc -> #aabbcc. Returns null for anything unparseable. */
 function normalizeHex(value: string | null | undefined): string | null {
@@ -128,8 +133,11 @@ export function buildThemeTokens(theme: ChurchTheme | null): ThemeTokens {
     "--kc-line": "#E3D5C6",
 
     // ---- typography ----
-    "--kc-font-display": fontStack(theme?.font_heading, DEFAULT_THEME.font_heading, DISPLAY_FALLBACK),
-    "--kc-font-body": fontStack(theme?.font_body, DEFAULT_THEME.font_body, BODY_FALLBACK),
+    // Both roles are the same face now - see PLATFORM_FONT. The two tokens
+    // remain distinct so existing rules keep working and a future split does
+    // not have to touch every stylesheet.
+    "--kc-font-display": PLATFORM_FONT,
+    "--kc-font-body": PLATFORM_FONT,
     "--kc-font-utility": "var(--font-plex-mono), ui-monospace, monospace",
 
     // ---- shape ----

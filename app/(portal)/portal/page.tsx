@@ -41,7 +41,7 @@ export default async function PortalHomePage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
+      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
         Welcome back
       </h1>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
@@ -57,7 +57,7 @@ export default async function PortalHomePage() {
       </div>
 
       <section className="mt-7 rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-5">
-        <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-semibold">
+        <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
           When you meet
         </h2>
 
@@ -105,7 +105,7 @@ export default async function PortalHomePage() {
 function Stat({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-4">
-      <p className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
+      <p className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
         {value ?? "-"}
       </p>
       <p className="mt-0.5 text-sm text-[var(--kc-ink-soft)]">{label}</p>

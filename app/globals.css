@@ -156,8 +156,11 @@
   --kc-ink: #22271f;
   --kc-ink-soft: #6b5d51;
   --kc-line: #e3d5c6;
-  --kc-font-display: var(--font-fraunces), Georgia, serif;
-  --kc-font-body: var(--font-source-sans), system-ui, sans-serif;
+  /* One platform typeface - see PLATFORM_FONT in lib/theme.ts. These are
+     the pre-hydration fallbacks; buildThemeTokens() sets the same values
+     per request, so a page never flashes a different face. */
+  --kc-font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --kc-font-body: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --kc-font-utility: var(--font-plex-mono), ui-monospace, monospace;
   --kc-radius: 10px;
   --kc-shadow:
@@ -200,9 +203,22 @@
 
 .kc-site :is(h1, h2, h3, h4) {
   font-family: var(--kc-font-display);
-  font-weight: 500;
-  line-height: 1.12;
-  letter-spacing: -0.01em;
+  /*
+   * 700, not the 500 this carried under Fraunces.
+   *
+   * A display serif reads as a heading at 500 because its contrast and shapes
+   * do the work. A grotesque does not: Plus Jakarta Sans at 500 sits at almost
+   * the same visual weight as body text, and the hierarchy collapses to size
+   * alone. 700 restores the step.
+   */
+  font-weight: 700;
+  /*
+   * 1.2, not 1.12. Plus Jakarta Sans has a taller x-height and wider forms than
+   * Fraunces at the same size, so the old leading crowds descenders against the
+   * next line - most visibly on the two-line clamp headings.
+   */
+  line-height: 1.2;
+  letter-spacing: -0.015em;
   text-wrap: balance;
 }
 

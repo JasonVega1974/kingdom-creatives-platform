@@ -41,7 +41,7 @@ export default async function PortalPlaceholderPage({
 
   return (
     <div className="max-w-2xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
+      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
         {item.label}
       </h1>
       <p className="mt-2 text-[var(--kc-ink-soft)]">{item.blurb}</p>

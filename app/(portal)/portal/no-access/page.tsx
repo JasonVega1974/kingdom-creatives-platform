@@ -19,7 +19,7 @@ export default async function NoAccessPage() {
   return (
     <div className="flex min-h-full items-center justify-center px-5 py-16">
       <div className="w-full max-w-md">
-        <h1 className="font-[family-name:var(--kc-font-display)] text-2xl font-semibold">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-2xl font-bold">
           You are signed in, but not for {name}
         </h1>
         <p className="mt-3 text-[var(--kc-ink-soft)]">

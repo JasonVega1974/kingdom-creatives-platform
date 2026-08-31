@@ -64,7 +64,7 @@ export function EventsCalendar({
         <MonthLink month={monthIndex - 1} year={year}>
           Previous
         </MonthLink>
-        <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-semibold">
+        <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
           {month.toLocaleDateString("en-US", {
             timeZone: "UTC",
             month: "long",

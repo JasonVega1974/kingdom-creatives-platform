@@ -70,7 +70,7 @@ const KINDS = [
 export function LinksPanel({ links }: { links: LinkRow[] }) {
   return (
     <section className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-5">
-      <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-semibold">
+      <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
         Links
       </h2>
       <p className="mt-1 mb-5 text-sm text-[var(--kc-ink-soft)]">

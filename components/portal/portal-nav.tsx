@@ -39,7 +39,7 @@ export function PortalNav({ churchName }: { churchName: string }) {
         )}
       >
         <div className="mb-6 px-3">
-          <p className="font-[family-name:var(--kc-font-display)] text-lg leading-tight font-semibold">
+          <p className="font-[family-name:var(--kc-font-display)] text-lg leading-tight font-bold">
             {churchName}
           </p>
           <p className="text-xs tracking-wide text-[var(--kc-ink-soft)] uppercase">

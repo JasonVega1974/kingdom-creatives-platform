@@ -62,7 +62,7 @@ export default async function DetailsPage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
+      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
         Church Details
       </h1>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
@@ -92,7 +92,7 @@ export default async function DetailsPage() {
 
         <LinksPanel links={links} />
         <section className="rounded-[var(--kc-radius)] border border-dashed border-[var(--kc-line)] p-5">
-          <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-semibold">
+          <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
             Social, video and giving links
           </h2>
           <p className="mt-1 text-sm text-[var(--kc-ink-soft)]">

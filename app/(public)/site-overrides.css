@@ -1,0 +1,77 @@
+/*
+ * ============================================================
+ * PUBLIC SITE - hand-written overrides
+ * ============================================================
+ *
+ * site.css is GENERATED from prototypes/cft-site-orange.html and must not be
+ * hand-edited - re-porting would silently discard the edit. Anything we decide
+ * ourselves lives here instead, and is imported after it so it wins.
+ *
+ * Two things belong in this file and nothing else does:
+ *   1. behaviour the prototype implemented in JavaScript that we do without
+ *   2. corrections the prototype could not know about, such as a font swap
+ */
+
+/* ------------------------------------------------------------
+ * 1. The mobile menu.
+ *
+ * The prototype opens it with a JavaScript class toggle (.mobile-nav.open).
+ * Ours is a <details>, so it needs no script and works with JavaScript off -
+ * these three rules are what make that work.
+ * ------------------------------------------------------------ */
+.kc-site details.mobile-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.kc-site details.mobile-menu > summary::-webkit-details-marker {
+  display: none;
+}
+.kc-site details.mobile-menu[open] .mobile-nav {
+  display: block;
+}
+
+/* ------------------------------------------------------------
+ * 2. Plus Jakarta Sans corrections (2026-08-31).
+ *
+ * The ported weights were tuned for Fraunces, a display serif whose contrast
+ * and letterforms carry a heading at 500-600. A grotesque does not: at the same
+ * weight these read as body text and the hierarchy flattens to size alone.
+ *
+ * Only the LARGE DISPLAY NUMERALS are corrected. Buttons, nav links, form
+ * labels and FAQ summaries stay at 600, which is correct for PJS and needs no
+ * change.
+ * ------------------------------------------------------------ */
+.kc-site .mile b {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.kc-site .mm-plate .day {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.kc-site .person-photo .initials {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/*
+ * The prototype set .logo-mark in 'Archivo Black' - a face this platform never
+ * loaded, so it has silently fallen through to the body font all along. Now it
+ * says what it means: the platform font at its heaviest.
+ */
+.kc-site .logo-mark {
+  font-family: var(--kc-font-display);
+  font-weight: 800;
+}
+
+/*
+ * PJS runs wider with a taller x-height than Fraunces at the same size, so a
+ * few measures set for the serif now crowd. These loosen the two where it shows
+ * most: long-form Bible text and the prose lede.
+ */
+.kc-site .vtext {
+  line-height: 1.8;
+}
+.kc-site .lede {
+  line-height: 1.55;
+}

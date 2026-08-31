@@ -1,41 +1,30 @@
 import type { Metadata } from "next";
-import { Fraunces, IBM_Plex_Mono, Inter, Lora, Source_Sans_3 } from "next/font/google";
+import { IBM_Plex_Mono, Plus_Jakarta_Sans } from "next/font/google";
 
 import "./globals.css";
 
 /**
- * Fonts the platform can serve, self-hosted by next/font.
+ * Fonts the platform serves, self-hosted by next/font.
  *
- * next/font is build-time, so a church_theme font name cannot be fetched at
- * request time - a church picks from this set and lib/theme.ts maps the stored
- * name to the matching variable (FONT_STACKS). Adding a font means editing both
- * places. Only the two platform defaults preload; the alternates are declared
- * but not preloaded, so a church that does not use them costs nothing.
+ * ONE TYPEFACE, PLATFORM-WIDE: Plus Jakarta Sans for both headings and body,
+ * across the public site and the portal. It replaced a Fraunces/Source Sans 3
+ * pairing on 2026-08-31.
+ *
+ * PLUS JAKARTA SANS IS A VARIABLE FONT, so `weight` is deliberately omitted
+ * rather than listing 400-800. Omitting it ships the whole 200-800 axis in one
+ * file - a superset of the five weights we need, and smaller than five static
+ * cuts would be. Any font-weight between 200 and 800 now renders exactly,
+ * including the 700 headings and 500/600 UI text.
+ *
+ * IBM Plex Mono stays. It is the utility face - eyebrows, the hero logbook,
+ * mile markers, the sermon meta line - and those rely on monospace figures to
+ * line up in columns. Replacing it with a proportional font would break that
+ * alignment, and it is not a serif, so it is not what this change was about.
  */
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
   display: "swap",
-});
-
-const sourceSans = Source_Sans_3({
-  variable: "--font-source-sans",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const lora = Lora({
-  variable: "--font-lora",
-  subsets: ["latin"],
-  display: "swap",
-  preload: false,
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-  preload: false,
 });
 
 const plexMono = IBM_Plex_Mono({
@@ -59,7 +48,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${sourceSans.variable} ${lora.variable} ${inter.variable} ${plexMono.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>

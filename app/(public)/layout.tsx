@@ -1,4 +1,6 @@
 import "./site.css";
+// Imported after site.css so our own decisions win over the generated port.
+import "./site-overrides.css";
 
 import type { CSSProperties, ReactNode } from "react";
 import type { Metadata } from "next";

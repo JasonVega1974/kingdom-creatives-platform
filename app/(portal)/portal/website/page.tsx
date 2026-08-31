@@ -103,7 +103,7 @@ export default async function WebsitePage({
 function Shell({ pageSlug, children }: { pageSlug: string; children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-semibold">
+      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
         Edit My Website
       </h1>
       <p className="mt-2 text-[var(--kc-ink-soft)]">

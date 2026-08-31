@@ -21,7 +21,8 @@
  * `--accent-soft` is the one token with no `--kc-` equivalent; it maps to
  * `--kc-brand-soft`, which fills the same role.
  *
- * DO NOT hand-edit to change the design. Change the prototype, re-port.
+ * DO NOT hand-edit. Re-porting discards edits - put anything hand-written
+ * in app/(public)/site-overrides.css, which is imported after this file.
  */
 
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
