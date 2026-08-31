@@ -98,6 +98,7 @@ export default async function PublicPage({
   const filter = rawFilter === "all" ? null : rawFilter;
 
   const context = {
+    church: site.church,
     giving: givingLink(links),
     collections,
     filter,

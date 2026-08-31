@@ -41,6 +41,7 @@ export default async function HomePage() {
 
   // Home has no filterable list and no Bible reader.
   const context = {
+    church: site.church,
     giving: givingLink(links),
     collections,
     filter: null,

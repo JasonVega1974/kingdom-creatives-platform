@@ -1,3 +1,5 @@
+import "./site.css";
+
 import type { CSSProperties, ReactNode } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";

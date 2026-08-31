@@ -4,9 +4,10 @@ import {
   EventList,
   GroupList,
   MinistryList,
-  SermonList,
   VideoGrid,
 } from "@/components/site/collections";
+import type { Church } from "@/lib/church";
+import { parseServiceTimes } from "@/lib/church";
 import type { Collections } from "@/lib/collections";
 import { PrayerForm, VisitForm } from "@/components/site/public-forms";
 import {
@@ -48,6 +49,8 @@ import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/secti
  */
 
 export type SectionContext = {
+  /** The tenant. The hero's logbook renders churches.service_times. */
+  church: Church;
   /** Resolved once per page and passed down; see givingLink(). */
   giving: ChurchLink | null;
   /** Only the collections this page asked for are populated. */
@@ -74,7 +77,7 @@ export function SectionRenderer({
 }) {
   switch (section.section_key) {
     case "hero":
-      return <Hero section={section} large />;
+      return <HomeHero section={section} context={context} />;
     case "page_hero":
       return <Hero section={section} large={false} />;
 
@@ -170,6 +173,100 @@ function Heading({ children }: { children: string }) {
 // Sections
 // ---------------------------------------------------------------
 
+/**
+ * The home hero, as the prototype draws it.
+ *
+ * Three parts: a full-bleed banner, the welcome copy with its buttons, and the
+ * "driver's log" - the church's service times as a timetable panel beside the
+ * copy.
+ *
+ * THE LOGBOOK READS churches.service_times, not the section content. The seed
+ * supplies only its heading and timezone (`logbook_title`, `logbook_tz`); the
+ * rows are the same service times the pastor edits in Church Details, so the
+ * hero cannot drift from the rest of the site. Nothing rendered these before -
+ * they were seeded and ignored.
+ *
+ * The visible heading is the banner image, so the H1 is screen-reader only.
+ * That is the prototype's own structure: a page still needs exactly one H1 and
+ * it should say what the banner says.
+ */
+function HomeHero({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const { eyebrow, headline, lede, logbook_title, logbook_tz, image_desktop } =
+    sectionContent(section.content);
+  const ctas = rows(section.content, "ctas");
+  const services = parseServiceTimes(context.church.service_times);
+
+  const heading = [headline, context.church.tagline, context.church.address]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <div className="hero">
+      <div className="wrap">
+        <h1 className="sr-only">{heading || headline || context.church.slug}</h1>
+
+        {image_desktop ? (
+          <div className="hero-banner">
+            {/* Unoptimized: the banner is a full-bleed art-directed image and
+                next/image would need its intrinsic size, which the section
+                content does not carry. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={image_desktop} alt={headline ?? ""} />
+          </div>
+        ) : null}
+
+        <div className="hero-under">
+          <div>
+            {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+            {lede ? <p className="lede">{lede}</p> : null}
+            {ctas.length > 0 ? (
+              <div className="hero-ctas">
+                {ctas.map((cta, index) =>
+                  cta.label && cta.href ? (
+                    <Link
+                      key={index}
+                      href={cta.href}
+                      className={cta.style === "ghost" ? "btn btn-ghost" : "btn btn-gold"}
+                    >
+                      {cta.label}
+                    </Link>
+                  ) : null,
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          {services.length > 0 ? (
+            <div className="logbook" role="table" aria-label="Service times">
+              <div className="logbook-head">
+                <span>{logbook_title ?? "Service times"}</span>
+                <span>{logbook_tz ?? services[0]?.tz ?? ""}</span>
+              </div>
+              {services.map((slot, index) => (
+                <div key={index} className="logbook-row">
+                  <span className="k">{[slot.day, slot.time].filter(Boolean).join(" ")}</span>
+                  <span className="v">
+                    {slot.streaming ? (
+                      <span className="live-dot" aria-hidden="true" />
+                    ) : null}
+                    {slot.label ?? ""}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Hero({ section, large }: { section: SectionRow; large: boolean }) {
   const { eyebrow, headline, lede } = sectionContent(section.content);
   const ctas = rows(section.content, "ctas");
@@ -203,61 +300,69 @@ function Hero({ section, large }: { section: SectionRow; large: boolean }) {
 
 function AboutStrip({ section }: { section: SectionRow }) {
   const { eyebrow, heading, lead_in, verse, verse_cite } = sectionContent(section.content);
-  // `body` is a list of paragraphs here, not a single string.
   const paragraphs = strings(section.content, "body");
   const cta = obj(section.content, "cta");
 
   return (
-    <Band>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      {heading ? <Heading>{heading}</Heading> : null}
+    <div className="about-strip">
+      <div className="wrap">
+        {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+        {heading ? <h2>{heading}</h2> : null}
 
-      {lead_in ? <p className="mt-4 max-w-[62ch] text-lg text-ink">{lead_in}</p> : null}
+        {lead_in ? (
+          <p>
+            <strong>{lead_in}</strong>
+          </p>
+        ) : null}
+        {paragraphs.map((paragraph, index) => (
+          <p key={index}>{paragraph}</p>
+        ))}
 
-      {paragraphs.map((paragraph, index) => (
-        <p key={index} className="mt-4 max-w-[62ch] text-ink-soft">
-          {paragraph}
-        </p>
-      ))}
+        {verse ? (
+          <blockquote className="verse">
+            {verse}
+            {verse_cite ? <cite>{verse_cite}</cite> : null}
+          </blockquote>
+        ) : null}
 
-      {verse ? (
-        <blockquote className="mt-8 max-w-[62ch] border-l-2 border-brand pl-5">
-          <p className="text-lg text-ink italic">{verse}</p>
-          {verse_cite ? (
-            <cite className="mt-2 block font-utility text-xs uppercase not-italic tracking-[0.14em] text-ink-soft">
-              {verse_cite}
-            </cite>
-          ) : null}
-        </blockquote>
-      ) : null}
-
-      {cta.href && cta.label ? <CtaButtons ctas={[cta]} /> : null}
-    </Band>
+        {cta.href && cta.label ? (
+          <Link href={cta.href} className="btn btn-ghost">
+            {cta.label}
+          </Link>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
+/**
+ * The mile-marker stat tiles.
+ *
+ * `marker` becomes the data-mm attribute the CSS prints in the corner - the
+ * prototype styles it through ::before with attr(), so the value has to be an
+ * attribute rather than a child element.
+ *
+ * The prototype puts these beside the About copy in a two-column grid. They are
+ * separate rows in church_sections with their own sort order and visibility, so
+ * they render as their own band here and stack instead. Pairing them would mean
+ * one renderer consuming the next section, which is more coupling than the
+ * layout is worth.
+ */
 function MileStats({ section }: { section: SectionRow }) {
   const items = rows(section.content, "items");
   if (items.length === 0) return null;
 
   return (
-    <Band tint>
-      <dl className="grid grid-cols-2 gap-6 md:grid-cols-4">
+    <div className="wrap" style={{ paddingBottom: "76px" }}>
+      <div className="mile-stats">
         {items.map((item, index) => (
-          <div key={index}>
-            {item.marker ? (
-              <p className="font-utility text-[11px] uppercase tracking-[0.16em] text-brand">
-                {item.marker}
-              </p>
-            ) : null}
-            <dd className="mt-1 text-[clamp(28px,3.6vw,40px)] leading-none text-ink">
-              {item.value}
-            </dd>
-            <dt className="mt-2 text-sm text-ink-soft">{item.label}</dt>
+          <div key={index} className="mile" data-mm={item.marker ?? ""}>
+            <b>{item.value}</b>
+            <span>{item.label}</span>
           </div>
         ))}
-      </dl>
-    </Band>
+      </div>
+    </div>
   );
 }
 
@@ -266,41 +371,43 @@ function GetConnected({ section }: { section: SectionRow }) {
   const cards = rows(section.content, "cards");
 
   return (
-    <Band>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      {heading ? <Heading>{heading}</Heading> : null}
-
-      {cards.length > 0 ? (
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          {cards.map((card, index) => {
-            const inner = (
-              <>
-                {card.kicker ? (
-                  <p className="font-utility text-[11px] uppercase tracking-[0.16em] text-brand">
-                    {card.kicker}
-                  </p>
-                ) : null}
-                <h3 className="mt-2 text-xl text-ink">{card.title}</h3>
-                {card.body ? <p className="mt-2 text-sm text-ink-soft">{card.body}</p> : null}
-              </>
-            );
-
-            const className =
-              "block rounded-[var(--kc-radius)] border border-line bg-surface p-5 transition-colors hover:border-brand";
-
-            return card.href ? (
-              <Link key={index} href={card.href} className={className}>
-                {inner}
-              </Link>
-            ) : (
-              <div key={index} className={className}>
-                {inner}
-              </div>
-            );
-          })}
+    <div style={{ padding: "0 0 84px" }}>
+      <div className="wrap">
+        <div style={{ marginBottom: "28px" }}>
+          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+          {heading ? <h2>{heading}</h2> : null}
         </div>
-      ) : null}
-    </Band>
+
+        {cards.length > 0 ? (
+          <div className="cardgrid">
+            {cards.map((card, index) => {
+              const inner = (
+                <>
+                  {card.kicker ? <span className="card-kicker">{card.kicker}</span> : null}
+                  <h3 style={{ margin: "10px 0 6px" }}>{card.title}</h3>
+                  {card.body ? <p>{card.body}</p> : null}
+                </>
+              );
+
+              return card.href ? (
+                <Link
+                  key={index}
+                  href={card.href}
+                  className="card"
+                  style={{ textDecoration: "none", padding: "26px 28px" }}
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <div key={index} className="card" style={{ padding: "26px 28px" }}>
+                  {inner}
+                </div>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -558,7 +665,14 @@ function FilterStrip({
   );
 }
 
-/** Home: the most recent published sermon, or the seeded empty line. */
+/**
+ * Home: this week's message, in the prototype's dark band.
+ *
+ * The prototype draws a play-button thumbnail; that is a facade for the YouTube
+ * player and belongs with the sermon work rather than here, so the card links
+ * out to the video instead. Everything else - the band, the meta line, the
+ * archive link - is the prototype's.
+ */
 function LatestSermon({
   section,
   context,
@@ -569,34 +683,67 @@ function LatestSermon({
   const { eyebrow, badge, archive_label, archive_href, empty } = sectionContent(
     section.content,
   );
-  // getSermons() already orders newest first.
   const latest = context.collections.sermons[0];
 
   return (
-    <Band>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      {badge ? (
-        <p className="mt-2 font-utility text-[11px] uppercase tracking-[0.16em] text-ink-soft">
-          {badge}
-        </p>
-      ) : null}
+    <div className="sermon-band on-dark">
+      <div className="wrap sermon-grid">
+        <div>
+          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
 
-      <div className="mt-6">
-        <SermonList
-          sermons={latest ? [latest] : []}
-          empty={empty ?? "No sermon posted yet."}
-          watchLabel="Watch this message"
-        />
+          {latest ? (
+            <>
+              <h2>{latest.title}</h2>
+              <div className="sermon-meta">
+                {[
+                  latest.series,
+                  latest.scripture_ref,
+                  latest.duration_min ? `${latest.duration_min} min` : null,
+                ]
+                  .filter(Boolean)
+                  .map((bit, index) => (
+                    <span key={index}>{bit}</span>
+                  ))}
+              </div>
+              {latest.summary ? <p className="sermon-desc">{latest.summary}</p> : null}
+            </>
+          ) : (
+            <p className="sermon-desc">{empty ?? "No sermon posted yet."}</p>
+          )}
+
+          {archive_label && archive_href ? (
+            <Link href={archive_href} className="archive-link">
+              {archive_label}
+            </Link>
+          ) : null}
+        </div>
+
+        {latest?.youtube_id ? (
+          <a
+            className="player"
+            href={`https://www.youtube.com/watch?v=${latest.youtube_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Watch ${latest.title}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              className="thumb"
+              src={`https://i.ytimg.com/vi/${latest.youtube_id}/hqdefault.jpg`}
+              alt=""
+            />
+            {badge ? <span className="badge">{badge}</span> : null}
+            <span className="play-ring">
+              <span className="disc" />
+            </span>
+          </a>
+        ) : null}
       </div>
-
-      {archive_label && archive_href ? (
-        <CtaButtons ctas={[{ label: archive_label, href: archive_href, style: "ghost" }]} />
-      ) : null}
-    </Band>
+    </div>
   );
 }
 
-/** Home: the next few events. `limit` comes from the seed, not a constant. */
+/** Home: the next few events, as mile-marker plates. */
 function EventsPreview({
   section,
   context,
@@ -614,16 +761,66 @@ function EventsPreview({
   );
 
   return (
-    <Band tint>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      {heading ? <Heading>{heading}</Heading> : null}
+    <div style={{ padding: "84px 0" }}>
+      <div className="wrap">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "end",
+            gap: "24px",
+            marginBottom: "40px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+            {heading ? <h2>{heading}</h2> : null}
+          </div>
+          {cta.href && cta.label ? (
+            <Link href={cta.href} className="btn btn-ghost">
+              {cta.label}
+            </Link>
+          ) : null}
+        </div>
 
-      <div className="mt-8">
-        <EventList events={events} empty={empty ?? "Nothing on the calendar yet."} />
+        {events.length === 0 ? (
+          <p style={{ color: "var(--kc-ink-soft)" }}>
+            {empty ?? "Nothing on the calendar yet."}
+          </p>
+        ) : (
+          <div className="event-list">
+            {events.map((event) => {
+              const when = new Date(event.starts_at);
+              const valid = !Number.isNaN(when.getTime());
+
+              return (
+                <article key={event.id} className="event">
+                  <div className="mm-plate" aria-hidden="true">
+                    <div className="mo">
+                      {valid
+                        ? when.toLocaleDateString("en-US", {
+                            timeZone: "UTC",
+                            month: "short",
+                          })
+                        : ""}
+                    </div>
+                    <div className="day">{valid ? when.getUTCDate() : ""}</div>
+                  </div>
+                  <div>
+                    <h3>{event.title}</h3>
+                    {event.location ? (
+                      <p className="where">{event.location}</p>
+                    ) : null}
+                    {event.description ? <p>{event.description}</p> : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
-
-      {cta.href && cta.label ? <CtaButtons ctas={[cta]} /> : null}
-    </Band>
+    </div>
   );
 }
 
@@ -767,13 +964,10 @@ function VisitFormSection({ section }: { section: SectionRow }) {
 /**
  * Home: the bulletin board - announcements and the prayer wall.
  *
- * The "Add a request" form is live as of draft 21 (FF-34). Before that, the
- * insert policy was `with check (true)` and anyone with the anon key could POST
- * straight to this wall with status = 'approved', publishing unmoderated - so
- * the CTA was deliberately held back until the policy could refuse it.
- *
- * Submissions arrive as 'pending' and stay invisible here until a pastor
- * approves them, which is what prayer_pending_note promises the visitor.
+ * Two cards side by side, as the prototype draws it. The prayer form is a
+ * <details> inside the second card rather than the prototype's prompt()
+ * dialogs - see FF-34 for why the CTA was held back until the insert policy
+ * could refuse a pre-approved submission.
  */
 function Bulletin({
   section,
@@ -782,79 +976,74 @@ function Bulletin({
   section: SectionRow;
   context: SectionContext;
 }) {
-  const {
-    eyebrow,
-    heading,
-    announcements_title,
-    announcements_empty,
-    prayer_title,
-    prayer_note,
-    prayer_empty,
-    prayer_pending_note,
-  } = sectionContent(section.content);
-
+  const content = sectionContent(section.content);
   const { announcements, prayer } = context.collections;
 
   return (
-    <Band>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      {heading ? <Heading>{heading}</Heading> : null}
-
-      <div className="mt-8 grid gap-8 md:grid-cols-2">
-        <div>
-          <h3 className="font-utility text-xs uppercase tracking-[0.16em] text-brand">
-            {announcements_title ?? "Announcements"}
-          </h3>
-          {announcements.length > 0 ? (
-            <ul className="mt-4 space-y-4">
-              {announcements.map((item) => (
-                <li key={item.id} className="text-ink-soft">
-                  {item.body}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-4 text-ink-soft">
-              {announcements_empty ?? "Nothing posted this week."}
-            </p>
-          )}
+    <div style={{ padding: "0 0 84px" }}>
+      <div className="wrap">
+        <div style={{ marginBottom: "40px" }}>
+          {content.eyebrow ? <span className="eyebrow">{content.eyebrow}</span> : null}
+          {content.heading ? <h2>{content.heading}</h2> : null}
         </div>
 
-        <div>
-          <h3 className="font-utility text-xs uppercase tracking-[0.16em] text-brand">
-            {prayer_title ?? "Prayer list"}
-          </h3>
-          {prayer_note ? (
-            <p className="mt-1 text-sm text-ink-soft">{prayer_note}</p>
-          ) : null}
+        <div className="cardgrid two">
+          <div className="card" style={{ padding: "26px 28px" }}>
+            <span className="card-kicker">
+              {content.announcements_title ?? "Announcements"}
+            </span>
 
-          {prayer.length > 0 ? (
-            <ul className="mt-4 space-y-4">
-              {prayer.map((item) => (
-                <li key={item.id}>
-                  <p className="text-ink-soft">{item.body}</p>
-                  {item.display_name ? (
-                    <p className="mt-1 font-utility text-xs text-ink-soft">
-                      {item.display_name}
-                    </p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-4 text-ink-soft">
-              {prayer_empty ?? "No requests right now."}
-            </p>
-          )}
+            {announcements.length > 0 ? (
+              <div style={{ marginTop: "14px" }}>
+                {announcements.map((item) => (
+                  <div key={item.id} className="logbook-row" style={{ padding: "12px 0" }}>
+                    <span>{item.body}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ marginTop: "14px", color: "var(--kc-ink-soft)" }}>
+                {content.announcements_empty ?? "Nothing posted this week."}
+              </p>
+            )}
+          </div>
 
-          {prayer_pending_note ? (
-            <p className="mt-4 text-sm text-ink-soft">{prayer_pending_note}</p>
-          ) : null}
+          <div className="card" style={{ padding: "26px 28px" }}>
+            <span className="card-kicker">{content.prayer_title ?? "Prayer list"}</span>
 
-          <PrayerForm content={sectionContent(section.content)} />
+            {prayer.length > 0 ? (
+              <div style={{ marginTop: "14px" }}>
+                {prayer.map((item) => (
+                  <div key={item.id} className="logbook-row" style={{ padding: "12px 0" }}>
+                    <span>
+                      {item.display_name ? <strong>{item.display_name}</strong> : null}
+                      {item.display_name ? " - " : null}
+                      {item.body}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ marginTop: "14px", color: "var(--kc-ink-soft)" }}>
+                {content.prayer_empty ?? "No requests right now."}
+              </p>
+            )}
+
+            <div className="card-foot" style={{ paddingTop: "16px" }}>
+              <span>{content.prayer_note ?? ""}</span>
+            </div>
+
+            <PrayerForm content={content} />
+
+            {content.prayer_pending_note ? (
+              <p style={{ marginTop: "12px", fontSize: "14px", color: "var(--kc-ink-soft)" }}>
+                {content.prayer_pending_note}
+              </p>
+            ) : null}
+          </div>
         </div>
       </div>
-    </Band>
+    </div>
   );
 }
 
@@ -912,63 +1101,63 @@ function CalloutCard({ section }: { section: SectionRow }) {
  * DECIDED 2026-08-28 (Jason): Tithe.ly only, through the `kind = 'giving'` row
  * in church_links. No Stripe, no amount picker, no custom-amount field.
  *
- * The seed carries a full donation widget - `frequencies`, `amounts`,
- * `default_amount`, `custom_placeholder`, `submit_label`. Those fields are
- * DELIBERATELY NOT RENDERED and are not a bug to fix. Amount and frequency are
- * chosen on the Tithe.ly form itself, so collecting them here would either be
- * decorative or would need Tithe.ly to accept them as parameters - a real
- * integration nobody has asked for. See FF-32.
+ * The prototype's give-card holds a frequency toggle and an amount ladder, and
+ * the seed carries the values for both. They are DELIBERATELY NOT RENDERED and
+ * are not a bug to fix: amount and frequency are chosen on the Tithe.ly form
+ * itself, so collecting them here would be decorative. The card keeps its
+ * shape and holds the button. See FF-32.
  *
  * A church with no giving link gets no button rather than a dead one.
  */
 function GivingBand({ section, giving }: { section: SectionRow; giving: ChurchLink | null }) {
-  const { eyebrow, heading, body, note } = sectionContent(section.content);
+  const { eyebrow, heading, body, note, card_title } = sectionContent(section.content);
   const bullets = strings(section.content, "bullets");
   const link = obj(section.content, "link");
 
   return (
-    <Band tint>
-      {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      {heading ? <Heading>{heading}</Heading> : null}
-      {body ? <p className="mt-4 max-w-[62ch] text-lg text-ink-soft">{body}</p> : null}
+    <div className="wrap">
+      <div className="give-band on-dark">
+        <div className="giving-grid">
+          <div>
+            {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+            {heading ? <h2>{heading}</h2> : null}
+            {body ? <p>{body}</p> : null}
 
-      {bullets.length > 0 ? (
-        <ul className="mt-6 grid gap-2 md:grid-cols-2">
-          {bullets.map((bullet, index) => (
-            <li key={index} className="flex gap-3 text-ink-soft">
-              <span aria-hidden="true" className="text-brand">
-                -
-              </span>
-              {bullet}
-            </li>
-          ))}
-        </ul>
-      ) : null}
+            {bullets.length > 0 ? (
+              <ul style={{ marginTop: "16px", paddingLeft: "18px" }}>
+                {bullets.map((bullet, index) => (
+                  <li key={index}>{bullet}</li>
+                ))}
+              </ul>
+            ) : null}
 
-      <div className="mt-8 flex flex-wrap items-center gap-3">
-        {giving ? (
-          <a
-            href={giving.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center rounded-[var(--kc-radius)] bg-brand px-5 py-2.5 font-semibold text-brand-contrast"
-          >
-            {giving.label}
-          </a>
-        ) : null}
+            {link.href && link.label ? (
+              <p style={{ marginTop: "16px" }}>
+                <Link href={link.href} className="archive-link">
+                  {link.label}
+                </Link>
+              </p>
+            ) : null}
+          </div>
 
-        {link.href && link.label ? (
-          <Link
-            href={link.href}
-            className="inline-flex items-center rounded-[var(--kc-radius)] border border-line px-5 py-2.5 text-ink"
-          >
-            {link.label}
-          </Link>
-        ) : null}
+          {giving ? (
+            <div className="give-card">
+              <h3>{card_title ?? "Give securely"}</h3>
+              <a
+                className="btn btn-solid"
+                style={{ width: "100%" }}
+                href={giving.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {giving.label}
+              </a>
+              {note ? <p className="give-note">{note}</p> : null}
+            </div>
+          ) : null}
+        </div>
       </div>
-
-      {note ? <p className="mt-4 max-w-[62ch] text-sm text-ink-soft">{note}</p> : null}
-    </Band>
+    </div>
   );
 }
 
