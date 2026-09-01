@@ -1431,9 +1431,14 @@ that structured content is seeded and only prose is pastor-editable.
 
 ---
 
-## FF-46 - two of the three "Three ways in" links went to the wrong place
+## FF-46 - CLOSED - two of the three "Three ways in" links went to the wrong place
 
-**File:** live data; fix drafted in `supabase/drafts/26_fix_get_connected_links.sql`
+**File:** live data; fixed by `supabase/migrations/26_fix_get_connected_links.sql`
+**Closed:** 2026-08-31. Draft 26 run by Jason; section 3 returned the three
+expected rows in order. Verified per ground rule 4a against the SERVED
+production HTML, not the query output: churchfortruckers.org renders
+`/groups`, `/about#ministries`, `#prayer` in that order, and both anchor
+targets resolve (`id="prayer"` on home, `id="ministries"` on /about).
 **Raised:** 2026-08-31 by Jason
 **Must fix by:** before cutover - these are on the home page.
 

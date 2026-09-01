@@ -63,24 +63,46 @@ Standing rules for every session in this repo. These override anything else.
    are used only in Route Handlers / Server Actions / Edge Functions. History
    note: the old WP system leaked a YouTube API key client-side.
 7. **ASCII straight quotes only** in source files.
-8. **Know what is actually live.** Updated 2026-08-27 - the previous version of
-   this rule said WordPress serves churchfortruckers.org. It does not, and has
-   not since Jason moved Kingdom Creatives off Cloudways.
+8. **Know what is actually live.** Updated 2026-08-31 - the Phase D cutover has
+   happened. Two previous versions of this rule were wrong about what serves the
+   domain, so verify before trusting the table rather than after:
+
+   ```
+   curl -sI https://churchfortruckers.org/ | grep -i "^server:"
+   ```
 
    | Thing | State |
    |---|---|
-   | `churchfortruckers.org` | Served by the **Vercel project `kingdom-creatives`** - the static launch site. Keeps the domain until Phase D cutover. |
-   | `kingdom-creatives-platform` (this repo) | Serves **nothing public yet**. |
-   | Supabase `cyyxhhwuyeyvewqrhewt` | Backs nothing public yet. |
+   | `churchfortruckers.org` | Served by **this repo** - Next.js on Vercel. Verified 2026-08-31: `Server: Vercel`, page carries `kc-site` and `_next/static`. |
+   | Supabase `cyyxhhwuyeyvewqrhewt` | **Backs the live public site.** Rows in `church_sections`, `churches`, `events`, `sermons`, `groups` and the rest are rendered to visitors. |
+   | Vercel project `kingdom-creatives` (the old static launch site) | No longer serves the domain. Separate project - nothing here deploys to it, and nothing here should try to edit it. |
    | WordPress multisite / Cloudways | **Gone.** Local backup on Jason's desktop only. |
 
-   Consequence: **running a draft in `supabase/drafts/` is not a production
-   change.** No maintenance window, no cutover risk. That stops being true at
-   Phase D, when DNS moves off the static site - after that, re-read this rule
-   before running anything.
+   Consequence, and this **replaces** the old wording that called a draft "not a
+   production change":
 
-   The static site is a separate Vercel project. Nothing in this repo deploys
-   to it, and nothing here should try to edit it.
+   **Running a draft in `supabase/drafts/` against `cyyxhhwuyeyvewqrhewt` is a
+   production change.** Full stop, including data-only ones. There is no staging
+   database and there never was one - the same project has always held this
+   data; what changed at cutover is that visitors now read it. A bad write shows
+   on churchfortruckers.org immediately, with no environment to catch it first
+   and no second copy to diff against.
+
+   That is a reason to size the risk before running, not a reason to freeze:
+
+   | What the draft does | Risk | Care |
+   |---|---|---|
+   | Data-only and idempotent - `jsonb_set`, `update ... set` to a fixed literal. Draft 26 is the model. | Low | Run it. Keep the before/after selects. Re-running changes nothing. |
+   | Data-only but non-idempotent - inserts without a guard, updates computed from the current value | Medium | `begin` / inspect / `rollback` first, then run for real. Row counts must match what the draft predicted. |
+   | Schema (`create` / `alter` / `drop`), deletes, or anything touching RLS or grants | High | One section at a time, results pasted back between sections. RLS changes additionally need the rule 4a anon probe before the feature is called done. |
+
+   Two things hold at every risk level:
+
+   - **Rule 0.3 is unchanged and this rule does not loosen it.** Never execute
+     SQL against the live project. Drafts go to Jason for the SQL editor and the
+     results come back. Nothing here is authorisation to run one.
+   - **A draft states its expected before and after** so a failing run is
+     recognisable as failing. "SQL executed successfully" is not a result.
 9. **`wp-legacy-reference/` is read-only reference** - never deployed, never
    imported. The full WordPress backup (including the `pastor-portal-plugin`
    source and the `zvkcuehwvv.sql` dump) lives outside this repo at

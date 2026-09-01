@@ -1,7 +1,12 @@
 /* ============================================================
    DRAFT 26 - fix two of the three "Three ways in" links (FF-46)
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  RUN 2026-08-31 by Jason. Section 3 returned 3 rows in order
+            Groups / Ministries / Prayer with hrefs /groups,
+            /about#ministries, #prayer. Verified again against the SERVED
+            production HTML the same day - all three links match the
+            database, in order, and both anchor targets resolve
+            (id="prayer" on home, id="ministries" on /about).
    Requires: nothing. Data only - no schema change.
 
    >>> RUN THE SECTIONS SEPARATELY. Section 1 is the before/after. <<<
