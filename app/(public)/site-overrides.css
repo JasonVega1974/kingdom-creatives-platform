@@ -75,3 +75,26 @@
 .kc-site .lede {
   line-height: 1.55;
 }
+
+/* ------------------------------------------------------------
+ * 3. The give card's small print was invisible.
+ *
+ * .give-note is a <p>, and it sits inside .give-band. Two rules competed:
+ *
+ *   .kc-site .give-note   {color:var(--kc-ink-soft)}   specificity (0,2,0)
+ *   .kc-site .give-band p {color:#FFE4D2}              specificity (0,2,1)  WINS
+ *
+ * The band's pale-peach body colour is correct for text on the orange
+ * background and catastrophic on the white card nested inside it: #FFE4D2 on
+ * #FFFFFF measures 1.22:1, so the Tithe.ly disclaimer and the tax-deductibility
+ * note were effectively unreadable.
+ *
+ * Not a token problem - --kc-ink-soft (#6B5D51) is 6.34:1 on white and was
+ * always the right value. It simply never applied. The prototype had no card
+ * inside the band, so the port could not have known.
+ *
+ * Fixed by out-specifying the band rule for anything inside the card, rather
+ * than by weakening the band rule, which is right where it was aimed.
+ * ------------------------------------------------------------ */
+
+.kc-site .give-band .give-card p {color:var(--kc-ink-soft)}

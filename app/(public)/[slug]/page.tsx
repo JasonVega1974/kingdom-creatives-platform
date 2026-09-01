@@ -10,7 +10,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
 import { getCollectionsFor } from "@/lib/collections";
-import { getChurchLinks, givingLink } from "@/lib/links";
+import { getChurchLinks, givingLink, videoChannels } from "@/lib/links";
 import { getPageSections } from "@/lib/sections";
 import { PAGES } from "@/lib/portal/sections";
 
@@ -100,6 +100,7 @@ export default async function PublicPage({
   const context = {
     church: site.church,
     giving: givingLink(links),
+    videoChannels: videoChannels(links),
     collections,
     filter,
     book: one("book"),
@@ -124,7 +125,7 @@ export default async function PublicPage({
         />
       </main>
 
-      <SiteFooter church={site.church} />
+      <SiteFooter church={site.church} links={links} />
     </>
   );
 }

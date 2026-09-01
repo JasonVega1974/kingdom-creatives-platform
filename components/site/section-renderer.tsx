@@ -40,6 +40,11 @@ export type SectionContext = {
   church: Church;
   /** Resolved once per page and passed down; see givingLink(). */
   giving: ChurchLink | null;
+  /**
+   * The church's video channels, for the Worship page. CFT has two and the
+   * labels are what distinguish them - see videoChannels().
+   */
+  videoChannels: ChurchLink[];
   /** Only the collections this page asked for are populated. */
   collections: Collections;
   /**
@@ -1027,6 +1032,42 @@ function WorshipSection({
         empty={empty ?? "No worship videos yet."}
         playLabel={play_label ?? "Play"}
       />
+      <ChannelStrip channels={context.videoChannels} />
+    </div>
+  );
+}
+
+/**
+ * "Watch on YouTube" - one button per channel.
+ *
+ * Rendered whether or not there are videos, not only in the empty state. The
+ * channels are where the services actually live; a visitor who wants last
+ * Sunday's sermon should not lose the way there the moment somebody uploads a
+ * single video and the empty state disappears.
+ *
+ * The LABEL is the point. Two bare YouTube links tell nobody which is the
+ * Sunday service and which is the midweek study, so the label from
+ * church_links leads and the platform is the supporting word.
+ */
+function ChannelStrip({ channels }: { channels: ChurchLink[] }) {
+  if (channels.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: "32px" }}>
+      <span className="eyebrow">Watch on YouTube</span>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginTop: "14px" }}>
+        {channels.map((channel) => (
+          <a
+            key={channel.id}
+            className="btn btn-ghost"
+            href={channel.url ?? "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {channel.label ?? "YouTube channel"}
+          </a>
+        ))}
+      </div>
     </div>
   );
 }

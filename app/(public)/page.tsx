@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
 import { getCollectionsFor } from "@/lib/collections";
-import { getChurchLinks, givingLink } from "@/lib/links";
+import { getChurchLinks, givingLink, videoChannels } from "@/lib/links";
 import { getPageSections } from "@/lib/sections";
 
 /**
@@ -43,6 +43,7 @@ export default async function HomePage() {
   const context = {
     church: site.church,
     giving: givingLink(links),
+    videoChannels: videoChannels(links),
     collections,
     filter: null,
     book: null,
@@ -57,7 +58,7 @@ export default async function HomePage() {
         <PageSections pageSlug={"home"} sections={sections} context={context} />
       </main>
 
-      <SiteFooter church={site.church} />
+      <SiteFooter church={site.church} links={links} />
     </>
   );
 }
