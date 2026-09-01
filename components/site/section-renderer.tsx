@@ -1191,17 +1191,25 @@ function WorshipSection({
   const songs = showSongs ? WORSHIP_PLAYLIST : [];
 
   /*
-   * The seeded songs stand in for the empty state. Rendering "No worship
-   * videos yet" above thirty worship videos would be absurd, so VideoGrid's
-   * empty line is suppressed whenever songs are showing - the page is not
-   * empty, it just has no rows in the `videos` table.
+   * When the videos table is empty but the seeded songs are showing, the grid
+   * is simply not rendered - the page is not empty, it just has no rows in
+   * `videos`. (The old approach passed empty="" to suppress the message,
+   * which quietly rendered a blank dashed box on every /worship load; the
+   * Phase 3 empty-state upgrade made that visible as a textless icon ring,
+   * which is how it finally got caught.)
    */
-  const videoEmpty = songs.length > 0 ? "" : (empty ?? "No worship videos yet.");
+  const showVideoGrid = videos.length > 0 || songs.length === 0;
 
   return (
     <div className="wrap" style={{ paddingBottom: "76px" }}>
       <FilterStrip filters={filters} active={context.filter} />
-      <VideoGrid videos={videos} empty={videoEmpty} playLabel={play_label ?? "Play"} />
+      {showVideoGrid ? (
+        <VideoGrid
+          videos={videos}
+          empty={empty ?? "No worship videos yet."}
+          playLabel={play_label ?? "Play"}
+        />
+      ) : null}
       <WorshipGrid songs={songs} heading={songs.length > 0 ? "Worship playlist" : undefined} />
       <ChannelStrip channels={context.videoChannels} />
     </div>

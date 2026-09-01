@@ -1,7 +1,12 @@
 /* ============================================================
    DRAFT 32 (Phase 2, Draft B) - add the daily_devotional section for CFT
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  RUN 2026-09-01 by Jason. APPLIED.
+
+            Verified on churchfortruckers.org after the run: the devotional
+            card renders in the about grid with title, verse, body, Reflect
+            and Prayer blocks; exactly 1 devotional title and 1 body in the
+            served page; the 365-entry array still absent from the payload.
    Requires: the Phase 2 code DEPLOYED first (the renderer's daily_devotional
              case ships with it - before that deploy this row renders nothing
              in production). Run together with draft 31.

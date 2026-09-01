@@ -1324,3 +1324,34 @@
   .kc-site .ts-item {white-space: normal}
   .kc-site .ts-item + .ts-item::before {margin: 0 10px}
 }
+
+/* ============================================================
+ * 17. PHASE 3 - LIST PAGES
+ * ============================================================
+ * Smaller than planned, honestly: the audit-era mockup assumed events needed
+ * date plates and cards needed hover language, but both shipped earlier
+ * (mm-plate has been the event row since Phase B; hover lifts came in Phase
+ * 1). What was genuinely missing: the empty-state pattern, and small polish.
+ * ------------------------------------------------------------ */
+
+.kc-site .empty-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  border: 1px dashed var(--kc-line);
+  border-radius: var(--kc-radius);
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.kc-site .empty-state p {color: var(--kc-ink-soft); max-width: 44ch}
+.kc-site .empty-state .icon-ring {width: 44px; height: 44px; border-radius: 13px}
+
+/* The event day steps up to the display weight of the new scale. */
+.kc-site .mm-plate .day {font-weight: 800}
+
+/* Group cards: the leader reads as a kicker ABOVE the name, matching every
+   other card's kicker-then-heading order. Markup already renders both; this
+   just corrects the visual order without touching DOM order for readers. */
+.kc-site .group-card .card-body {display: flex; flex-direction: column}
+.kc-site .group-card .card-kicker {order: -1; margin-bottom: 6px}

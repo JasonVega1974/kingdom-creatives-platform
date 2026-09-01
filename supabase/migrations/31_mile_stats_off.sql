@@ -1,7 +1,11 @@
 /* ============================================================
    DRAFT 31 (Phase 2, Draft A) - switch off the mile-marker stats for CFT
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  RUN 2026-09-01 by Jason. APPLIED.
+
+            Verified on churchfortruckers.org after the run: no data-mm
+            markers anywhere on the served home page - the four seeded stats
+            are gone, content untouched (this was a switch, not a deletion).
    Requires: nothing by itself, but run it TOGETHER WITH draft 32, AFTER the
              Phase 2 code deploys - see ORDERING below.
 

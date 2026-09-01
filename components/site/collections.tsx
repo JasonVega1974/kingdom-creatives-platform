@@ -28,19 +28,35 @@ import { mediaUrl } from "@/lib/portal/media";
  * C has the pastor and board still sending real material.
  */
 
-function EmptyState({ children }: { children: string }) {
+/**
+ * The empty-state pattern from the Phase 0 direction: an icon in a brand-wash
+ * ring and one honest sentence (which still comes from the seed, per the note
+ * above - an empty collection is a normal state, not a failure). The icon
+ * names what KIND of thing is missing, so a bare page still says what it is.
+ */
+const EMPTY_ICONS = {
+  calendar: <path d="M8 2v4M16 2v4M3 8h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />,
+  people: <path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M9.5 3.6a4 4 0 1 0 0 7.8M21 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />,
+  play: <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM10 8l6 4-6 4V8z" />,
+  hands: <path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 7a5.5 5.5 0 0 1 9.5 5c-2.5 4.4-9.5 9-9.5 9z" />,
+} as const;
+
+function EmptyState({
+  icon = "calendar",
+  children,
+}: {
+  icon?: keyof typeof EMPTY_ICONS;
+  children: string;
+}) {
   return (
-    <p
-      style={{
-        border: "1px dashed var(--kc-line)",
-        borderRadius: "var(--kc-radius)",
-        padding: "32px 20px",
-        textAlign: "center",
-        color: "var(--kc-ink-soft)",
-      }}
-    >
-      {children}
-    </p>
+    <div className="empty-state">
+      <span className="icon-ring" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          {EMPTY_ICONS[icon]}
+        </svg>
+      </span>
+      <p>{children}</p>
+    </div>
   );
 }
 
@@ -72,7 +88,7 @@ function initialsOf(name: string): string {
 // ---------------------------------------------------------------
 
 export function StaffGrid({ staff, empty }: { staff: StaffMember[]; empty: string }) {
-  if (staff.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (staff.length === 0) return <EmptyState icon="people">{empty}</EmptyState>;
 
   return (
     <div className="team-grid">
@@ -139,7 +155,7 @@ export function GroupList({
   empty: string;
   linkLabel: string;
 }) {
-  if (groups.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (groups.length === 0) return <EmptyState icon="people">{empty}</EmptyState>;
 
   return (
     <div className="cardgrid">
@@ -185,7 +201,7 @@ export function GroupList({
 }
 
 export function EventList({ events, empty }: { events: ChurchEvent[]; empty: string }) {
-  if (events.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (events.length === 0) return <EmptyState icon="calendar">{empty}</EmptyState>;
 
   return (
     <div className="event-list">
@@ -236,7 +252,7 @@ export function SermonList({
   empty: string;
   watchLabel: string;
 }) {
-  if (sermons.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (sermons.length === 0) return <EmptyState icon="play">{empty}</EmptyState>;
 
   return (
     <div className="cardgrid">
@@ -292,7 +308,7 @@ export function VideoGrid({
   empty: string;
   playLabel: string;
 }) {
-  if (videos.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (videos.length === 0) return <EmptyState icon="play">{empty}</EmptyState>;
 
   return (
     <div className="cardgrid">
@@ -333,7 +349,7 @@ export function MinistryList({
   ministries: Ministry[];
   empty: string;
 }) {
-  if (ministries.length === 0) return <EmptyState>{empty}</EmptyState>;
+  if (ministries.length === 0) return <EmptyState icon="hands">{empty}</EmptyState>;
 
   return (
     <div className="cardgrid">
