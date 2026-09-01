@@ -1473,3 +1473,14 @@
   .kc-site details.mobile-menu[open] .mobile-nav,
   .kc-site details.mobile-menu[open]::before {animation: none !important}
 }
+
+/* ---- 19c. The play disc is brand, not the church accent ----
+   .play-ring .disc filled from --kc-accent, which computes to #161311 for
+   CFT - the theme derivation turns the stored near-white accent (#FDFBF5)
+   into a dark value, so every play button rendered as a black disc.
+   Brand is the site's interactive colour; the triangle goes brand-contrast so
+   it reads on the disc at any theme. */
+.kc-site .play-ring .disc {
+  background: var(--kc-brand);
+  color: var(--kc-brand-contrast);
+}
