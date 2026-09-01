@@ -8,7 +8,8 @@ import {
 } from "@/components/site/collections";
 import { PrayerForm, VisitForm } from "@/components/site/public-forms";
 import { SermonPlayer } from "@/components/site/sermon-player";
-import { getBibleProvider, normalizeBook, normalizeChapter } from "@/lib/bible";
+import { getBibleProvider } from "@/lib/bible";
+import { booksIn, resolveBook, resolveChapter } from "@/lib/bible-books";
 import type { Church } from "@/lib/church";
 import { parseServiceTimes } from "@/lib/church";
 import type { Collections } from "@/lib/collections";
@@ -824,52 +825,105 @@ async function BibleReader({
   context: SectionContext;
 }) {
   const content = sectionContent(section.content);
-  const books = strings(section.content, "books");
 
-  const fallbackBook = content.default_book ?? books[0] ?? "John";
-  const fallbackChapter = Number.parseInt(content.default_chapter ?? "1", 10) || 1;
+  /*
+   * The seeded `books` array is now QUICK LINKS, not the allow-list. It used to
+   * be both, which meant six books existed and ?book=Genesis silently fell back
+   * to Psalms. The canon lives in lib/bible-books.ts because it is the same for
+   * every church - see the note there.
+   */
+  const quickLinks = strings(section.content, "books");
 
-  const book = normalizeBook(context.book, books, fallbackBook);
-  const chapter = normalizeChapter(context.chapter, fallbackChapter);
+  const fallbackBook = content.default_book ?? quickLinks[0] ?? "John";
+  const book = resolveBook(context.book, fallbackBook);
+
+  /*
+   * The church's default chapter applies only to the church's default book.
+   * Psalms 121 is "the driver's psalm"; carrying 121 over to Obadiah, which has
+   * one chapter, would be nonsense - and resolveChapter would clamp it to 1
+   * anyway, silently.
+   */
+  const isDefaultBook = book.name === resolveBook(fallbackBook, fallbackBook).name;
+  const chapter = context.chapter
+    ? resolveChapter(book, context.chapter)
+    : isDefaultBook
+      ? resolveChapter(book, content.default_chapter ?? "1")
+      : 1;
 
   const provider = getBibleProvider();
-  const reading = await provider.fetchPassage(book, chapter);
+  const reading = await provider.fetchPassage(book.name, chapter);
 
   const body = (
     <div className="reader">
-      <form method="get" className="reader-controls">
-        <label className="sr-only" htmlFor="book">
-          Book
-        </label>
-        <select id="book" name="book" defaultValue={book}>
-          {books.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
+      {quickLinks.length > 0 ? (
+        <div className="bible-quick">
+          <span className="eyebrow">Start here</span>
+          <div className="bible-chips">
+            {quickLinks.map((name) => (
+              <Link key={name} href={`/bible?book=${encodeURIComponent(name)}`} className="chip">
+                {name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-        <label className="sr-only" htmlFor="chapter">
-          Chapter
-        </label>
-        <select id="chapter" name="chapter" defaultValue={String(chapter)}>
-          {Array.from({ length: 150 }, (_, index) => index + 1).map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
+      {/*
+        Open when the reader arrives with no book chosen, closed once they are
+        reading - at which point the passage is what they came for and 66 book
+        buttons above it are in the way. A <details> rather than a script, for
+        the same reason the mobile menu is one: it works with JavaScript off and
+        every choice inside it is a real link.
+      */}
+      <details className="bible-picker" open={!context.book}>
+        <summary>Choose a book</summary>
 
-        <button type="submit" className="chip">
-          {content.load_label ?? "Load passage"}
-        </button>
-      </form>
+        {(["old", "new"] as const).map((testament) => (
+          <details key={testament} className="bible-testament" open={book.testament === testament}>
+            <summary>
+              {testament === "old" ? "Old Testament" : "New Testament"}{" "}
+              <span className="bible-count">({booksIn(testament).length})</span>
+            </summary>
+            <div className="bible-books">
+              {booksIn(testament).map((entry) => (
+                <Link
+                  key={entry.name}
+                  href={`/bible?book=${encodeURIComponent(entry.name)}`}
+                  className={entry.name === book.name ? "bible-book is-current" : "bible-book"}
+                  aria-current={entry.name === book.name ? "page" : undefined}
+                >
+                  {entry.name}
+                </Link>
+              ))}
+            </div>
+          </details>
+        ))}
+      </details>
+
+      {/*
+        Exactly as many chapters as the book has. The old control offered 1-150
+        for everything, so Philemon had 149 links to chapters that do not exist.
+      */}
+      <nav className="bible-chapters" aria-label={`Chapters in ${book.name}`}>
+        {Array.from({ length: book.chapters }, (_, index) => index + 1).map((n) => (
+          <Link
+            key={n}
+            href={`/bible?book=${encodeURIComponent(book.name)}&chapter=${n}`}
+            className={n === chapter ? "bible-chapter is-current" : "bible-chapter"}
+            aria-current={n === chapter ? "page" : undefined}
+          >
+            {n}
+          </Link>
+        ))}
+      </nav>
 
       {reading ? (
         <>
           <h3>{reading.reference}</h3>
           <div className="trans">
-            {[content.default_subtitle, reading.translation].filter(Boolean).join(" - ")}
+            {[isDefaultBook ? content.default_subtitle : null, reading.translation]
+              .filter(Boolean)
+              .join(" - ")}
           </div>
           <div className="vtext">
             <p>{reading.text}</p>

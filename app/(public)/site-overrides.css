@@ -149,3 +149,46 @@
 /* Playing: the frame stays, the pointer cursor goes. The element is no longer
    a link, and a cursor promising a click over YouTube's own controls is a lie. */
 .kc-site .player.is-playing {cursor:default}
+
+/* ------------------------------------------------------------
+ * 5. The Bible book and chapter picker.
+ *
+ * The prototype's reader had two <select> dropdowns, so site.css has no rules
+ * for any of this. It offered six books and 1-150 chapters for every one of
+ * them, which is 149 dead options for Philemon.
+ *
+ * Now 66 books and exactly the right number of chapters, as links rather than a
+ * form: every passage becomes a shareable URL, it survives a reload, and it
+ * needs no JavaScript - the same bargain the filters and the mobile menu make.
+ *
+ * MOBILE IS THE CONSTRAINT. 66 books in one column is a scroll nobody
+ * finishes, so Old and New Testament are collapsible and the books lay out as
+ * an auto-filling grid: four or five columns on a laptop, two on a phone,
+ * without a media query deciding which. Chapter numbers are 44px minimum, which
+ * is the smallest reliable touch target.
+ * ------------------------------------------------------------ */
+
+.kc-site .bible-quick {margin-bottom:20px}
+.kc-site .bible-chips {display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.kc-site .bible-chips .chip {text-decoration:none;display:inline-block}
+
+.kc-site .bible-picker {border:1px solid var(--kc-line);border-radius:var(--kc-radius);padding:14px 18px;margin-bottom:18px;background:var(--kc-surface)}
+.kc-site .bible-picker > summary {cursor:pointer;font-weight:600;list-style:none}
+.kc-site .bible-picker > summary::-webkit-details-marker {display:none}
+.kc-site .bible-picker > summary::after {content:" +";color:var(--kc-brand);font-weight:700}
+.kc-site .bible-picker[open] > summary::after {content:" -"}
+
+.kc-site .bible-testament {margin-top:14px;border-top:1px solid var(--kc-line);padding-top:12px}
+.kc-site .bible-testament > summary {cursor:pointer;font-family:var(--kc-font-utility);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--kc-ink-soft)}
+.kc-site .bible-count {opacity:.7}
+
+/* auto-fill, so the column count follows the space rather than a breakpoint */
+.kc-site .bible-books {display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:6px;margin-top:12px}
+.kc-site .bible-book {display:block;padding:9px 10px;border-radius:8px;text-decoration:none;font-size:14px;color:var(--kc-ink);border:1px solid transparent}
+.kc-site .bible-book:hover {background:var(--kc-brand-wash);border-color:var(--kc-line)}
+.kc-site .bible-book.is-current {background:var(--kc-brand);color:var(--kc-brand-contrast);font-weight:600}
+
+.kc-site .bible-chapters {display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;margin-bottom:22px}
+.kc-site .bible-chapter {display:grid;place-items:center;min-height:44px;border:1px solid var(--kc-line);border-radius:8px;text-decoration:none;font-family:var(--kc-font-utility);font-size:14px;color:var(--kc-ink)}
+.kc-site .bible-chapter:hover {border-color:var(--kc-brand);background:var(--kc-brand-wash)}
+.kc-site .bible-chapter.is-current {background:var(--kc-brand);border-color:var(--kc-brand);color:var(--kc-brand-contrast);font-weight:700}
