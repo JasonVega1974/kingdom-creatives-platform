@@ -310,15 +310,24 @@ function HomeHero({
    * person could see. Same section, two honest renderings.
    */
   if (image_desktop) {
+    const hero = heroImageCandidates(image_desktop);
+
     return (
       <div className="hero hero-photo">
         <h1 className="sr-only">{headline ?? context.church.name ?? context.church.slug}</h1>
 
         {/* The photo, fully visible - the floating plate was covering the
-            truck. Times moved to the bar below (2026-09-01). */}
+            truck. Times moved to the bar below (2026-09-01).
+
+            srcSet + sizes so a phone requests a phone-sized file. The band is
+            full-bleed at every width (see .hero-shot), so sizes="100vw" is not
+            a guess - it is what the CSS actually does. Without this, the
+            browser has one candidate to choose from and always fetches it,
+            which is how a 375px screen ended up pulling the same file a
+            3840px desktop would. */}
         <div className="hero-shot">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image_desktop} alt="" />
+          <img src={hero.src} srcSet={hero.srcSet} sizes="100vw" alt="" />
         </div>
 
         {ctas.length > 0 || timesStrip ? (
@@ -346,6 +355,47 @@ function HomeHero({
       </div>
     </div>
   );
+}
+
+/**
+ * Responsive candidates for the hero banner, built from whatever is stored in
+ * `image_desktop`.
+ *
+ * NORMALIZES A HISTORICAL DATA QUIRK. The field is meant to hold a raw image
+ * URL (what the media picker writes via mediaUrl()), but CFT's stored value is
+ * already a `/_next/image?url=...&w=3840&q=75` link - baked to one fixed
+ * width, and to this church's domain specifically, which is also wrong for a
+ * multi-tenant platform if the domain ever changes. That is why the hero
+ * always requested the same huge file regardless of device: there was only
+ * ever one URL to ask for.
+ *
+ * This unwraps a proxied value back to the raw source (an inner `url=` param
+ * is decoded and used instead of the whole string) so it works whether the
+ * field holds a proxied URL like CFT's or a clean one from a future upload -
+ * either way, what comes out is a same-origin, relative `/_next/image` request
+ * built here, at several widths, so <img srcSet> can choose.
+ *
+ * Not a database fix - that is a data draft, not this. This is what makes the
+ * current data harmless without one.
+ */
+function heroImageCandidates(stored: string): { src: string; srcSet: string } {
+  const raw = (() => {
+    try {
+      const u = new URL(stored, "https://placeholder.invalid");
+      const inner = u.pathname.endsWith("/_next/image") ? u.searchParams.get("url") : null;
+      return inner ?? stored;
+    } catch {
+      return stored;
+    }
+  })();
+
+  const widths = [640, 828, 1200, 1920, 2560, 3840];
+  const at = (w: number) => `/_next/image?url=${encodeURIComponent(raw)}&w=${w}&q=75`;
+
+  return {
+    src: at(1920),
+    srcSet: widths.map((w) => `${at(w)} ${w}w`).join(", "),
+  };
 }
 
 /** Every inner page opens with this. */

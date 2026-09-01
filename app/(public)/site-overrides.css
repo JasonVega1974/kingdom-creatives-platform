@@ -1524,3 +1524,75 @@
 
   .kc-site footer a[aria-label] {width: 44px; height: 44px}
 }
+
+/* ============================================================
+ * 21. MOBILE POLISH (2026-09-01, follow-up to the 375px audit)
+ * ============================================================ */
+
+/* ---- 21a. Banner portrait crop ----
+   At 375px the banner rendered as a ~152px strip - the full-bleed image at
+   its natural (1600x649-ish) aspect ratio, scaled to fit the viewport width.
+   The truck was visible but small.
+
+   CROP, not scale: below 640px the shot takes a fixed height and the image is
+   pinned to fill it with object-fit: cover, the same device the give-card and
+   worship thumbnails already use. The crop is centred, so whatever sits in
+   the middle of the photo (the truck, for this church) reads at a useful
+   size regardless of the frame's original aspect ratio.
+
+   THE CLEANER FIX IS DATA, NOT CSS. church_sections.home.hero.image_mobile
+   exists in the registry for exactly this - a portrait-cropped photo a pastor
+   chooses on purpose beats an automatic centre-crop of a landscape shot. It is
+   null for CFT today. Wiring image_mobile into the renderer is out of scope
+   for this pass (it needs its own <picture> source and a decision about
+   breakpoints); this CSS is the interim treatment and stays correct once that
+   ships - a real portrait photo would simply fill the same box better. */
+@media (max-width: 640px) {
+  .kc-site .hero-shot {height: 220px}
+  .kc-site .hero-shot img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+  }
+}
+
+/* ---- 21b. Bible book picker, two columns on narrow phones ----
+   auto-fill minmax(124px,1fr) forced a single column below ~300px of
+   available width - 33 books per testament as one long scroll. 104px yields
+   two columns at 375px; verified the column count in the emulator rather than
+   assuming the arithmetic works out.
+
+   Verifying also caught a target that was NEVER 44px, columns aside:
+   .bible-book measured 42px tall before this change too - 9px vertical
+   padding plus a 14px line height falls 2px short. Not something this grid
+   edit introduced, but it is exactly the kind of thing this audit exists to
+   catch, so it is fixed alongside it via the same (pointer: coarse) floor the
+   previous mobile-fixes commit established, rather than left as a near-miss
+   with a comment claiming it passed. */
+.kc-site .bible-books {grid-template-columns: repeat(auto-fill, minmax(104px, 1fr))}
+
+@media (pointer: coarse) {
+  .kc-site .bible-book {min-height: 44px; display: flex; align-items: center}
+}
+
+/* ---- 21c. The channel filter strip scrolls instead of wrapping mid-word ----
+   .filters had no layout rule at all, so chips fell back to inline default
+   flow - on /sermons at 375px "Bible Studies" didn't move to a new line, it
+   wrapped its OWN TEXT onto two, which is the one thing a pill-shaped chip
+   should never do. Horizontal scroll keeps every chip one line at any width
+   and scales to a channel list longer than two entries; the scrollbar is
+   hidden since the row is short enough to read as a swipeable strip rather
+   than a scroll area needing a visible affordance. */
+.kc-site .filters {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 2px;
+}
+
+.kc-site .filters::-webkit-scrollbar {display: none}
+.kc-site .filters .chip {flex: none; white-space: nowrap}
