@@ -1490,15 +1490,35 @@ separate fault from anything unfinished. See FF-47 for what is unfinished.
 
 ---
 
-## FF-47 - a prayer request can be submitted but never approved
+## FF-47 - MODERATION CLOSED - a prayer request can be submitted but never approved
 
 **File:** `lib/portal/nav.ts` (`/portal/prayer`, `built: false`)
 **Raised:** 2026-08-31, while tracing FF-46
 **Must fix by:** before the prayer wall is advertised to anyone.
-**Status 2026-09-01: tab BUILT, not yet verified end to end.** The screen this
-entry asks for now exists - `app/(portal)/portal/prayer/` with five moderation
-actions, and `built: true` in the nav. It compiles and the route is live, but no
-request has been moderated through it yet, so this stays OPEN until one has.
+**CLOSED 2026-09-01. A request was moderated end to end on production.**
+
+Jason approved a real prayer request through the deployed Prayer Wall tab. The
+row went to `status = 'approved'` with `approved_at` and `approved_by` stamped,
+the anon count moved from `Content-Range: */0` to `0-0/1`, and
+churchfortruckers.org rendered it on the wall.
+
+The check could genuinely fail, which is why it counts: a second request was
+still `pending` at the time and stayed **invisible** on the same page. One
+approved row appearing while one pending row does not is proof of the filter,
+not of a page that happens to render something.
+
+`approvePrayer` therefore works end to end - portal write, RLS, public read and
+render. The moderation half of this entry is done.
+
+**Still open, and not fixable from this tab:** the acknowledgement half below.
+`supabase/migrations/27_prayer_moderation_probe.sql` has since been run and
+confirmed that `private` and `archived` requests stay invisible to anon, so the
+"Keep private" action is safe as well.
+
+The original entry, and the still-open acknowledgement problem, follow.
+
+**Superseded status note, kept for the record:** the tab was built before it was
+deployed.
 
 Jason submitted a real request on 2026-09-01 to test it and saw nothing, which
 was not a bug: the tab was still uncommitted local work and production was
@@ -1948,3 +1968,65 @@ That is why both failure paths log with the cause named -
 `quota exhausted or key restricted` - rather than failing silently. If sermon
 lists ever go quiet across several churches at once, read the logs before
 believing the data.
+
+---
+
+## FF-54 - the worship playlist is tenant data living in code
+
+**File:** `lib/worship-playlist.ts`, `components/site/worship-grid.tsx`
+**Raised:** 2026-09-01, after the fact - the playlist shipped in `b8b7531` with
+no entry recording what was owed.
+**Must fix by:** before a second church needs a worship page. Not urgent while
+the platform has one tenant; blocking the day it has two.
+
+### What is there
+
+Thirty songs on `/worship`, ported verbatim from the YourLife CC project
+(`app/js/worship.js`), each `{ id, title, artist, duration }`. They are Church
+for Truckers' set - hand-curated by someone, for that church - and they live in
+a TypeScript module.
+
+`WORSHIP_CATEGORY = "music"` maps them onto the page's own seeded filter
+("Worship sets"), so no new filter was invented and Driver Stories correctly
+excludes them.
+
+### Why this is an entry and not just a file comment
+
+`lib/worship-playlist.ts` explains itself perfectly well. What it cannot record
+is the DEBT: **a per-church table is still owed.** Right now a second tenant
+would get Church for Truckers' worship songs, because there is nowhere else for
+songs to come from. That is a gap, and gaps belong here.
+
+Same shape as FF-30's devotionals, which landed with an entry; this one landed
+without.
+
+### What was done to make the eventual move cheap
+
+The file holds the songs, a type, and the category constant - nothing else. No
+rendering code inlines a song and no component imports a specific one:
+`WorshipGrid` takes a `WorshipSong[]` and does not know where it came from.
+Point the page at a query and the data file is deleted with nothing else to
+change.
+
+### Why not church_links
+
+`church_links` stores DESTINATIONS - one row, one URL. A track list is not a
+destination, and forcing thirty rows of `{title, artist, duration}` into a table
+built for "here is our Facebook page" would be the wrong shape twice over.
+
+A YouTube playlist id WOULD have fit `church_links` and would auto-update. There
+isn't one: the YourLife project never had a playlist, only the array. That was
+checked before porting, not assumed.
+
+### The metadata is not recoverable if dropped
+
+`artist` and `duration` are hand-written. YouTube's Data API returns neither in
+that form, so a future migration must carry them across rather than plan to
+re-derive them from the video ids.
+
+### Related
+
+FF-30 - the devotionals, the same situation with 365 entries and the same debt.
+Whatever table shape solves one should be considered for both, though they are
+different enough (a track list versus dated prose) that one table for both is
+probably the wrong instinct.
