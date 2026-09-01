@@ -1,3 +1,5 @@
+import { ViewTransition } from "react";
+
 import Link from "next/link";
 
 import type { BibleBook } from "@/lib/bible-books";
@@ -81,32 +83,51 @@ export function Scripture({
    * chapter. Staying put is not the same as staying oriented.
    */
   return (
-    <article className="scripture" id="scripture">
-      <header className="scripture-head">
-        <div>
-          <span className="scripture-book">{reference || book.name}</span>
-          {subtitle ? <span className="scripture-sub">{subtitle}</span> : null}
+    /*
+     * The page turn. Directional: advancing a chapter slides the old passage
+     * left and the new one in from the right; going back reverses it. That
+     * left-to-right convention is how a book turns, and violating it reads as
+     * wrong even when nobody can say why.
+     *
+     * `default: "none"` matters - a first page load, or arriving from another
+     * page, carries no transition type and must not slide. Only chapter
+     * navigation is tagged, in ChapterSteps and in the chapter grid.
+     *
+     * Inert unless experimental.viewTransition is on. When it is off the
+     * wrapper renders its children and the CSS baseline handles the motion.
+     */
+    <ViewTransition
+      enter={{ "nav-forward": "nav-forward", "nav-back": "nav-back", default: "none" }}
+      exit={{ "nav-forward": "nav-forward", "nav-back": "nav-back", default: "none" }}
+      default="none"
+    >
+      <article className="scripture" id="scripture">
+        <header className="scripture-head">
+          <div>
+            <span className="scripture-book">{reference || book.name}</span>
+            {subtitle ? <span className="scripture-sub">{subtitle}</span> : null}
+          </div>
+          {/* The translation is a licence-relevant fact, not decoration - a
+              reader must be able to tell which text they are looking at. */}
+          <span className="scripture-trans">{translation}</span>
+        </header>
+
+        <div className="scripture-body">
+          {verses.map((verse, index) => (
+            <p key={index} className={index === 0 ? "scripture-verse is-first" : "scripture-verse"}>
+              {verse.number ? <sup className="scripture-num">{verse.number}</sup> : null}
+              {verse.text}
+            </p>
+          ))}
         </div>
-        {/* The translation is a licence-relevant fact, not decoration - a
-            reader must be able to tell which text they are looking at. */}
-        <span className="scripture-trans">{translation}</span>
-      </header>
 
-      <div className="scripture-body">
-        {verses.map((verse, index) => (
-          <p key={index} className={index === 0 ? "scripture-verse is-first" : "scripture-verse"}>
-            {verse.number ? <sup className="scripture-num">{verse.number}</sup> : null}
-            {verse.text}
-          </p>
-        ))}
-      </div>
+        {/* A licence condition for several providers, not decoration - printed
+            verbatim as the adapter returned it. */}
+        <p className="scripture-credit">{attribution}</p>
 
-      {/* A licence condition for several providers, not decoration - printed
-          verbatim as the adapter returned it. */}
-      <p className="scripture-credit">{attribution}</p>
-
-      <ChapterSteps book={book} chapter={chapter} />
-    </article>
+        <ChapterSteps book={book} chapter={chapter} />
+      </article>
+    </ViewTransition>
   );
 }
 
@@ -129,14 +150,24 @@ function ChapterSteps({ book, chapter }: { book: BibleBook; chapter: number }) {
   return (
     <nav className="scripture-steps" aria-label="Chapter navigation">
       {hasPrev ? (
-        <Link className="scripture-step" href={href(chapter - 1)} rel="prev">
+        <Link
+          className="scripture-step"
+          href={href(chapter - 1)}
+          rel="prev"
+          transitionTypes={["nav-back"]}
+        >
           <span aria-hidden="true">&larr;</span> {book.name} {chapter - 1}
         </Link>
       ) : (
         <span />
       )}
       {hasNext ? (
-        <Link className="scripture-step is-next" href={href(chapter + 1)} rel="next">
+        <Link
+          className="scripture-step is-next"
+          href={href(chapter + 1)}
+          rel="next"
+          transitionTypes={["nav-forward"]}
+        >
           {book.name} {chapter + 1} <span aria-hidden="true">&rarr;</span>
         </Link>
       ) : null}

@@ -5,6 +5,23 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   : undefined;
 
 const nextConfig: NextConfig = {
+  /*
+   * EXPERIMENTAL, AND LOAD-BEARING. See FF-52.
+   *
+   * Enables React's <ViewTransition> integration, which is what gives the
+   * Bible reader a directional page-turn between chapters. Without this flag
+   * the <ViewTransition> in components/site/scripture.tsx is inert and the
+   * reader falls back to the CSS slide from the previous commit - a working
+   * page, just a plainer transition.
+   *
+   * It is marked experimental by Next and rides on React canary. It is
+   * isolated in its own commit for exactly that reason: dropping that commit
+   * removes the flag and the wrapper together and restores the plain baseline.
+   */
+  experimental: {
+    viewTransition: true,
+  },
+
   images: {
     remotePatterns: [
       // Supabase Storage: the public `gallery` bucket (logos, hero images).

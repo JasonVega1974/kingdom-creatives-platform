@@ -1815,3 +1815,77 @@ hardcoded on purpose.
 When it is built, note that the footer is shared by every page including the
 legal ones, so the setting needs to reach `SiteFooter` on all of them - the
 church record is already passed to each, so there is no plumbing problem.
+
+---
+
+## FF-52 - experimental.viewTransition is ENABLED and is load-bearing
+
+**File:** `next.config.ts`, `components/site/scripture.tsx`,
+`types/react-view-transition.d.ts`, `app/(public)/site-overrides.css` section 11
+**Raised:** 2026-09-01, at the moment of enabling it
+**Must fix by:** not a defect. This entry exists so a future session knows the
+flag is deliberate, what depends on it, and how to remove it safely.
+
+### What is on
+
+`experimental.viewTransition: true` in `next.config.ts`, plus React's
+`<ViewTransition>` around the Bible passage. It gives chapter navigation a
+directional page-turn: forward slides the old passage left and the new one in
+from the right, back reverses it.
+
+It is **experimental in Next and rides on React canary features**. That is the
+entire reason it lives in its own commit (`git log` - the commit after
+"landing page motion, and chapters that no longer lurch"). Dropping that one
+commit removes the flag, the wrapper, the type declaration and the CSS layer
+together, and the reader falls back to a plain CSS slide with nothing broken.
+
+### The type declaration is not a hack, and it is not optional
+
+`types/react-view-transition.d.ts` declares `ViewTransition` on the `react`
+module. It is needed because of a real split:
+
+  next/dist/compiled/react   exports ViewTransition   <- what Next actually uses
+  react@19.2.4               does not
+  @types/react@19.2.17       does not
+
+With the flag on, Next aliases `react` to its vendored copy, so the import
+resolves and runs correctly; only TypeScript cannot see it. The declaration
+describes the props rather than silencing the line with `@ts-expect-error`,
+which would also suppress any genuine future error there.
+
+**Delete that file when the flag goes, or when @types/react ships the real
+declaration.** It is dead weight in either case and misleading in the first.
+
+### What was verified at the time, on the real build
+
+- `next build` succeeds with the flag on. No warnings, no errors.
+- `/`, `/bible` and `/give` all return 200 with full content.
+- No hydration warnings or console errors, on first load or after navigating
+  between chapters.
+- Chapter navigation still works and still does not jump to the top:
+  Psalms 23 -> 24 left scrollY at 797 with the passage in view.
+- The two motion layers do not double up. The baseline slide is wrapped in
+  `@supports not (view-transition-name: none)`, and in a browser that supports
+  view transitions the passage's computed `animation-name` is `none` - measured,
+  not assumed. A browser without support gets the baseline and none of the
+  view-transition rules match.
+
+### Reduced motion
+
+Handled differently here on purpose. Everything else on the site puts motion
+*inside* `prefers-reduced-motion: no-preference`, so static is the default.
+Browser-generated `::view-transition-*` pseudo-elements cannot be guarded that
+way, so section 11 uses the kill-switch form instead - zeroing
+`animation-duration` and `animation-delay` under `reduce`, which makes the
+browser swap content instantly, exactly as it would without the API.
+
+Directional slides are the highest-risk motion on the site for vestibular
+sensitivity. If this flag is ever removed, that kill switch can go with it.
+
+### If it misbehaves
+
+Symptoms worth watching for that would not have shown up in one session:
+flashes between chapters on Safari, transitions firing on first load (the
+`default: "none"` mapping is what prevents that), or hydration warnings
+appearing after a Next upgrade. Any of those - revert the commit rather than
+patching around it. The baseline underneath is known good.
