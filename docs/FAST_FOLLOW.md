@@ -1143,7 +1143,34 @@ whatever came back. Hardcoding a WEB credit would become quietly false the
 moment the provider changed - the exact failure a swappable adapter exists to
 prevent.
 
-**ESV is a documented stub, not working code.** A key exists, left over from the
+**UPDATE 2026-09-01: the ESV adapter is now IMPLEMENTED, and still off.**
+Jason asked for the Bible page to use ESV. `fetchPassage` is written against
+`GET https://api.esv.org/v3/passage/text/` with `Authorization: Token <key>`,
+asks for prose (no headings, footnotes or rules), folds ESV's ~70-column
+wrapping back into paragraphs, and returns Crossway's required credit line as
+`attribution` - a constant in `lib/bible.ts`, because the API returns no credit
+field and printing it is a licence condition.
+
+**It activates only when BOTH `KC_BIBLE_PROVIDER=esv` and `ESV_API_KEY` are
+set.** A key alone changes nothing. That is deliberate: writing the adapter did
+not answer the licensing question below, and "we have a key" must not quietly
+become "we are redistributing ESV to every tenant".
+
+**Two things are still outstanding and neither is code:**
+
+1. **The licensing question is unanswered.** Whether Crossway's terms cover
+   redistributing ESV text across many churches' sites on a paid platform is
+   the same open question it was on 2026-08-28. Someone has to read the terms
+   or ask Crossway before `KC_BIBLE_PROVIDER=esv` is set in production.
+2. **The key was never given to the agent and must not be.** It belongs in
+   Vercel env vars and a local `.env.local`, set by Jason. As of this entry no
+   `ESV_API_KEY` exists in either, so `/bible` is still serving WEB text
+   through bible-api - which is why the adapter is untested against the live
+   API. First real request is the first proof it works.
+
+**Original note, still accurate:**
+
+**ESV was a documented stub, not working code.** A key exists, left over from the
 WordPress build. It is deliberately not wired up: ESV's terms are oriented to
 non-commercial use with attribution and caching conditions, and whether they
 cover redistributing ESV text across many churches' sites on a paid platform is

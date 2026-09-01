@@ -111,20 +111,28 @@ const bibleApiProvider: BibleProvider = {
 };
 
 /**
- * ESV (api.esv.org) - a key exists but is NOT wired up.
+ * ESV (api.esv.org).
  *
- * Left as a documented stub rather than working code on purpose. ESV's terms
- * are oriented to non-commercial use with attribution and caching conditions,
- * and whether they cover redistributing ESV text across many churches' sites on
- * a paid platform is an open legal question, not a technical one. Shipping a
- * working implementation would make it trivially easy to enable before that is
- * answered.
+ * IMPLEMENTED, BUT STILL OPT-IN. Nothing changes until KC_BIBLE_PROVIDER=esv
+ * AND ESV_API_KEY are both set. A key on its own does nothing, which is
+ * deliberate - see the licensing note below.
  *
- * To finish it when the answer comes back: set ESV_API_KEY, implement
- * fetchPassage against GET https://api.esv.org/v3/passage/text/ with an
- * `Authorization: Token <key>` header, and return their required credit line as
- * `attribution` - which is a licence condition, not a courtesy.
+ * THE OPEN QUESTION IS LICENSING, NOT CODE (FF-36). Crossway's API terms are
+ * oriented to non-commercial use with attribution and caching conditions, and
+ * whether they cover redistributing ESV text across many churches' sites on a
+ * paid platform has not been answered. This adapter existing does not answer
+ * it. Requiring the explicit env var is what keeps "we have a key" from
+ * quietly becoming "we are redistributing ESV to every tenant".
+ *
+ * ATTRIBUTION IS A LICENCE CONDITION. The API returns no credit field, so the
+ * required line is a constant here and is printed verbatim with every passage.
+ * If Crossway changes its required wording, this string is what must change.
  */
+const ESV_CREDIT =
+  "Scripture quotations are from the ESV(R) Bible (The Holy Bible, English " +
+  "Standard Version(R)), copyright (c) 2001 by Crossway, a publishing ministry " +
+  "of Good News Publishers. Used by permission. All rights reserved.";
+
 const esvProvider: BibleProvider = {
   id: "esv",
   label: "ESV (api.esv.org)",
@@ -133,10 +141,81 @@ const esvProvider: BibleProvider = {
     return Boolean(process.env.ESV_API_KEY);
   },
 
-  async fetchPassage() {
-    throw new Error(
-      "ESV provider is not implemented. Licensing for multi-tenant use is unresolved - see lib/bible.ts and FF-36.",
-    );
+  async fetchPassage(book, chapter) {
+    const key = process.env.ESV_API_KEY;
+    // isConfigured() gates selection, but a provider must not assume it was
+    // asked politely - this is also reachable if PROVIDERS is called directly.
+    if (!key) return null;
+
+    /*
+     * Ask for prose, not an apparatus. Headings, footnotes and horizontal
+     * rules are markup for a study Bible and become noise in a plain-text
+     * field. The short copyright is suppressed because we print the full
+     * required credit ourselves rather than a truncated "(ESV)".
+     */
+    const params = new URLSearchParams({
+      q: `${book} ${chapter}`,
+      "include-passage-references": "false",
+      "include-verse-numbers": "true",
+      "include-first-verse-numbers": "true",
+      "include-footnotes": "false",
+      "include-footnote-body": "false",
+      "include-headings": "false",
+      "include-short-copyright": "false",
+      "include-passage-horizontal-lines": "false",
+      "include-heading-horizontal-lines": "false",
+      "indent-paragraphs": "0",
+      "indent-poetry-lines": "0",
+    });
+
+    try {
+      const res = await fetch(`https://api.esv.org/v3/passage/text/?${params}`, {
+        headers: { Authorization: `Token ${key}` },
+        next: { revalidate: PASSAGE_TTL_SECONDS },
+      });
+
+      if (!res.ok) {
+        // 401 means the key is wrong or revoked, and that is worth saying out
+        // loud - it is otherwise indistinguishable from "chapter not found",
+        // and the page would silently fall back to WEB text forever.
+        console.error(
+          `[bible] ESV request failed with ${res.status} for "${book} ${chapter}"` +
+            (res.status === 401 ? " - check ESV_API_KEY" : ""),
+        );
+        return null;
+      }
+
+      const data = (await res.json()) as {
+        canonical?: string;
+        passages?: string[];
+      };
+
+      const raw = data.passages?.join("\n\n") ?? "";
+      if (!raw.trim()) return null;
+
+      return {
+        reference: data.canonical?.trim() || `${book} ${chapter}`,
+        /*
+         * ESV wraps prose at ~70 columns, so a paragraph arrives as several
+         * lines. Collapsing every newline (as the bible-api adapter does)
+         * would run poetry and paragraph breaks together into one block, so
+         * blank lines are preserved as paragraph boundaries and only the
+         * wrapping newlines inside a paragraph are folded away.
+         */
+        text: raw
+          .replace(/\r/g, "")
+          .split(/\n{2,}/)
+          .map((paragraph) => paragraph.replace(/\s*\n\s*/g, " ").trim())
+          .filter(Boolean)
+          .join("\n\n"),
+        translation: "ESV",
+        attribution: ESV_CREDIT,
+      };
+    } catch {
+      // A network failure is not a missing passage - same reasoning as
+      // bible-api above. The caller renders the seeded error line either way.
+      return null;
+    }
   },
 };
 
