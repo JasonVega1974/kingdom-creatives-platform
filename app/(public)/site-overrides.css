@@ -1355,3 +1355,47 @@
    just corrects the visual order without touching DOM order for readers. */
 .kc-site .group-card .card-body {display: flex; flex-direction: column}
 .kc-site .group-card .card-kicker {order: -1; margin-bottom: 6px}
+
+/* ============================================================
+ * 18. PHASE 4 - READING PAGES
+ * ============================================================
+ * The audit found these pages mostly ALREADY GOOD - the devotional reading
+ * and archive, the Bible reader, the expect tiles, the visit form structure
+ * and the timeline all shipped this session and are not re-touched. Four
+ * genuine items:
+ * ------------------------------------------------------------ */
+
+/* ---- 18a. Field focus rings failed non-text contrast ----
+   site.css focuses inputs with the gold accent: #C9A227 on paper measures
+   2.26:1 against WCAG 1.4.11's 3:1 for focus indicators. Brand measures
+   3.2:1 on paper and 3.4:1 on white. A real a11y bug, not a taste call. */
+.kc-site .field input:focus,
+.kc-site .field select:focus,
+.kc-site .field textarea:focus,
+.kc-site .reader-controls select:focus {
+  outline: 3px solid var(--kc-brand);
+  outline-offset: 1px;
+  border-color: var(--kc-brand);
+}
+
+/* ---- 18b. The give-card small print, size nudge ----
+   The Phase-1-era contrast fix made it readable (6.34:1); at 12.5px it was
+   still squinty. 13.5px keeps it clearly subordinate to the body. */
+.kc-site .give-note {font-size: 13.5px}
+
+/* ---- 18c. The give card's shadow was grey ----
+   0 24px 70px rgba(0,0,0,.28) is a cold shadow on a warm page - the one
+   surface that never got the warm-shadow token treatment. */
+.kc-site .give-card {box-shadow: var(--kc-shadow-lift)}
+
+/* ---- 18d. FAQ: the open item declares itself ----
+   The breathing open (Phase 1) and the +/- marker already exist. This adds
+   the state read: an open item's border warms to brand, the summary tracks
+   hover, and the marker turns with the state. */
+.kc-site .faq details {transition: border-color .2s ease}
+.kc-site .faq details[open] {border-color: var(--kc-brand)}
+.kc-site .faq summary:hover {color: var(--kc-brand)}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-site .faq details {transition: none !important}
+}
