@@ -3,6 +3,8 @@ import {
   SectionRenderer,
   type SectionContext,
 } from "@/components/site/section-renderer";
+import { Fragment, type ReactNode } from "react";
+
 import type { SectionRow } from "@/lib/sections";
 
 /**
@@ -23,10 +25,20 @@ export function PageSections({
   pageSlug,
   sections,
   context,
+  afterSection,
 }: {
   pageSlug: string;
   sections: SectionRow[];
   context: SectionContext;
+  /**
+   * Extra content to render immediately after a named section, keyed by
+   * section_key. A seam, not a special case: this component still knows only
+   * about ordering and grouping, and the PAGE decides what goes where. Anything
+   * keyed to a section the church has hidden simply never renders, which is the
+   * correct behaviour - a teaser for a band that is switched off would be
+   * stranded.
+   */
+  afterSection?: Record<string, ReactNode>;
 }) {
   // THE BANNER IS ALWAYS FIRST, whatever sort_order says.
   //
@@ -91,7 +103,12 @@ export function PageSections({
         // Claimed by a group but not its anchor - already rendered above.
         if (claimed.has(section.section_key)) return null;
 
-        return <SectionRenderer key={section.id} section={section} context={context} />;
+        return (
+          <Fragment key={section.id}>
+            <SectionRenderer section={section} context={context} />
+            {afterSection?.[section.section_key] ?? null}
+          </Fragment>
+        );
       })}
     </>
   );

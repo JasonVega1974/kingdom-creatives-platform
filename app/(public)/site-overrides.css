@@ -835,3 +835,54 @@
 @media (prefers-reduced-motion: reduce) {
   .kc-site .devotional-item {transition:none !important;transform:none !important}
 }
+
+/* ------------------------------------------------------------
+ * 14. Today's devotional - home page teaser.
+ *
+ * Sits between the dark sermon band and the events list, so it is deliberately
+ * light and quiet: a rule down the left in brand orange, the same device the
+ * scripture page uses, rather than another filled card competing with the two
+ * blocks either side of it.
+ * ------------------------------------------------------------ */
+
+.kc-site .devotional-teaser {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 28px;
+  padding: 26px 30px;
+  border: 1px solid var(--kc-line);
+  border-left: 3px solid var(--kc-brand);
+  border-radius: var(--kc-radius);
+  background: var(--kc-surface);
+}
+
+.kc-site .devotional-teaser h2 {
+  font-size: 24px;
+  margin: 10px 0 4px;
+  line-height: 1.2;
+}
+
+.kc-site .devotional-teaser-ref {
+  font-family: var(--kc-font-utility);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--kc-ink-soft);
+}
+
+.kc-site .devotional-teaser-line {
+  margin-top: 10px;
+  font-size: 16.5px;
+  line-height: 1.6;
+  font-style: italic;
+  color: var(--kc-ink-soft);
+  max-width: 62ch;
+}
+
+.kc-site .devotional-teaser-go .btn {white-space:nowrap}
+
+@media (max-width: 760px) {
+  .kc-site .devotional-teaser {grid-template-columns:1fr;gap:18px;padding:22px 20px}
+  .kc-site .devotional-teaser h2 {font-size:21px}
+}
