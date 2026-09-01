@@ -1706,3 +1706,85 @@ What this entry changes is the size of the job: it is four cache modules and
 two helpers, not one function. Doing it piecemeal would leave the codebase in a
 state where `updateTag` is correct in some paths and dead in others, which is
 worse than either end state.
+
+---
+
+## FF-50 - the legal pages are a TEMPLATE and have not had legal review
+
+**File:** `lib/legal.ts`, `app/(public)/{privacy,terms,cookies}/page.tsx`
+**Raised:** 2026-09-01
+**Must fix by:** before the platform takes a second paying tenant, and before
+anyone relies on these documents in a dispute.
+
+**Nobody with a licence has read this text.** It was written by an agent against
+an audit of the codebase and is published on a live church website. That is
+better than the boilerplate alternative in one specific way - the factual claims
+were checked rather than assumed - and it is still not legal advice, not
+reviewed, and not sufficient for a platform that intends to sign up churches.
+
+### What IS trustworthy about it
+
+The factual statements were verified against the running system on 2026-09-01,
+not copied from a generator:
+
+| Claim | How it was checked |
+|---|---|
+| the public site sets no cookies | live `curl -D -` on `/` and `/portal/login` - no `Set-Cookie` |
+| fonts are not fetched from Google | `next/font/google` self-hosts at build; served from `/_next/static/media/*.woff2` |
+| YouTube is contacted only after clicking play | browser check on the facade - only `i.ytimg.com` before the click |
+| no payment data reaches the platform | giving is an outbound link to Tithe.ly; no card fields exist anywhere in this repo |
+
+**If any of those change, `lib/legal.ts` becomes false and must change with the
+code.** The header comment in that file says so; this entry is the second place
+it is written down, because the first will be missed.
+
+### What is NOT trustworthy
+
+- No lawyer has reviewed the wording, the structure, or whether it satisfies any
+  particular regime.
+- It does not name a jurisdiction beyond "the state in which the church is
+  established", and does not address CCPA, GDPR or state-level privacy statutes
+  by name.
+- The children's section asserts a policy that nothing technically enforces.
+- Whether "prayer requests are kept until the church deletes them" is a
+  defensible retention position has not been tested.
+
+### The structural decision, which IS deliberate
+
+Platform templates, not `church_sections` rows. Recorded because it will look
+like an omission later:
+
+1. `church_sections` is pastor-editable by design. Legal text there means a
+   pastor can edit "we never see your card number" into something untrue.
+2. A template renders for a new tenant on day one. Seeded rows would need a
+   data migration per church before `/privacy` resolved, and the failure mode is
+   a 404 where a policy should be.
+3. The wording is the platform's; only the facts are the tenant's. Name, domain,
+   contact and address come from the `churches` row and are never typed in.
+
+---
+
+## FF-51 - "Powered by Kingdom Creatives" is hardcoded, not per-tenant
+
+**File:** `components/site/site-footer.tsx`
+**Raised:** 2026-09-01, while building the footer
+**Must fix by:** whenever a tenant first asks to remove it, or before pricing
+tiers are defined - whichever comes first.
+
+The footer's attribution line and its link to kingdom-creatives.com are
+constants in the component. Every tenant gets them, and no tenant can turn them
+off.
+
+On a white-label platform that is backwards. Removing the builder's mark is a
+normal paid tier, which makes this a per-tenant setting - most likely a column
+on `churches` (`show_attribution boolean default true`) or a field on whatever
+plan model Phase E introduces.
+
+**Deliberately not built yet.** Inventing a schema column for a pricing model
+that does not exist would be guessing at the shape of Phase E, and a wrong guess
+is harder to remove than a constant. Flagged with Jason at build time and left
+hardcoded on purpose.
+
+When it is built, note that the footer is shared by every page including the
+legal ones, so the setting needs to reach `SiteFooter` on all of them - the
+church record is already passed to each, so there is no plumbing problem.

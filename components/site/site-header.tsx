@@ -29,7 +29,7 @@ import { mediaUrl } from "@/lib/portal/media";
  */
 
 type NavChild = { href: string; label: string };
-type NavEntry = { label: string; href?: string; children?: NavChild[] };
+export type NavEntry = { label: string; href?: string; children?: NavChild[] };
 
 /**
  * The nav, as real routes.
@@ -38,7 +38,15 @@ type NavEntry = { label: string; href?: string; children?: NavChild[] };
  * These are the actual Next routes, so they prefetch, they work with
  * JavaScript off, and a middle-click opens a real page.
  */
-const NAV: NavEntry[] = [
+/**
+ * The site's navigation, and the ONE source of it.
+ *
+ * The footer builds its link list from this array rather than keeping a second
+ * one. Two hand-maintained lists of the same eleven routes drift the first time
+ * somebody adds a page, and the footer is where nobody notices.
+ */
+export const NAV: NavEntry[] = [
+  { label: "Home", href: "/" },
   { label: "Visit", href: "/visit" },
   {
     label: "Watch",
