@@ -886,3 +886,137 @@
   .kc-site .devotional-teaser {grid-template-columns:1fr;gap:18px;padding:22px 20px}
   .kc-site .devotional-teaser h2 {font-size:21px}
 }
+
+/* ============================================================
+ * 15. PHASE 1 - DESIGN FOUNDATION (approved direction, 2026-09-01)
+ * ============================================================
+ *
+ * CSS only, every page inherits. The identity stays; scale, rhythm, depth and
+ * motion go up. Full spec: the Phase 0 mockup artifact. The rules here are the
+ * ones every later phase builds on - phases 2-5 add structure, not new tokens.
+ *
+ * Band-ground ALTERNATION is deliberately not here: most sections render as
+ * anonymous .wrap divs with no stable class to hang a tint on, and a
+ * :nth-child() guess would tint different sections on different pages. The
+ * tints land in phases 2-3 as sections gain semantic classes. Logged in the
+ * phase plan rather than half-done here.
+ * ------------------------------------------------------------ */
+
+/* ---- 15a. Tokens the direction adds ---- */
+.kc-site {
+  /* Gold: promoted from the play disc to the voice of the NIGHT bands -
+     kickers, times, live markers on dark grounds. NEVER on light surfaces:
+     #D9A441 on white is ~2.2:1 and fails everything. The rule is enforced by
+     only ever applying it inside .sermon-band / .on-dark scopes. */
+  --kc-gold: #D9A441;
+  /* Warm shadows, three sizes. Never grey - grey shadows on warm paper read
+     as dirt. */
+  --kc-shadow-sm: 0 1px 3px rgba(60, 24, 8, .07);
+  --kc-shadow-md: 0 10px 30px -12px rgba(60, 24, 8, .28);
+  --kc-shadow-lift: 0 18px 44px -18px rgba(60, 24, 8, .35);
+}
+
+/* ---- 15b. Fluid type scale ----
+   The site's headings were flat ~20-30px everywhere - the single biggest
+   "stale prototype" signal in the audit. One scale, applied globally so all
+   eleven pages step up together. */
+.kc-site .page-hero h1 {
+  font-size: clamp(34px, 5vw, 56px);
+  font-weight: 800;
+  letter-spacing: -.022em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.kc-site h2 {
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 800;
+  letter-spacing: -.015em;
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.kc-site h3 {font-weight: 700}
+
+.kc-site .lede {font-size: 18px; line-height: 1.65}
+
+/* Kickers tighten into signage: smaller, wider tracked, already mono. */
+.kc-site .eyebrow {font-size: 11px; letter-spacing: .16em}
+
+/* Times and mile numbers line up like a logbook should. */
+.kc-site .logbook,
+.kc-site .mile::before,
+.kc-site .scripture-trans {font-variant-numeric: tabular-nums}
+
+/* ---- 15c. Spacing rhythm ----
+   More air at the page head and inside the dark bands; the paper-dim
+   alternation between light sections follows in later phases. */
+.kc-site .page-hero {padding: 84px 0 52px}
+.kc-site .sermon-band {padding: 96px 0}
+
+/* ---- 15d. Gold on night ----
+   Dark bands stop leaning on white-on-orange. Kickers and the archive link
+   inside night bands take gold; the give band keeps its deliberate
+   dark-on-orange eyebrow, untouched. */
+.kc-site .sermon-band .eyebrow,
+.kc-site .hero-banner + .hero-under .eyebrow {color: var(--kc-gold)}
+.kc-site .sermon-band .eyebrow::before {
+  background: repeating-linear-gradient(90deg, var(--kc-gold) 0 8px, transparent 8px 14px);
+}
+.kc-site .sermon-band .archive-link {color: var(--kc-gold)}
+
+/* ---- 15e. Focus, site-wide ----
+   Every interactive element gets the same visible ring. Individual components
+   (player, chapter grid) already declare their own; this is the floor. */
+.kc-site a:focus-visible,
+.kc-site button:focus-visible,
+.kc-site summary:focus-visible {
+  outline: 2px solid var(--kc-brand);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ---- 15f. The live dot ----
+   site.css ships it red at 1.6s, unguarded. Re-grounded: green (live, not
+   alert), slower breath, and DEAD under reduced motion - the base declaration
+   sits in generated CSS outside any guard, so the kill here is load-bearing. */
+.kc-site .live-dot {background: #2FA45C; animation-duration: 2.2s}
+
+/* ---- 15g. Motion additions ----
+   Same guardrails as every earlier block: opt-in via no-preference,
+   transform/opacity/background-size only, decoration never text. */
+@media (prefers-reduced-motion: no-preference) {
+  /* Link draw: the underline draws in rather than popping. Replaces the
+     text-decoration hover on archive links; no layout shift. */
+  .kc-site .archive-link,
+  .kc-site .devo-more,
+  .kc-site .scripture-step {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0 1.5px;
+    transition: background-size .25s ease, color .15s ease;
+  }
+  .kc-site .archive-link:hover,
+  .kc-site .devo-more:hover {background-size: 100% 1.5px; text-decoration: none}
+
+  /* Chip sweep: filters warm up under the cursor before they are chosen. */
+  .kc-site .chip:hover {background: var(--kc-brand-wash)}
+
+  /* Details open with a breath instead of a snap. (Closing cannot be
+     animated without script; the snap shut is acceptable.) Scoped to the
+     content wrapper so the summary itself never moves. */
+  .kc-site .faq details[open] > *:not(summary),
+  .kc-site .bible-picker[open] > .bible-testament,
+  .kc-site .bible-testament[open] > .bible-books {
+    animation: kc-enter .28s ease both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-site .live-dot {animation: none !important}
+  .kc-site .archive-link,
+  .kc-site .devo-more,
+  .kc-site .scripture-step,
+  .kc-site .chip {transition: none !important}
+}
