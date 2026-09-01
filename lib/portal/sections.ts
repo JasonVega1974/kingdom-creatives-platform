@@ -115,6 +115,12 @@ export const PAGES: PageDef[] = [
         ],
       },
       {
+        key: "daily_devotional",
+        label: "Today's devotional",
+        description: "The daily reading, drawn from the year's collection",
+        auto: true,
+      },
+      {
         key: "mile_stats",
         label: "Numbers strip",
         description: "The row of figures - miles, states, drivers",

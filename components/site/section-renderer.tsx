@@ -9,8 +9,11 @@ import {
 import { PrayerForm, VisitForm } from "@/components/site/public-forms";
 import { Scripture } from "@/components/site/scripture";
 import { SermonPlayer } from "@/components/site/sermon-player";
+import { DevotionalCard } from "@/components/site/devotionals";
 import { WorshipGrid } from "@/components/site/worship-grid";
 import { getBibleProvider } from "@/lib/bible";
+import { dailyDevotionalIndex } from "@/lib/devotional-day";
+import { DEVOTIONALS } from "@/lib/devotionals";
 import { booksIn, resolveBook, resolveChapter } from "@/lib/bible-books";
 import type { Church } from "@/lib/church";
 import { parseServiceTimes } from "@/lib/church";
@@ -96,7 +99,19 @@ export type LayoutGroup = {
 };
 
 export const LAYOUT_GROUPS: Record<string, LayoutGroup[]> = {
-  home: [{ className: "wrap about-grid", columns: [["about_strip"], ["mile_stats"]] }],
+  home: [
+    {
+      className: "wrap about-grid",
+      /*
+       * The right column lists BOTH keys, and that is the multi-tenant switch:
+       * a church with daily_devotional in its sections gets the devotional
+       * card; one without it (every church but CFT today) still gets its
+       * mile-marker stats; hidden sections render nothing. No shared code
+       * knows which church chose what.
+       */
+      columns: [["about_strip"], ["daily_devotional", "mile_stats"]],
+    },
+  ],
   visit: [{ className: "wrap split", columns: [["expect", "faq"], ["visit_form"]] }],
   bible: [
     {
@@ -121,6 +136,8 @@ export function SectionRenderer({
 
     case "about_strip":
       return <AboutStrip section={section} context={context} />;
+    case "daily_devotional":
+      return <DailyDevotional section={section} context={context} />;
     case "mile_stats":
       return <MileStats section={section} context={context} />;
     case "get_connected":
@@ -235,49 +252,57 @@ function HomeHero({
   const ctas = rows(section.content, "ctas");
   const services = parseServiceTimes(context.church.service_times);
 
-  const heading = [headline, context.church.tagline, context.church.address]
-    .filter(Boolean)
-    .join(" ");
-
+  /*
+   * PHASE 2 HERO. The banner image becomes the band's background under a
+   * night scrim, and the headline becomes VISIBLE - the old hero was a bare
+   * image with an sr-only h1, so the page had no headline a person could see.
+   *
+   * The scrim floor is rgba(night, .85), measured against a worst-case WHITE
+   * image region (not an average): the lightest possible ground is #39312C,
+   * carrying the heading at 10.9:1, the lede at 7.8:1 and the gold kicker at
+   * 5.7:1 - and copy sits in the left 60% where alpha is .88 or more. A church
+   * with no banner gets the plain night gradient - same band, no scrim needed.
+   *
+   * The image is decorative here (background, empty alt semantics); the
+   * visible h1 now carries what the alt text used to.
+   */
   return (
-    <div className="hero">
-      <div className="wrap">
-        <h1 className="sr-only">{heading || headline || context.church.slug}</h1>
+    <div
+      className={image_desktop ? "hero hero-cine has-image" : "hero hero-cine"}
+      style={
+        image_desktop
+          ? ({ "--hero-image": `url("${image_desktop}")` } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <div className="wrap hero-cine-grid">
+        <div className="hero-copy">
+          {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
+          <h1>{headline ?? context.church.name ?? context.church.slug}</h1>
+          {lede ? <p className="lede">{lede}</p> : null}
+          {ctas.length > 0 ? <div className="hero-ctas">{ctaLinks(ctas, true)}</div> : null}
+        </div>
 
-        {image_desktop ? (
-          <div className="hero-banner">
-            {/* Unoptimized: an art-directed full-bleed banner whose intrinsic
-                size the section content does not carry. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image_desktop} alt={headline ?? ""} />
+        {services.length > 0 ? (
+          /* The Driver's Log, as a glass plate. Same data, same aria - the
+             live dot lights only when a row has streaming: true. */
+          <div className="plate" role="table" aria-label="Service times">
+            <div className="plate-head">
+              <span>{logbook_title ?? "Service times"}</span>
+              <span>{logbook_tz ?? services[0]?.tz ?? ""}</span>
+            </div>
+            {services.map((slot, index) => (
+              <div key={index} className="plate-row" role="row">
+                <span className="pk">{slot.day ?? ""}</span>
+                <span className="pt">{slot.time ?? ""}</span>
+                <span className="pv">
+                  {slot.streaming ? <span className="live-dot" aria-hidden="true" /> : null}
+                  {slot.label ?? ""}
+                </span>
+              </div>
+            ))}
           </div>
         ) : null}
-
-        <div className="hero-under">
-          <div>
-            {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
-            {lede ? <p className="lede">{lede}</p> : null}
-            {ctas.length > 0 ? <div className="hero-ctas">{ctaLinks(ctas, true)}</div> : null}
-          </div>
-
-          {services.length > 0 ? (
-            <div className="logbook" role="table" aria-label="Service times">
-              <div className="logbook-head">
-                <span>{logbook_title ?? "Service times"}</span>
-                <span>{logbook_tz ?? services[0]?.tz ?? ""}</span>
-              </div>
-              {services.map((slot, index) => (
-                <div key={index} className="logbook-row">
-                  <span className="k">{[slot.day, slot.time].filter(Boolean).join(" ")}</span>
-                  <span className="v">
-                    {slot.streaming ? <span className="live-dot" aria-hidden="true" /> : null}
-                    {slot.label ?? ""}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
       </div>
     </div>
   );
@@ -356,6 +381,41 @@ function AboutStrip({
  * `marker` becomes data-mm, which the CSS prints in the corner through
  * ::before with attr() - so it has to be an attribute, not a child element.
  */
+/**
+ * Home: the full daily devotional, in the grid column the stats used to hold.
+ *
+ * The entry is chosen SERVER-SIDE by the same dailyDevotionalIndex() the
+ * /devotionals page uses - one selector, so the two never disagree about what
+ * day it is - and only that one entry reaches the markup. lib/devotionals.ts
+ * is server-only, so a client import is a build error, not a fat page.
+ */
+function DailyDevotional({
+  section,
+  context,
+}: {
+  section: SectionRow;
+  context: SectionContext;
+}) {
+  const content = sectionContent(section.content);
+  const index = dailyDevotionalIndex();
+
+  const card = (
+    <DevotionalCard
+      devotional={DEVOTIONALS[index]}
+      dayNumber={index + 1}
+      label={content.label ?? "Today's devotional"}
+      readLabel={content.read_label ?? "Read the full devotional"}
+    />
+  );
+
+  if (context.grouped) return card;
+  return (
+    <Wrap context={context} style={{ paddingBottom: "76px" }}>
+      {card}
+    </Wrap>
+  );
+}
+
 function MileStats({
   section,
   context,
@@ -516,7 +576,10 @@ function EventsPreview({
   );
 
   return (
-    <div style={{ padding: "84px 0" }}>
+    /* band-dim: the alternating paper-dim ground the Phase 1 audit deferred
+       until sections had classes to carry it. Full-width div, so the tint is
+       genuinely full-bleed. */
+    <div className="band-dim" style={{ padding: "84px 0" }}>
       <div className="wrap">
         <SplitHead eyebrow={eyebrow} heading={heading} cta={cta} />
         <EventList events={events} empty={empty ?? "Nothing on the calendar yet."} />
@@ -553,46 +616,61 @@ function Bulletin({
           {content.heading ? <h2>{content.heading}</h2> : null}
         </div>
 
-        <div className="cardgrid two">
-          <div className="card" style={{ padding: "26px 28px" }}>
-            <span className="card-kicker">
-              {content.announcements_title ?? "Announcements"}
-            </span>
+        {/* items-start keeps each card content-height: one short announcement
+            no longer stretches into a tall blank box to match its neighbour. */}
+        <div className="cardgrid two bulletin-grid">
+          <div className="bcard">
+            <div className="bcard-head">
+              <span className="icon-ring" aria-hidden="true">
+                {/* bullhorn */}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11v3a1 1 0 0 0 1 1h2l3.6 4.5a1 1 0 0 0 1.8-.6V5.1a1 1 0 0 0-1.8-.6L6 9H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></svg>
+              </span>
+              <h3>{content.announcements_title ?? "Announcements"}</h3>
+            </div>
 
             {announcements.length > 0 ? (
-              <div style={{ marginTop: "14px" }}>
+              <div className="bcard-list">
                 {announcements.map((item) => (
-                  <div key={item.id} className="logbook-row" style={{ padding: "12px 0" }}>
-                    <span>{item.body}</span>
+                  <div key={item.id} className="ann">
+                    {/* Real data only: the chip renders when the pastor set an
+                        end date, and never invents one when they did not. */}
+                    {item.expires_at ? (
+                      <span className="ann-when">Through {shortDate(item.expires_at)}</span>
+                    ) : null}
+                    <p>{item.body}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p style={{ marginTop: "14px", color: "var(--kc-ink-soft)" }}>
+              <p className="bcard-empty">
                 {content.announcements_empty ?? "Nothing posted this week."}
               </p>
             )}
           </div>
 
-          <div className="card" style={{ padding: "26px 28px" }}>
-            <span className="card-kicker">{content.prayer_title ?? "Prayer list"}</span>
+          <div className="bcard">
+            <div className="bcard-head">
+              <span className="icon-ring" aria-hidden="true">
+                {/* heart */}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 7a5.5 5.5 0 0 1 9.5 5c-2.5 4.4-9.5 9-9.5 9z"/></svg>
+              </span>
+              <h3>{content.prayer_title ?? "Prayer list"}</h3>
+            </div>
 
             {prayer.length > 0 ? (
-              <div style={{ marginTop: "14px" }}>
+              <div className="bcard-list">
                 {prayer.map((item) => (
-                  <div key={item.id} className="logbook-row" style={{ padding: "12px 0" }}>
-                    <span>
+                  <div key={item.id} className="ann">
+                    <p>
                       {item.display_name ? <strong>{item.display_name}</strong> : null}
                       {item.display_name ? " - " : null}
                       {item.body}
-                    </span>
+                    </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p style={{ marginTop: "14px", color: "var(--kc-ink-soft)" }}>
-                {content.prayer_empty ?? "No requests right now."}
-              </p>
+              <p className="bcard-empty">{content.prayer_empty ?? "No requests right now."}</p>
             )}
 
             {content.prayer_note ? (
@@ -604,13 +682,7 @@ function Bulletin({
             <PrayerForm content={content} />
 
             {content.prayer_pending_note ? (
-              <p
-                style={{
-                  marginTop: "12px",
-                  fontSize: "14px",
-                  color: "var(--kc-ink-soft)",
-                }}
-              >
+              <p style={{ marginTop: "12px", fontSize: "14px", color: "var(--kc-ink-soft)" }}>
                 {content.prayer_pending_note}
               </p>
             ) : null}
@@ -621,11 +693,13 @@ function Bulletin({
   );
 }
 
-// ---------------------------------------------------------------
-// Visit
-// ---------------------------------------------------------------
+/** "Sep 13" from a timestamp, UTC like every other public date (FF-38). */
+function shortDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { timeZone: "UTC", month: "short", day: "numeric" });
+}
 
-/** "What to expect" - each entry carries an emoji marker in a rounded tile. */
 function Expect({
   section,
   context,

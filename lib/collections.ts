@@ -100,7 +100,7 @@ export type Video = Pick<
 
 export type Announcement = Pick<
   Tables["announcements"]["Row"],
-  "id" | "body" | "created_at"
+  "id" | "body" | "created_at" | "expires_at"
 >;
 
 export type PrayerRequest = Pick<
@@ -254,7 +254,7 @@ export function getAnnouncements(slug: string, churchId: string): Promise<Announ
   return cached(["announcements", slug], slug, "announcements", () =>
     createPublicClient()
       .from("announcements")
-      .select("id, body, created_at")
+      .select("id, body, created_at, expires_at")
       .eq("church_id", churchId)
       .eq("visible", true)
       .or(`expires_at.is.null,expires_at.gte.${now}`)

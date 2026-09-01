@@ -6,9 +6,6 @@ import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
 import { getCollectionsFor } from "@/lib/collections";
 import { getChurchLinks, givingLink, videoChannels } from "@/lib/links";
-import { DevotionalTeaser } from "@/components/site/devotional-teaser";
-import { dailyDevotionalIndex } from "@/lib/devotional-day";
-import { DEVOTIONALS } from "@/lib/devotionals";
 import { buildSermonFeed } from "@/lib/sermon-feed";
 import { getPageSections } from "@/lib/sections";
 
@@ -66,34 +63,7 @@ export default async function HomePage() {
       <SiteHeader church={site.church} theme={site.theme} activeSlug={"home"} links={links} />
 
       <main>
-        {/*
-          Today's devotional, immediately after "this week's message".
-
-          Placed there because both are "here is something to read or watch
-          right now", so they read as one idea rather than two - and because it
-          is high on the page without displacing the banner or the church's own
-          introduction. It sits between the dark sermon band and the events
-          list, which gives the eye a light break between two heavy blocks.
-
-          THE ENTRY IS PICKED ON THE SERVER, and this is the whole size story:
-          lib/devotionals.ts is ~253 KB and server-only, dailyDevotionalIndex()
-          chooses one, and only that one crosses into the markup. The home page
-          never carries the array.
-
-          The SAME selector the /devotionals page uses - not a second copy of
-          the date logic. Two implementations would drift and the two pages
-          would eventually disagree about what day it is.
-        */}
-        <PageSections
-          pageSlug={"home"}
-          sections={sections}
-          context={context}
-          afterSection={{
-            latest_sermon: (
-              <DevotionalTeaser devotional={DEVOTIONALS[dailyDevotionalIndex()]} />
-            ),
-          }}
-        />
+        <PageSections pageSlug={"home"} sections={sections} context={context} />
       </main>
 
       <SiteFooter church={site.church} links={links} />

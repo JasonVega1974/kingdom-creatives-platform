@@ -166,3 +166,60 @@ function Pager({ current, pages }: { current: number; pages: number }) {
     </nav>
   );
 }
+
+/**
+ * The home-page card: the whole devotional, compactly.
+ *
+ * Distinct from DevotionalReading (the /devotionals page) in framing, not in
+ * content - a card in a grid column next to the church's introduction, using
+ * the shared .devo-* styles from the approved mockup. Same rule as everything
+ * in this file: it takes ONE devotional, never the collection, so the 365-entry
+ * array stays server-side.
+ */
+export function DevotionalCard({
+  devotional,
+  dayNumber,
+  label,
+  readLabel,
+}: {
+  devotional: Devotional;
+  dayNumber: number;
+  label: string;
+  readLabel: string;
+}) {
+  return (
+    <aside className="devo">
+      <div className="devo-head">
+        <div>
+          <span className="eyebrow">{label}</span>
+          <h3>{devotional.title}</h3>
+        </div>
+        <span className="devo-no">No. {dayNumber}</span>
+      </div>
+
+      <blockquote className="devo-scrip">
+        {devotional.scripture}
+        <cite>{devotional.verse}</cite>
+      </blockquote>
+
+      <p className="devo-body">{devotional.body}</p>
+
+      <div className="devo-block">
+        <b>Reflect</b>
+        <p>{devotional.reflect}</p>
+      </div>
+
+      {/* Omitted, never invented, when absent - entry #29 has no prayer. */}
+      {devotional.prayer ? (
+        <div className="devo-block">
+          <b>Prayer</b>
+          <p>{devotional.prayer}</p>
+        </div>
+      ) : null}
+
+      <Link className="devo-more" href="/devotionals">
+        {readLabel}
+      </Link>
+    </aside>
+  );
+}
