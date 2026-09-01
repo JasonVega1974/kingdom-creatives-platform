@@ -7,6 +7,7 @@ import {
   VideoGrid,
 } from "@/components/site/collections";
 import { PrayerForm, VisitForm } from "@/components/site/public-forms";
+import { SermonPlayer } from "@/components/site/sermon-player";
 import { getBibleProvider, normalizeBook, normalizeChapter } from "@/lib/bible";
 import type { Church } from "@/lib/church";
 import { parseServiceTimes } from "@/lib/church";
@@ -479,24 +480,14 @@ function LatestSermon({
         </div>
 
         {latest?.youtube_id ? (
-          <a
-            className="player"
-            href={`https://www.youtube.com/watch?v=${latest.youtube_id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={`Watch ${latest.title}`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              className="thumb"
-              src={`https://i.ytimg.com/vi/${latest.youtube_id}/hqdefault.jpg`}
-              alt=""
-            />
-            {badge ? <span className="badge">{badge}</span> : null}
-            <span className="play-ring">
-              <span className="disc" />
-            </span>
-          </a>
+          /* Plays in place rather than opening a new tab. The facade keeps the
+             page cheap - nothing is requested from YouTube until someone
+             presses play. See SermonPlayer. */
+          <SermonPlayer
+            youtubeId={latest.youtube_id}
+            title={latest.title}
+            badge={badge ?? undefined}
+          />
         ) : null}
       </div>
     </div>

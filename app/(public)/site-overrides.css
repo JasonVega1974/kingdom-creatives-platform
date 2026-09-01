@@ -98,3 +98,54 @@
  * ------------------------------------------------------------ */
 
 .kc-site .give-band .give-card p {color:var(--kc-ink-soft)}
+
+/* ------------------------------------------------------------
+ * 4. The sermon player - frame, and the letterbox fix.
+ *
+ * The prototype drew a static thumbnail that linked out to YouTube, so
+ * site.css styles .player as a picture frame. It is now a facade that swaps in
+ * a real iframe on click (see components/site/sermon-player.tsx), which needs
+ * two things the port could not have anticipated: rules for the iframe, and a
+ * thumbnail that fills the frame.
+ *
+ * THE LETTERBOX. .thumb had no object-fit. YouTube's hqdefault.jpg is 480x360
+ * - 4:3, with the 16:9 frame pillarboxed inside it by black bars - so
+ * stretching it into a 16:9 box gave black bands top and bottom AND distorted
+ * the image. `cover` crops exactly those bars away. hqdefault is used rather
+ * than maxresdefault because it exists for every video; maxres is absent on
+ * older uploads and fails to a grey placeholder.
+ * ------------------------------------------------------------ */
+
+.kc-site .player .thumb {object-fit:cover}
+
+.kc-site .player iframe {position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+
+/* The frame. Brand orange at low alpha rather than a flat stroke: a hairline
+   inside edge to define it against the dark band, and a soft outer bloom that
+   reads as glow rather than as a second border. The black drop shadow from
+   site.css is kept underneath so the panel still sits above the background. */
+.kc-site .player {
+  border-color: color-mix(in srgb, var(--kc-brand) 45%, transparent);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, .45),
+    0 0 0 1px color-mix(in srgb, var(--kc-brand) 22%, transparent),
+    0 0 38px -8px color-mix(in srgb, var(--kc-brand) 55%, transparent);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.kc-site .player:hover,
+.kc-site .player:focus-visible {
+  border-color: color-mix(in srgb, var(--kc-brand) 75%, transparent);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, .5),
+    0 0 0 1px color-mix(in srgb, var(--kc-brand) 40%, transparent),
+    0 0 54px -6px color-mix(in srgb, var(--kc-brand) 70%, transparent);
+}
+
+/* Keyboard users get the same affordance as the hover glow, plus a real ring -
+   the glow alone is a style change, not a visible focus indicator. */
+.kc-site .player:focus-visible {outline:2px solid var(--kc-brand);outline-offset:3px}
+
+/* Playing: the frame stays, the pointer cursor goes. The element is no longer
+   a link, and a cursor promising a click over YouTube's own controls is a lie. */
+.kc-site .player.is-playing {cursor:default}
