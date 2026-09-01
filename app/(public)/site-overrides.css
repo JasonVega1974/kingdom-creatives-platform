@@ -192,3 +192,290 @@
 .kc-site .bible-chapter {display:grid;place-items:center;min-height:44px;border:1px solid var(--kc-line);border-radius:8px;text-decoration:none;font-family:var(--kc-font-utility);font-size:14px;color:var(--kc-ink)}
 .kc-site .bible-chapter:hover {border-color:var(--kc-brand);background:var(--kc-brand-wash)}
 .kc-site .bible-chapter.is-current {background:var(--kc-brand);border-color:var(--kc-brand);color:var(--kc-brand-contrast);font-weight:700}
+
+/* ------------------------------------------------------------
+ * 6. The header dropdown closed before you could reach it.
+ *
+ * site.css puts the panel 6px below the trigger:
+ *
+ *   .dropdown {position:absolute; top:calc(100% + 6px); display:none}
+ *   li:hover > .dropdown {display:block}
+ *
+ * Those 6px are dead space. Moving the pointer from "Watch" down to
+ * "Sermons" crosses them, `li:hover` goes false mid-journey, and
+ * display:none removes the panel before the pointer lands. The submenu was
+ * unusable with a mouse - only keyboard focus-within reached it.
+ *
+ * Fixed by BRIDGING the gap rather than closing it: an invisible strip on
+ * the panel covers the 6px, and because it is a descendant of the <li>, the
+ * pointer never leaves the hover region. The visual offset is preserved.
+ *
+ * display:none also cannot be transitioned, so the panel now hides with
+ * visibility + opacity and animates in. pointer-events:none while hidden
+ * keeps an invisible panel from swallowing clicks on the page beneath.
+ * ------------------------------------------------------------ */
+
+.kc-site .dropdown {
+  display: block;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity .16s ease, transform .16s ease, visibility .16s;
+}
+
+/* The bridge. Invisible, sits in the gap, keeps li:hover true. */
+.kc-site .dropdown::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
+}
+
+.kc-site li:hover > .dropdown,
+.kc-site li:focus-within > .dropdown {
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------
+ * 7. Movement.
+ *
+ * The port gave cards a -3px lift on hover and nothing else. These add the
+ * transitions that were missing, a little more travel, and a scroll-reveal.
+ *
+ * The reveal uses `animation-timeline: view()`, so it is CSS with no
+ * observer and no JavaScript - consistent with how the filters, the menu and
+ * the Bible picker work. Browsers without it simply show the content, which
+ * is the correct fallback for a church website: never hide anything behind an
+ * effect that might not run.
+ *
+ * ALL OF IT IS OFF under prefers-reduced-motion. Vestibular disorders are
+ * real and a site that moves when someone asked it not to is a bug.
+ * ------------------------------------------------------------ */
+
+.kc-site .card,
+.kc-site .event,
+.kc-site .person,
+.kc-site .mile,
+.kc-site .expect-item,
+.kc-site .give-card,
+.kc-site .logbook {
+  transition: transform .22s cubic-bezier(.2, .7, .3, 1), box-shadow .22s ease, border-color .22s ease;
+}
+
+.kc-site .card:hover,
+.kc-site .person:hover {transform:translateY(-6px)}
+.kc-site .event:hover {transform:translateY(-3px) translateX(3px)}
+.kc-site .mile:hover {transform:translateY(-4px);border-color:var(--kc-brand)}
+.kc-site .expect-item:hover {transform:translateX(4px);border-color:var(--kc-brand)}
+
+/* The thumbnail drifts in a touch slower than the card lifts, so the image
+   settles after the card does rather than moving as one flat slab. */
+.kc-site .card img,
+.kc-site .person img {transition:transform .5s cubic-bezier(.2,.7,.3,1)}
+.kc-site .card:hover img,
+.kc-site .person:hover img {transform:scale(1.045)}
+
+.kc-site .chip,
+.kc-site .bible-book,
+.kc-site .bible-chapter {transition:transform .15s ease, background .15s ease, border-color .15s ease, color .15s ease}
+.kc-site .chip:hover,
+.kc-site .bible-chapter:hover {transform:translateY(-2px)}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .kc-site .card,
+    .kc-site .event,
+    .kc-site .person,
+    .kc-site .mile,
+    .kc-site .expect-item {
+      animation: kc-rise linear both;
+      animation-timeline: view();
+      /* Finish well before the element is centred, or it is still arriving
+         when the reader is already looking at it. */
+      animation-range: entry 0% cover 26%;
+    }
+  }
+}
+
+@keyframes kc-rise {
+  from {opacity:0; transform:translateY(18px)}
+  to   {opacity:1; transform:none}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-site .card,
+  .kc-site .event,
+  .kc-site .person,
+  .kc-site .mile,
+  .kc-site .expect-item,
+  .kc-site .card img,
+  .kc-site .person img,
+  .kc-site .chip,
+  .kc-site .bible-book,
+  .kc-site .bible-chapter,
+  .kc-site .dropdown {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+/* ------------------------------------------------------------
+ * 8. Scripture, set as a page rather than a paragraph.
+ *
+ * The prototype had one .vtext block, so none of this exists in site.css.
+ *
+ * The frame is the "book outline": a warm page inset on the surface, a brand
+ * rule down the binding edge, and a soft shadow so it sits on the page instead
+ * of in it. Restrained on purpose - a skeuomorphic leather Bible would date in
+ * a year and fight the rest of the site.
+ *
+ * READING COMES FIRST. Measure is capped near 66 characters, line-height is
+ * generous, and verse numbers are small and brand-coloured so they guide the
+ * eye without interrupting the sentence - the job they do in print.
+ * ------------------------------------------------------------ */
+
+.kc-site .scripture {
+  position: relative;
+  margin-top: 22px;
+  padding: 34px 34px 26px 40px;
+  background:
+    linear-gradient(180deg, var(--kc-surface), var(--kc-paper-dim));
+  border: 1px solid var(--kc-line);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px -28px rgba(60, 24, 8, .45);
+}
+
+/* The binding edge. */
+.kc-site .scripture::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--kc-brand), transparent);
+  opacity: .55;
+}
+
+.kc-site .scripture-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--kc-line);
+}
+
+.kc-site .scripture-book {
+  display: block;
+  font-family: var(--kc-font-display);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.kc-site .scripture-sub {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--kc-ink-soft);
+}
+
+.kc-site .scripture-trans {
+  font-family: var(--kc-font-utility);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--kc-brand);
+  border: 1px solid var(--kc-brand);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.kc-site .scripture-body {max-width:66ch}
+
+.kc-site .scripture-verse {
+  margin: 0 0 14px;
+  font-size: 17.5px;
+  line-height: 1.72;
+  color: var(--kc-ink);
+}
+
+/* Superscript, as a printed Bible sets it - present for finding a verse,
+   quiet enough not to break the sentence. */
+.kc-site .scripture-num {
+  font-family: var(--kc-font-utility);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--kc-brand);
+  vertical-align: super;
+  line-height: 0;
+  margin-right: 5px;
+}
+
+.kc-site .scripture-verse.is-first::first-letter {
+  font-family: var(--kc-font-display);
+  font-size: 3.1em;
+  font-weight: 700;
+  float: left;
+  line-height: .84;
+  padding: 6px 10px 0 0;
+  color: var(--kc-brand);
+}
+
+.kc-site .scripture-credit {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px solid var(--kc-line);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--kc-ink-soft);
+}
+
+.kc-site .scripture-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.kc-site .scripture-step {
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--kc-brand);
+  border: 1px solid var(--kc-line);
+  border-radius: 999px;
+  padding: 9px 16px;
+  transition: border-color .16s ease, transform .16s ease, background .16s ease;
+}
+
+.kc-site .scripture-step:hover {
+  border-color: var(--kc-brand);
+  background: var(--kc-brand-wash);
+}
+
+.kc-site .scripture-step:hover {transform:translateX(-3px)}
+.kc-site .scripture-step.is-next:hover {transform:translateX(3px)}
+
+@media (max-width: 700px) {
+  .kc-site .scripture {padding:24px 20px 20px 26px}
+  .kc-site .scripture-book {font-size:22px}
+  .kc-site .scripture-verse {font-size:17px}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-site .scripture-step {transition:none !important;transform:none !important}
+}

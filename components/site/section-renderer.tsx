@@ -7,6 +7,7 @@ import {
   VideoGrid,
 } from "@/components/site/collections";
 import { PrayerForm, VisitForm } from "@/components/site/public-forms";
+import { Scripture } from "@/components/site/scripture";
 import { SermonPlayer } from "@/components/site/sermon-player";
 import { getBibleProvider } from "@/lib/bible";
 import { booksIn, resolveBook, resolveChapter } from "@/lib/bible-books";
@@ -918,20 +919,15 @@ async function BibleReader({
       </nav>
 
       {reading ? (
-        <>
-          <h3>{reading.reference}</h3>
-          <div className="trans">
-            {[isDefaultBook ? content.default_subtitle : null, reading.translation]
-              .filter(Boolean)
-              .join(" - ")}
-          </div>
-          <div className="vtext">
-            <p>{reading.text}</p>
-          </div>
-          {/* A licence condition for several providers, not decoration -
-              printed verbatim as the adapter returned it. */}
-          <p className="give-note">{reading.attribution}</p>
-        </>
+        <Scripture
+          book={book}
+          chapter={chapter}
+          reference={reading.reference}
+          translation={reading.translation}
+          subtitle={isDefaultBook ? content.default_subtitle : null}
+          text={reading.text}
+          attribution={reading.attribution}
+        />
       ) : (
         <p className="vtext">
           {content.error ?? "That passage could not be loaded right now."}
