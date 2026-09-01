@@ -1477,6 +1477,27 @@ separate fault from anything unfinished. See FF-47 for what is unfinished.
 **File:** `lib/portal/nav.ts` (`/portal/prayer`, `built: false`)
 **Raised:** 2026-08-31, while tracing FF-46
 **Must fix by:** before the prayer wall is advertised to anyone.
+**Status 2026-09-01: tab BUILT, not yet verified end to end.** The screen this
+entry asks for now exists - `app/(portal)/portal/prayer/` with five moderation
+actions, and `built: true` in the nav. It compiles and the route is live, but no
+request has been moderated through it yet, so this stays OPEN until one has.
+
+Jason submitted a real request on 2026-09-01 to test it and saw nothing, which
+was not a bug: the tab was still uncommitted local work and production was
+serving the placeholder. Worth recording because "built" and "deployed" read the
+same in a status report and are not the same thing. The submission did prove the
+public write path on production - draft 21's insert policy accepted it and
+stamped `status = 'pending'` with null `approved_at` / `approved_by`.
+
+Remaining to close: moderate that row in the deployed portal, then confirm it
+appears on the public wall (an anon read of `prayer_requests` returns
+`Content-Range: */0` today, so a non-zero count afterwards is a check that can
+genuinely fail). `supabase/drafts/27_prayer_moderation_probe.sql` covers the
+`private` and `archived` statuses, which no real row has ever held.
+
+The acknowledgement half of this entry is NOT addressed and cannot be from this
+tab - `prayer_requests` stores no contact detail by design, so there is nobody
+to notify. That needs an optional email column and is its own decision.
 
 The public prayer form works. A submission lands in `prayer_requests` as
 `status = 'pending'`, exactly as designed, and the seed promises the visitor

@@ -70,7 +70,7 @@ export const NAV: NavGroup[] = [
         href: "/portal/prayer",
         label: "Prayer Wall",
         icon: "\u{1F64F}",
-        built: false,
+        built: true,
         blurb: "Read prayer requests and choose which ones appear publicly.",
       },
       {

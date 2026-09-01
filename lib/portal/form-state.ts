@@ -71,3 +71,26 @@ export const SERMON_STATUS_LABELS: Record<SermonStatus, string> = {
   published: "On your website",
   archived: "Taken down (kept here)",
 };
+
+/**
+ * The four values prayer_requests.status accepts, per the column comment in
+ * migration 01. The public policy from draft 21 admits 'approved' only, so
+ * 'pending', 'private' and 'archived' are all invisible to a visitor - they
+ * differ in what they mean to the pastor, not in what the wall shows.
+ *
+ *   pending   submitted, nobody has read it yet
+ *   approved  on the public wall
+ *   private   prayed over, deliberately never published
+ *   archived  dealt with, kept for the record
+ *
+ * Here rather than in the actions file for the same reason as SERMON_STATUSES:
+ * a "use server" module may export only async functions.
+ *
+ * No STATUS_LABELS map to go with it, unlike sermons. The Prayer Wall shows
+ * one list per status rather than a status picker, so the pastor-facing
+ * wording lives on the section headings where it can be read in context.
+ */
+export const PRAYER_STATUSES = ["pending", "approved", "private", "archived"] as const;
+
+export type PrayerStatus = (typeof PRAYER_STATUSES)[number];
+
