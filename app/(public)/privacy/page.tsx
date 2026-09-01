@@ -26,7 +26,7 @@ export default async function PrivacyPolicyPage() {
 
   return (
     <>
-      <SiteHeader church={site.church} theme={site.theme} activeSlug="privacy" />
+      <SiteHeader church={site.church} theme={site.theme} activeSlug="privacy" links={links} />
       <main>
         <LegalPage doc={privacyPolicy(site.church)} updated={LEGAL_UPDATED} />
       </main>

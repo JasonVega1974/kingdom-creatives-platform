@@ -122,7 +122,7 @@ export default async function PublicPage({
 
   return (
     <>
-      <SiteHeader church={site.church} theme={site.theme} activeSlug={page.slug} />
+      <SiteHeader church={site.church} theme={site.theme} activeSlug={page.slug} links={links} />
 
       <main>
         {sections.length > 0 ? (

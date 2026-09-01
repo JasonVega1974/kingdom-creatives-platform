@@ -72,41 +72,10 @@ export function givingLink(links: ChurchLink[]): ChurchLink | null {
   return giving.find((link) => link.is_primary) ?? giving[0] ?? null;
 }
 
-/**
- * The church's video channels, in the order the pastor arranged them.
- *
- * CFT has two - Preaching and Bible Studies - which is the reason church_links
- * exists at all: churches.youtube_channel_id cannot hold both. They are
- * rendered on the Worship page as labelled destinations, because the label is
- * the whole point. Two bare YouTube URLs tell a visitor nothing about which one
- * is the Sunday service and which is the midweek study.
+/*
+ * The pure selectors moved to lib/video-channels.ts so the site header can use
+ * them without importing a server-only module. Re-exported here so every
+ * existing caller keeps working.
  */
-export function videoChannels(links: ChurchLink[]): ChurchLink[] {
-  return links.filter((link) => link.kind === "video");
-}
-
-/**
- * Social profiles for the footer.
- *
- * Deliberately separate from videoChannels(). A church's YouTube channel is
- * both a social presence and the place its sermons live, and conflating the two
- * would put every video channel in the footer - for CFT that is two identical
- * YouTube glyphs side by side, distinguishable only by hovering.
- *
- * The footer takes these plus ONE video channel, chosen by footerVideo().
- */
-export function socialLinks(links: ChurchLink[]): ChurchLink[] {
-  return links.filter((link) => link.kind === "social");
-}
-
-/**
- * The single video channel that belongs in the footer, or null.
- *
- * The primary one - for CFT that is Preaching, the main channel. The Bible
- * Studies channel is not omitted from the site; it has a labelled place on the
- * Worship page where there is room to say what it is.
- */
-export function footerVideo(links: ChurchLink[]): ChurchLink | null {
-  const videos = videoChannels(links);
-  return videos.find((link) => link.is_primary) ?? videos[0] ?? null;
-}
+export { videoChannels, socialLinks, footerVideo, sermonChannels } from "@/lib/video-channels";
+export type { SermonChannel } from "@/lib/video-channels";

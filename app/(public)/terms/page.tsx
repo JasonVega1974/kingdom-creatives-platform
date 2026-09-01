@@ -26,7 +26,7 @@ export default async function TermsOfUsePage() {
 
   return (
     <>
-      <SiteHeader church={site.church} theme={site.theme} activeSlug="terms" />
+      <SiteHeader church={site.church} theme={site.theme} activeSlug="terms" links={links} />
       <main>
         <LegalPage doc={termsOfUse(site.church)} updated={LEGAL_UPDATED} />
       </main>

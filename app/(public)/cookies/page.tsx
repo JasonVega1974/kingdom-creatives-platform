@@ -26,7 +26,7 @@ export default async function CookiePolicyPage() {
 
   return (
     <>
-      <SiteHeader church={site.church} theme={site.theme} activeSlug="cookies" />
+      <SiteHeader church={site.church} theme={site.theme} activeSlug="cookies" links={links} />
       <main>
         <LegalPage doc={cookiePolicy(site.church)} updated={LEGAL_UPDATED} />
       </main>

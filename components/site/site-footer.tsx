@@ -1,10 +1,10 @@
 import Link from "next/link";
 
-import { NAV } from "@/components/site/site-header";
+import { buildNav } from "@/components/site/site-header";
 import type { Church } from "@/lib/church";
 import { LEGAL_LINKS, PLATFORM_URL } from "@/lib/legal";
 import type { ChurchLink } from "@/lib/links";
-import { footerVideo, socialLinks } from "@/lib/links";
+import { footerVideo, socialLinks } from "@/lib/video-channels";
 
 /**
  * ============================================================
@@ -30,8 +30,8 @@ import { footerVideo, socialLinks } from "@/lib/links";
 const FOOTER_EXCLUDES = new Set(["/devotionals"]);
 
 /** Header groups flattened to a single list of destinations. */
-function footerRoutes() {
-  return NAV.flatMap((entry) =>
+function footerRoutes(links: ChurchLink[]) {
+  return buildNav(links).flatMap((entry) =>
     entry.children
       ? entry.children.map((child) => ({ href: child.href, label: child.label }))
       : entry.href
@@ -55,8 +55,9 @@ export function SiteFooter({
    *
    * CFT has two YouTube channels and only the main one belongs here. Two
    * identical YouTube glyphs side by side would be distinguishable only by
-   * hovering, which is not a choice worth offering in a footer. The Bible
-   * Studies channel has a labelled home on the Worship page instead.
+   * hovering, which is not a choice worth offering in a footer. Both channels
+   * are named properly in the Explore list beside this and in the Watch menu,
+   * so nothing is hidden by showing one icon.
    */
   const video = footerVideo(links);
   const social = [...socialLinks(links), ...(video ? [video] : [])];
@@ -66,7 +67,7 @@ export function SiteFooter({
    * /prayer. Same anchor the "Add a request" card points at, fixed in
    * migration 26. A /prayer link here would 404.
    */
-  const routes = [...footerRoutes(), { href: "/#prayer", label: "Prayer Wall" }];
+  const routes = [...footerRoutes(links), { href: "/#prayer", label: "Prayer Wall" }];
 
   return (
     <footer className="mt-auto bg-brand-night text-brand-soft">

@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import type { Church, ChurchTheme } from "@/lib/church";
+import type { ChurchLink } from "@/lib/links";
+import { sermonChannels } from "@/lib/video-channels";
 import { mediaUrl } from "@/lib/portal/media";
 
 /**
@@ -58,7 +60,11 @@ export const NAV: NavEntry[] = [
   {
     label: "Connect",
     children: [
-      { href: "/groups", label: "Groups & Bible Studies" },
+      /* "Groups" only. It used to read "Groups & Bible Studies" and point
+         at /groups, which is small groups - so a visitor who came for
+         Bible studies landed on the wrong page entirely. The studies now
+         have their own entry under Watch, built from church_links. */
+      { href: "/groups", label: "Groups" },
       { href: "/events", label: "Events" },
       { href: "/team", label: "Our Team" },
       { href: "/about", label: "About Us" },
@@ -78,9 +84,12 @@ export function SiteHeader({
   church,
   theme,
   activeSlug,
+  links = [],
 }: {
   church: Church;
   theme: ChurchTheme | null;
+  /** church_links, so the Watch menu can list this church's own channels. */
+  links?: ChurchLink[];
   /**
    * The page being rendered, so its link can be marked current. Passed from
    * the page rather than read from a hook - this is a Server Component, and
@@ -92,6 +101,8 @@ export function SiteHeader({
 
   const isActive = (href: string) => href === `/${activeSlug ?? ""}`;
 
+  const nav = buildNav(links);
+
   return (
     <header>
       <div className="wrap nav">
@@ -101,7 +112,7 @@ export function SiteHeader({
         </Link>
 
         <ul className="nav-links">
-          {NAV.map((entry) =>
+          {nav.map((entry) =>
             entry.children ? (
               <li key={entry.label}>
                 {/*
@@ -150,7 +161,7 @@ export function SiteHeader({
           </summary>
 
           <nav className="mobile-nav">
-            {NAV.map((entry) =>
+            {nav.map((entry) =>
               entry.children ? (
                 <div key={entry.label}>
                   <div className="mgroup">{entry.label}</div>
@@ -216,4 +227,46 @@ function Logo({ theme, name }: { theme: ChurchTheme | null; name: string }) {
       ))}
     </span>
   );
+}
+
+/**
+ * The nav for ONE church: the shared skeleton, plus that church's own video
+ * channels under Watch.
+ *
+ * The channel ids are per-church data and must never appear in this file. They
+ * come from church_links, and so do the labels - "Preaching" and "Bible
+ * Studies" are what THIS church called its channels, not a platform constant.
+ * Another church's menu will read whatever it called its own.
+ *
+ * A church with no usable channels gets NAV back unchanged, which is exactly
+ * the menu the site had before any of this - the array is returned by
+ * reference, so there is not even a copy to diverge.
+ *
+ * Entries land between Sermons and Worship Library: "everything", then each
+ * channel, then the other library. sermonChannels() is reused rather than
+ * re-filtering here, so the rule that an external_id must be a UC... id lives
+ * in exactly one place.
+ */
+export function buildNav(links: ChurchLink[] = []): NavEntry[] {
+  const channels = sermonChannels(links);
+  if (channels.length === 0) return NAV;
+
+  return NAV.map((entry) => {
+    if (entry.label !== "Watch" || !entry.children) return entry;
+
+    const sermons = entry.children.filter((child) => child.href === "/sermons");
+    const rest = entry.children.filter((child) => child.href !== "/sermons");
+
+    return {
+      ...entry,
+      children: [
+        ...sermons,
+        ...channels.map((channel) => ({
+          href: `/sermons?channel=${encodeURIComponent(channel.id)}`,
+          label: channel.label,
+        })),
+        ...rest,
+      ],
+    };
+  });
 }

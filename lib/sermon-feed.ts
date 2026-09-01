@@ -2,8 +2,13 @@ import "server-only";
 
 import type { Sermon } from "@/lib/collections";
 import type { ChurchLink } from "@/lib/links";
-import { videoChannels } from "@/lib/links";
+import { sermonChannels } from "@/lib/video-channels";
 import { getChannelVideos, youtubeConfigured } from "@/lib/youtube";
+
+/* Re-exported so /sermons keeps importing its channel list from here, next to
+   the feed it filters, rather than reaching for the selector module directly. */
+export { sermonChannels };
+export type { SermonChannel } from "@/lib/video-channels";
 
 /**
  * ============================================================
@@ -38,33 +43,6 @@ export type FeedSermon = Sermon & {
   channelId: string | null;
   channelLabel: string | null;
 };
-
-/** One selectable channel, derived from church_links - never hardcoded. */
-export type SermonChannel = {
-  /** The UC... id, used as the filter value. */
-  id: string;
-  label: string;
-};
-
-/**
- * The channels a church has configured, for the filter strip.
- *
- * Read from church_links rather than a constant: the ids are per-church data
- * and a second church will have different ones. A church with a single channel
- * gets a single entry and the page hides the strip; a church with none gets an
- * empty array and the page shows its empty state.
- *
- * external_id must hold the UC... channel id. Rows still carrying an @handle
- * are skipped rather than sent to the API, which would 400 on every request.
- */
-export function sermonChannels(links: ChurchLink[]): SermonChannel[] {
-  return videoChannels(links)
-    .filter((link) => link.external_id?.startsWith("UC"))
-    .map((link) => ({
-      id: link.external_id as string,
-      label: link.label ?? "Videos",
-    }));
-}
 
 /**
  * The full feed: every channel's uploads, enriched by curated rows.
