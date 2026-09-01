@@ -1484,3 +1484,43 @@
   background: var(--kc-brand);
   color: var(--kc-brand-contrast);
 }
+
+/* ============================================================
+ * 20. MOBILE AUDIT FIXES (2026-09-01, 375px emulated pass)
+ * ============================================================ */
+
+/* ---- 20a. iOS input auto-zoom ----
+   Safari on iOS zooms the whole page when a focused control's font-size is
+   under 16px. The visit and prayer forms sat at 15.5px, so tapping any field
+   lurched the layout. 16px exactly is the documented threshold. */
+.kc-site .field input,
+.kc-site .field select,
+.kc-site .field textarea,
+.kc-site .reader-controls select {font-size: 16px}
+
+/* ---- 20b. Touch targets under 44px ----
+   Guarded by (pointer: coarse) so mouse-driven layouts keep their tighter
+   metrics: chips measured 36-40px, the small watch buttons 42px, the menu
+   button 36px, standalone text links as little as 17px, and the footer's
+   social rings 40px. Everything a finger must hit gets the 44px floor. */
+@media (pointer: coarse) {
+  .kc-site .chip,
+  .kc-site .btn-sm,
+  .kc-site .menu-btn,
+  .kc-site details.mobile-menu > summary {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .kc-site .archive-link,
+  .kc-site .devo-more,
+  .kc-site .scripture-step,
+  .kc-site .devotional-go {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .kc-site footer a[aria-label] {width: 44px; height: 44px}
+}
