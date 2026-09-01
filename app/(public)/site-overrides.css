@@ -1399,3 +1399,77 @@
 @media (prefers-reduced-motion: reduce) {
   .kc-site .faq details {transition: none !important}
 }
+
+/* ============================================================
+ * 19. PHASE 5 - HEADER, MOBILE SHEET, FINAL SWEEP
+ * ============================================================ */
+
+/* ---- 19a. The mobile menu becomes a sliding sheet ----
+   Still a <details> - the no-script bargain holds. On narrow screens the open
+   menu is a full-height panel sliding from the right over a dim wash, instead
+   of a block shoved under the header.
+
+   The wash is DECORATIVE (pointer-events: none): with no script there is no
+   backdrop-click-to-close, and a wash that swallowed clicks while doing
+   nothing would be worse than one that lets the page breathe behind it. The
+   summary button stays where the reader opened it, and closes it. */
+@media (max-width: 1000px) {
+  .kc-site details.mobile-menu[open]::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(22, 13, 7, .38);
+    pointer-events: none;
+    z-index: 70;
+  }
+
+  .kc-site details.mobile-menu[open] .mobile-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(340px, 86vw);
+    overflow-y: auto;
+    z-index: 71;
+    border-bottom: 0;
+    border-left: 1px solid var(--kc-line);
+    box-shadow: var(--kc-shadow-lift);
+    padding: 24px 26px 32px;
+  }
+
+  /* The summary must outrank the wash so the menu can be closed. */
+  .kc-site details.mobile-menu[open] > summary {
+    position: relative;
+    z-index: 72;
+    background: var(--kc-surface);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 1000px) {
+  .kc-site details.mobile-menu[open] .mobile-nav {
+    animation: kc-sheet-in .28s cubic-bezier(.2, .7, .3, 1) both;
+  }
+  .kc-site details.mobile-menu[open]::before {
+    animation: kc-vt-fade .28s ease both;
+  }
+}
+
+@keyframes kc-sheet-in {
+  from {opacity: 0; transform: translateX(28px)}
+  to   {opacity: 1; transform: none}
+}
+
+/* ---- 19b. Header: the active page underlines in brand ----
+   .active existed as a colour swap only; a short brand rule under the current
+   page gives the state a shape as well as a hue. */
+.kc-site .nav-links a.active {
+  background-image: linear-gradient(var(--kc-brand), var(--kc-brand));
+  background-repeat: no-repeat;
+  background-position: 12px calc(100% - 4px);
+  background-size: calc(100% - 24px) 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-site details.mobile-menu[open] .mobile-nav,
+  .kc-site details.mobile-menu[open]::before {animation: none !important}
+}

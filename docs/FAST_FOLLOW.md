@@ -2030,3 +2030,31 @@ FF-30 - the devotionals, the same situation with 365 entries and the same debt.
 Whatever table shape solves one should be considered for both, though they are
 different enough (a track list versus dated prose) that one table for both is
 probably the wrong instinct.
+
+---
+
+## FF-55 - band-ground alternation landed partially; the rest needs section classes
+
+**File:** `app/(public)/site-overrides.css` (sections 15-19), `components/site/section-renderer.tsx`
+**Raised:** 2026-09-01, closing out the five-phase design upgrade
+**Must fix by:** no deadline. Cosmetic completeness, not a defect.
+
+The approved direction called for alternating band grounds (paper ->
+paper-dim -> night) across every page. What shipped: the home page's events
+band (`band-dim`), the night bands (hero fallback, sermon, give), and the
+spacing rhythm. What did not: most sections still render as anonymous `.wrap`
+divs with no stable class to hang a tint on, so inner pages remain
+single-ground. The Phase 1 header comment records why an :nth-child() guess
+was rejected - it would tint different sections on different pages.
+
+To finish: give the remaining section wrappers semantic classes as they are
+touched for other reasons, and tint per the direction. Do not do it as its own
+sweep; piggyback.
+
+**Design-upgrade close-out, for the record.** Phases 1-5 shipped 2026-09-01:
+foundation scale/tokens/motion (14a1810), home restructure + two hero
+revisions on Jason's deployed-eye review (ec5c0cd, 78e12be, 388fd34), list
+pages + empty states (18f82d1), reading pages incl. the field focus-ring
+contrast fix (01745f5), and the mobile sheet in the Phase 5 commit. Deferred
+knowingly: this entry's band tints, and a documented-but-unbuilt <dialog>
+pattern (nothing on the public site needs a true dialog yet).
