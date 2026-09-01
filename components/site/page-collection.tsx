@@ -1,4 +1,7 @@
+import Link from "next/link";
+
 import { SermonList, StaffGrid } from "@/components/site/collections";
+import type { SermonChannel } from "@/lib/sermon-feed";
 import type { Collections } from "@/lib/collections";
 import { sectionContent, type SectionRow } from "@/lib/sections";
 
@@ -41,10 +44,16 @@ export function PageCollection({
   pageSlug,
   sections,
   collections,
+  channels = [],
+  activeChannel = null,
 }: {
   pageSlug: string;
   sections: SectionRow[];
   collections: Collections;
+  /** YouTube channels this church has, from church_links. Empty for most. */
+  channels?: SermonChannel[];
+  /** ?channel= from the URL, or null for "everything". */
+  activeChannel?: string | null;
 }) {
   if (pageSlug === "team") {
     const { empty } = heroContent(sections);
@@ -60,10 +69,24 @@ export function PageCollection({
 
   if (pageSlug === "sermons") {
     const { empty, watch_label } = heroContent(sections);
+
+    /*
+     * collections.sermons is already the merged feed by the time it arrives
+     * here - YouTube's list enriched by curated rows. Filtering is by channel
+     * id, which is what makes "Preaching" and "Bible Studies" separable
+     * without either being hardcoded anywhere.
+     */
+    const shown = activeChannel
+      ? collections.sermons.filter(
+          (sermon) => (sermon as { channelId?: string | null }).channelId === activeChannel,
+        )
+      : collections.sermons;
+
     return (
       <Band>
+        <ChannelStrip channels={channels} active={activeChannel} />
         <SermonList
-          sermons={collections.sermons}
+          sermons={shown}
           empty={empty ?? "No sermons posted yet."}
           watchLabel={watch_label ?? "Watch"}
         />
@@ -73,6 +96,44 @@ export function PageCollection({
 
   // Every other page renders its list from a section of its own.
   return null;
+}
+
+/**
+ * Channel tabs, built from church_links.
+ *
+ * Hidden below two channels: a church with one YouTube channel has nothing to
+ * choose between, and a lone "Preaching" tab next to "Everything" is furniture
+ * pretending to be a control.
+ *
+ * Links, not client state - same bargain as every other filter on this site.
+ * Each choice is a shareable URL that survives a reload and needs no
+ * JavaScript.
+ */
+function ChannelStrip({
+  channels,
+  active,
+}: {
+  channels: SermonChannel[];
+  active: string | null;
+}) {
+  if (channels.length < 2) return null;
+
+  return (
+    <div className="filters" style={{ marginBottom: "26px" }}>
+      <Link className={active === null ? "chip is-active" : "chip"} href="/sermons">
+        Everything
+      </Link>
+      {channels.map((channel) => (
+        <Link
+          key={channel.id}
+          className={active === channel.id ? "chip is-active" : "chip"}
+          href={`/sermons?channel=${encodeURIComponent(channel.id)}`}
+        >
+          {channel.label}
+        </Link>
+      ))}
+    </div>
+  );
 }
 
 /** The prototype's centred container, so these lists line up with the rest. */

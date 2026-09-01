@@ -1889,3 +1889,71 @@ flashes between chapters on Safari, transitions firing on first load (the
 `default: "none"` mapping is what prevents that), or hydration warnings
 appearing after a Next upgrade. Any of those - revert the commit rather than
 patching around it. The baseline underneath is known good.
+
+---
+
+## FF-53 - the YouTube quota ceiling: hourly refresh stops scaling near 100 tenants
+
+**File:** `lib/youtube.ts`
+**Raised:** 2026-09-01, while building the sermon auto-pull
+**Must fix by:** before the platform passes roughly 50 paying tenants. Not a
+defect today; a wall with a known distance to it.
+
+### The arithmetic
+
+YouTube Data API v3 gives a Google Cloud project **10,000 quota units a day**,
+and this is **one shared platform key** - every tenant draws on the same budget.
+
+The endpoints were chosen to make that budget go as far as possible:
+
+| Call | Cost | Why |
+|---|---|---|
+| `search.list` with a channelId filter | **100 units** | the obvious approach, and never used here |
+| `channels.list` -> uploads playlist id | 1 unit | cached a day; the id never changes |
+| `playlistItems.list` on that playlist | 1 unit | up to 50 videos |
+
+That is **2 units per channel per refresh** instead of 100. Using `search.list`
+would have made everything below 50x worse, and it is what most examples show.
+
+```
+CFT today, hourly:    2 channels x 2 units x 24  =    96 units/day    1%
+50 tenants, hourly:  50 x 2 x 2 x 24             = 4,800 units/day   48%
+100 tenants, hourly: 100 x 2 x 2 x 24            = 9,600 units/day   96%   <-- wall
+100 tenants, daily:  100 x 2 x 2                 =   400 units/day    4%
+```
+
+### The nuance that buys time
+
+`unstable_cache` refreshes LAZILY - the fetch happens only when someone
+requests the page after the window expires. A tenant with no traffic that hour
+costs nothing, so the table above is a worst case assuming continuous traffic
+on every tenant simultaneously. Real consumption will be well under it.
+
+That is a reason not to panic, not a reason to ignore it. Traffic is exactly
+what a successful platform gets more of.
+
+### What to do when it gets close
+
+In rough order of preference:
+
+1. **Lengthen the window per tenant.** A church posting weekly does not need an
+   hourly check. Six-hourly cuts consumption 6x and nobody notices.
+2. **Request a quota increase.** Google grants these for legitimate use; it is
+   a form, not a purchase.
+3. **Per-tenant keys.** Correct long-term for a platform - each church's usage
+   billed to its own project - but it is a settings surface, a validation
+   story, and a support burden. Not worth it before the ceiling is real.
+4. **Persist and sync on a schedule.** Deliberately rejected for now: it needs
+   job infrastructure and reintroduces the drift that the merge-not-sync design
+   avoids. See `lib/sermon-feed.ts`.
+
+### How the failure presents, which is the dangerous part
+
+Quota exhaustion returns **403**, and every failure path in `lib/youtube.ts`
+returns `[]`. An empty list renders the page's ordinary empty state, so a
+platform over quota looks exactly like a church that has not posted anything.
+
+That is why both failure paths log with the cause named -
+`quota exhausted or key restricted` - rather than failing silently. If sermon
+lists ever go quiet across several churches at once, read the logs before
+believing the data.

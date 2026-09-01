@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
 import { getCollectionsFor } from "@/lib/collections";
 import { getChurchLinks, givingLink, videoChannels } from "@/lib/links";
+import { buildSermonFeed } from "@/lib/sermon-feed";
 import { getPageSections } from "@/lib/sections";
 
 /**
@@ -40,11 +41,18 @@ export default async function HomePage() {
   ]);
 
   // Home has no filterable list and no Bible reader.
+  // The latest-sermon band reads collections.sermons[0], so merging the feed
+  // in here is what makes it the newest upload rather than the newest row.
+  const collectionsWithFeed = {
+    ...collections,
+    sermons: await buildSermonFeed(links, collections.sermons),
+  };
+
   const context = {
     church: site.church,
     giving: givingLink(links),
     videoChannels: videoChannels(links),
-    collections,
+    collections: collectionsWithFeed,
     filter: null,
     book: null,
     chapter: null,

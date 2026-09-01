@@ -11,6 +11,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { getCurrentChurchSite } from "@/lib/church";
 import { getCollectionsFor } from "@/lib/collections";
 import { getChurchLinks, givingLink, videoChannels } from "@/lib/links";
+import { buildSermonFeed, sermonChannels } from "@/lib/sermon-feed";
 import { getPageSections } from "@/lib/sections";
 import { PAGES } from "@/lib/portal/sections";
 
@@ -97,11 +98,23 @@ export default async function PublicPage({
   const rawFilter = one("filter");
   const filter = rawFilter === "all" ? null : rawFilter;
 
+  /*
+   * The sermon list becomes YouTube's uploads enriched by curated rows. Doing
+   * it here rather than in the renderer means the home page's latest-sermon
+   * band and this page's list both get the merged feed with no extra
+   * plumbing - and every fallback (no key, no channels, quota) lands back on
+   * exactly collections.sermons, which is what the site showed before.
+   */
+  const collectionsWithFeed = {
+    ...collections,
+    sermons: await buildSermonFeed(links, collections.sermons),
+  };
+
   const context = {
     church: site.church,
     giving: givingLink(links),
     videoChannels: videoChannels(links),
-    collections,
+    collections: collectionsWithFeed,
     filter,
     book: one("book"),
     chapter: one("chapter"),
@@ -121,7 +134,9 @@ export default async function PublicPage({
         <PageCollection
           pageSlug={page.slug}
           sections={sections}
-          collections={collections}
+          collections={collectionsWithFeed}
+          channels={sermonChannels(links)}
+          activeChannel={one("channel")}
         />
       </main>
 
