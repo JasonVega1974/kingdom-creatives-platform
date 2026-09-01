@@ -252,29 +252,65 @@ function HomeHero({
   const ctas = rows(section.content, "ctas");
   const services = parseServiceTimes(context.church.service_times);
 
+  const plate =
+    services.length > 0 ? (
+      /* The Driver's Log glass plate. Same data, same aria; the live dot
+         lights only when a row has streaming: true. Over the photo it carries
+         its OWN ground - rgba(night,.84), worst case #3B342F over pure white,
+         gold times 5.4:1, day labels 7.4:1 - because the big scrim is gone. */
+      <div className="plate" role="table" aria-label="Service times">
+        <div className="plate-head">
+          <span>{logbook_title ?? "Service times"}</span>
+          <span>{logbook_tz ?? services[0]?.tz ?? ""}</span>
+        </div>
+        {services.map((slot, index) => (
+          <div key={index} className="plate-row" role="row">
+            <span className="pk">{slot.day ?? ""}</span>
+            <span className="pt">{slot.time ?? ""}</span>
+            <span className="pv">
+              {slot.streaming ? <span className="live-dot" aria-hidden="true" /> : null}
+              {slot.label ?? ""}
+            </span>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
   /*
-   * PHASE 2 HERO. The banner image becomes the band's background under a
-   * night scrim, and the headline becomes VISIBLE - the old hero was a bare
-   * image with an sr-only h1, so the page had no headline a person could see.
+   * IMAGE-FORWARD HERO (revised 2026-09-01, Jason's call). The banner photo
+   * stands alone: no headline, kicker or lede rendered over it - the live text
+   * was competing with the wordmark baked into the photograph, not adding to
+   * it. The h1 stays in the DOM as sr-only for screen readers and SEO,
+   * carrying the clean tagline from the (portal-edited) headline field. CTAs
+   * sit BELOW the image on a slim night strip, where contrast is guaranteed
+   * rather than negotiated with a photo.
    *
-   * The scrim floor is rgba(night, .85), measured against a worst-case WHITE
-   * image region (not an average): the lightest possible ground is #39312C,
-   * carrying the heading at 10.9:1, the lede at 7.8:1 and the gold kicker at
-   * 5.7:1 - and copy sits in the left 60% where alpha is .88 or more. A church
-   * with no banner gets the plain night gradient - same band, no scrim needed.
-   *
-   * The image is decorative here (background, empty alt semantics); the
-   * visible h1 now carries what the alt text used to.
+   * MULTI-TENANT GUARD: a church with NO banner image keeps the visible-text
+   * night-band hero - otherwise that tenant's page would have no heading a
+   * person could see. Same section, two honest renderings.
    */
+  if (image_desktop) {
+    return (
+      <div className="hero hero-photo">
+        <h1 className="sr-only">{headline ?? context.church.name ?? context.church.slug}</h1>
+
+        <div className="hero-shot">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={image_desktop} alt="" />
+          {plate}
+        </div>
+
+        {ctas.length > 0 ? (
+          <div className="hero-bar">
+            <div className="wrap hero-ctas">{ctaLinks(ctas, true)}</div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   return (
-    <div
-      className={image_desktop ? "hero hero-cine has-image" : "hero hero-cine"}
-      style={
-        image_desktop
-          ? ({ "--hero-image": `url("${image_desktop}")` } as React.CSSProperties)
-          : undefined
-      }
-    >
+    <div className="hero hero-cine">
       <div className="wrap hero-cine-grid">
         <div className="hero-copy">
           {eyebrow ? <span className="eyebrow">{eyebrow}</span> : null}
@@ -282,27 +318,7 @@ function HomeHero({
           {lede ? <p className="lede">{lede}</p> : null}
           {ctas.length > 0 ? <div className="hero-ctas">{ctaLinks(ctas, true)}</div> : null}
         </div>
-
-        {services.length > 0 ? (
-          /* The Driver's Log, as a glass plate. Same data, same aria - the
-             live dot lights only when a row has streaming: true. */
-          <div className="plate" role="table" aria-label="Service times">
-            <div className="plate-head">
-              <span>{logbook_title ?? "Service times"}</span>
-              <span>{logbook_tz ?? services[0]?.tz ?? ""}</span>
-            </div>
-            {services.map((slot, index) => (
-              <div key={index} className="plate-row" role="row">
-                <span className="pk">{slot.day ?? ""}</span>
-                <span className="pt">{slot.time ?? ""}</span>
-                <span className="pv">
-                  {slot.streaming ? <span className="live-dot" aria-hidden="true" /> : null}
-                  {slot.label ?? ""}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : null}
+        {plate}
       </div>
     </div>
   );
