@@ -479,3 +479,154 @@
 @media (prefers-reduced-motion: reduce) {
   .kc-site .scripture-step {transition:none !important;transform:none !important}
 }
+
+/* ============================================================
+ * 9. MOVEMENT ON THE LANDING PAGE
+ * ============================================================
+ *
+ * The brief was "alive and energetic, noticeably moving, not chaotic".
+ *
+ * The approach is to animate the vocabulary the site ALREADY has rather than
+ * bolt on new ornament. The prototype is full of highway motifs - dashed
+ * gradients as lane markings on .eyebrow, .centerline and .timeline, a dashed
+ * off-ramp arc on the give band, a warm glow on the sermon band. Making those
+ * move reads as the brand turned up. Adding floating blobs would read as a
+ * template.
+ *
+ * FOUR RULES, all of them load-bearing:
+ *
+ *   1. STATIC IS THE DEFAULT. Every animation lives inside
+ *      `prefers-reduced-motion: no-preference`. Motion is opt-in by the
+ *      reader's own setting, so a selector missed later fails to STILL rather
+ *      than to MOVING. Overriding afterwards with `animation:none` gets this
+ *      backwards and misses whatever it forgot to name.
+ *   2. TRANSFORM AND OPACITY ONLY. No width, height, top or left; nothing that
+ *      forces layout. Decorative layers are already pointer-events:none.
+ *   3. CONTINUOUS MOTION IS FOR DECORATION ONLY. Nothing a person is reading
+ *      ever drifts. Perpetual movement under text is fatiguing and is where
+ *      "alive" turns into "under construction".
+ *   4. SCROLL-DRIVEN WORK IS PROGRESSIVE. Wrapped in @supports; a browser
+ *      without animation-timeline gets the finished, static page rather than
+ *      content stuck at opacity 0.
+ * ============================================================ */
+
+@media (prefers-reduced-motion: no-preference) {
+  /* ---- A. The road markings travel. ----
+     .eyebrow::before is a 34x2px dashed gradient - a lane marking. Sliding the
+     gradient makes it advance like one. The element is tiny, so the repaint is
+     nothing, and it is the single most on-brand movement available here. */
+  .kc-site .eyebrow::before {
+    background-size: 14px 100%;
+    animation: kc-lane 1.4s linear infinite;
+  }
+
+  /* .timeline is the /about route line. .centerline exists in the ported
+     stylesheet but nothing renders it, so it is not styled here. */
+  .kc-site .timeline::before {
+    background-size: 100% 17px;
+    animation: kc-lane-v 2.2s linear infinite;
+  }
+
+  /* ---- B. The hero arrives. ----
+     A staggered entrance, so the page assembles itself instead of appearing
+     all at once. Runs once on load and then costs nothing. */
+  /* Selectors checked against the rendered DOM rather than the stylesheet.
+     The hero's <h1> is .sr-only and there is no eyebrow in this section, so
+     the visible sequence is lede -> buttons -> logbook. The buttons are
+     .hero-ctas; .cta-row does not exist anywhere on the site. */
+  .kc-site .hero-under .lede      {animation: kc-enter .55s .10s both cubic-bezier(.2,.7,.3,1)}
+  .kc-site .hero-under .hero-ctas {animation: kc-enter .55s .22s both cubic-bezier(.2,.7,.3,1)}
+  .kc-site .hero-under .logbook   {animation: kc-enter .70s .30s both cubic-bezier(.2,.7,.3,1)}
+
+  /* The banner settles rather than snapping in - slightly larger, easing to
+     rest. scale only, inside a container that already clips. */
+  .kc-site .hero-banner img {animation: kc-settle 1.1s cubic-bezier(.2,.7,.3,1) both}
+}
+
+@keyframes kc-lane   {to {background-position-x: 14px}}
+@keyframes kc-lane-v {to {background-position-y: 17px}}
+@keyframes kc-enter  {from {opacity:0; transform:translateY(16px)} to {opacity:1; transform:none}}
+@keyframes kc-settle {from {transform:scale(1.06)} to {transform:scale(1)}}
+
+/* ---- C, D, E. Scroll-driven. ----
+   Progressive: without animation-timeline the page is simply finished and
+   static, which is the right failure for a church site. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* The give band's dashed off-ramp arc drifts and turns as the band
+       passes. Decorative, already pointer-events:none. */
+    .kc-site .give-band::before {
+      animation: kc-arc linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+
+    /* The sermon band's warm glow rises like a headlight sweeping past. */
+    .kc-site .sermon-band::after {
+      animation: kc-glow linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+
+    /* The banner drifts slower than the scroll. Transform only, and the
+       container clips, so nothing reflows and nothing shifts.
+
+       BOTH animations, not one: declaring kc-parallax alone would replace the
+       kc-settle entrance above, because the `animation` shorthand overwrites
+       it wholesale. The timeline list pairs them - kc-settle runs on the
+       document timeline (auto) as the page loads, kc-parallax on the scroll
+       timeline afterwards. */
+    .kc-site .hero-banner img {
+      animation:
+        kc-settle 1.1s cubic-bezier(.2, .7, .3, 1) both,
+        kc-parallax linear both;
+      animation-timeline: auto, view();
+      animation-range: normal, entry 100% exit 100%;
+    }
+
+    /* Mile-marker plates arrive one after another, like markers going past,
+       rather than the whole row at once.
+
+       Staggered by animation-range, NOT animation-delay: on a scroll-driven
+       timeline progress is positional, so a time delay does nothing at all.
+       Shifting each plate's range start is what actually offsets them. */
+    .kc-site .mile:nth-child(2) {animation-range: entry 5%  cover 30%}
+    .kc-site .mile:nth-child(3) {animation-range: entry 10% cover 34%}
+    .kc-site .mile:nth-child(4) {animation-range: entry 15% cover 38%}
+    .kc-site .mile:nth-child(5) {animation-range: entry 20% cover 42%}
+  }
+}
+
+@keyframes kc-arc      {from {transform:rotate(14deg) translateY(4%)}  to {transform:rotate(20deg) translateY(-6%)}}
+@keyframes kc-glow     {from {transform:translateY(8%)  scale(.94); opacity:.75}
+                        to   {transform:translateY(-8%) scale(1.06); opacity:1}}
+@keyframes kc-parallax {to {transform:translateY(-5%)}}
+
+/* ============================================================
+ * 10. THE PAGE TURN - baseline layer
+ * ============================================================
+ *
+ * Advancing a chapter is a real server navigation, so there is no moment where
+ * the old and new chapter both exist to animate between. This is the layer that
+ * always works: the arriving chapter slides and fades into place, which read
+ * together with the scroll to #scripture is what makes it feel like turning a
+ * page rather than reloading a document.
+ *
+ * A 3D flip was considered and rejected: it needs both pages at once, it
+ * re-rasterises a large block of text every frame, and on scripture it reads as
+ * a gimmick.
+ * ============================================================ */
+
+/* Not inside a motion query - a jump that lands under the sticky header is a
+   BUG, not an effect, and must be fixed for everyone. */
+.kc-site .scripture {scroll-margin-top: 96px}
+
+@media (prefers-reduced-motion: no-preference) {
+  .kc-site .scripture {animation: kc-page-in .42s cubic-bezier(.2,.7,.3,1) both}
+  .kc-site .scripture-verse {animation: kc-enter .5s .06s both cubic-bezier(.2,.7,.3,1)}
+}
+
+@keyframes kc-page-in {
+  from {opacity:0; transform:translateX(16px)}
+  to   {opacity:1; transform:none}
+}

@@ -69,8 +69,19 @@ export function Scripture({
 }) {
   const verses = parseVerses(text);
 
+  /*
+   * The id is the whole fix for "clicking next jumps me to the top". Next's
+   * <Link> scrolls to the document top by default, which threw the reader past
+   * the hero, the quick links and the 66-book picker. Every chapter link now
+   * targets this element, so they land at the start of the passage they asked
+   * for. scroll-margin-top in the CSS keeps it clear of the header.
+   *
+   * scroll={false} was the alternative and is worse: jump from Psalm 119 to
+   * Psalm 120 and you are parked in whitespace past the end of a short
+   * chapter. Staying put is not the same as staying oriented.
+   */
   return (
-    <article className="scripture">
+    <article className="scripture" id="scripture">
       <header className="scripture-head">
         <div>
           <span className="scripture-book">{reference || book.name}</span>
@@ -108,7 +119,8 @@ export function Scripture({
  * already had once.
  */
 function ChapterSteps({ book, chapter }: { book: BibleBook; chapter: number }) {
-  const href = (n: number) => `/bible?book=${encodeURIComponent(book.name)}&chapter=${n}`;
+  const href = (n: number) =>
+    `/bible?book=${encodeURIComponent(book.name)}&chapter=${n}#scripture`;
   const hasPrev = chapter > 1;
   const hasNext = chapter < book.chapters;
 

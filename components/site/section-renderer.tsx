@@ -861,7 +861,7 @@ async function BibleReader({
           <span className="eyebrow">Start here</span>
           <div className="bible-chips">
             {quickLinks.map((name) => (
-              <Link key={name} href={`/bible?book=${encodeURIComponent(name)}`} className="chip">
+              <Link key={name} href={`/bible?book=${encodeURIComponent(name)}#scripture`} className="chip">
                 {name}
               </Link>
             ))}
@@ -889,7 +889,7 @@ async function BibleReader({
               {booksIn(testament).map((entry) => (
                 <Link
                   key={entry.name}
-                  href={`/bible?book=${encodeURIComponent(entry.name)}`}
+                  href={`/bible?book=${encodeURIComponent(entry.name)}#scripture`}
                   className={entry.name === book.name ? "bible-book is-current" : "bible-book"}
                   aria-current={entry.name === book.name ? "page" : undefined}
                 >
@@ -909,7 +909,7 @@ async function BibleReader({
         {Array.from({ length: book.chapters }, (_, index) => index + 1).map((n) => (
           <Link
             key={n}
-            href={`/bible?book=${encodeURIComponent(book.name)}&chapter=${n}`}
+            href={`/bible?book=${encodeURIComponent(book.name)}&chapter=${n}#scripture`}
             className={n === chapter ? "bible-chapter is-current" : "bible-chapter"}
             aria-current={n === chapter ? "page" : undefined}
           >
