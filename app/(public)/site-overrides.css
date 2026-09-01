@@ -708,3 +708,31 @@
     animation-delay: 0s !important;
   }
 }
+
+/* ------------------------------------------------------------
+ * 12. The worship playlist grid.
+ *
+ * Reuses .card and .player rather than inventing a card type. The only new
+ * rule is a lighter frame: .player carries a 60px drop shadow and a brand glow
+ * sized for ONE large player in a dark band, and thirty of those on a light
+ * page reads as heavy. player-sm keeps the facade and the aspect ratio and
+ * softens the depth.
+ * ------------------------------------------------------------ */
+
+.kc-site .worship-card .player-sm {
+  border-radius: var(--kc-radius) var(--kc-radius) 0 0;
+  box-shadow: none;
+  border-color: var(--kc-line);
+}
+
+.kc-site .worship-card .player-sm:hover,
+.kc-site .worship-card .player-sm:focus-visible {
+  border-color: color-mix(in srgb, var(--kc-brand) 70%, transparent);
+  box-shadow: 0 0 26px -10px color-mix(in srgb, var(--kc-brand) 60%, transparent);
+}
+
+/* The disc is sized for a hero player; at card width it swamps the thumbnail. */
+.kc-site .worship-card .play-ring .disc {width:54px;height:54px}
+.kc-site .worship-card .play-ring .disc svg {width:20px;height:20px}
+
+.kc-site .worship-card .card-body h3 {margin-bottom:4px}

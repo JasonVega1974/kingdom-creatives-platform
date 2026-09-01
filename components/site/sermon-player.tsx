@@ -28,17 +28,25 @@ export function SermonPlayer({
   youtubeId,
   title,
   badge,
+  variant,
 }: {
   youtubeId: string;
   title: string;
   /** "LATEST - SYNCED FROM YOUTUBE", from the section content. */
   badge?: string;
+  /**
+   * An extra class on the frame. The worship grid uses it to soften the heavy
+   * drop shadow that suits one large player in a dark band but not thirty
+   * small ones on a light page. The facade behaviour is untouched - this is
+   * the same component, not a second copy of it.
+   */
+  variant?: string;
 }) {
   const [playing, setPlaying] = useState(false);
 
   if (playing) {
     return (
-      <div className="player is-playing">
+      <div className={variant ? `player is-playing ${variant}` : "player is-playing"}>
         <iframe
           /* autoplay because the click WAS the play instruction - landing on a
              paused player would make the first click do nothing visible. */
@@ -54,7 +62,7 @@ export function SermonPlayer({
 
   return (
     <a
-      className="player"
+      className={variant ? `player ${variant}` : "player"}
       href={`https://www.youtube.com/watch?v=${youtubeId}`}
       target="_blank"
       rel="noopener noreferrer"

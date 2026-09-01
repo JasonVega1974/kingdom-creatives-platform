@@ -9,6 +9,7 @@ import {
 import { PrayerForm, VisitForm } from "@/components/site/public-forms";
 import { Scripture } from "@/components/site/scripture";
 import { SermonPlayer } from "@/components/site/sermon-player";
+import { WorshipGrid } from "@/components/site/worship-grid";
 import { getBibleProvider } from "@/lib/bible";
 import { booksIn, resolveBook, resolveChapter } from "@/lib/bible-books";
 import type { Church } from "@/lib/church";
@@ -16,6 +17,7 @@ import { parseServiceTimes } from "@/lib/church";
 import type { Collections } from "@/lib/collections";
 import type { ChurchLink } from "@/lib/links";
 import { obj, rows, sectionContent, strings, type SectionRow } from "@/lib/sections";
+import { WORSHIP_CATEGORY, WORSHIP_PLAYLIST } from "@/lib/worship-playlist";
 
 /**
  * ============================================================
@@ -1065,14 +1067,28 @@ function WorshipSection({
     ? context.collections.videos.filter((v) => v.category === context.filter)
     : context.collections.videos;
 
+  /*
+   * The seeded playlist answers to the page's OWN filters rather than a new
+   * one: these are worship sets, so they show under "Everything" and under
+   * "Worship sets" (music), and are correctly absent from "Driver Stories".
+   * No filter was invented and none conflicts.
+   */
+  const showSongs = context.filter === null || context.filter === WORSHIP_CATEGORY;
+  const songs = showSongs ? WORSHIP_PLAYLIST : [];
+
+  /*
+   * The seeded songs stand in for the empty state. Rendering "No worship
+   * videos yet" above thirty worship videos would be absurd, so VideoGrid's
+   * empty line is suppressed whenever songs are showing - the page is not
+   * empty, it just has no rows in the `videos` table.
+   */
+  const videoEmpty = songs.length > 0 ? "" : (empty ?? "No worship videos yet.");
+
   return (
     <div className="wrap" style={{ paddingBottom: "76px" }}>
       <FilterStrip filters={filters} active={context.filter} />
-      <VideoGrid
-        videos={videos}
-        empty={empty ?? "No worship videos yet."}
-        playLabel={play_label ?? "Play"}
-      />
+      <VideoGrid videos={videos} empty={videoEmpty} playLabel={play_label ?? "Play"} />
+      <WorshipGrid songs={songs} heading={songs.length > 0 ? "Worship playlist" : undefined} />
       <ChannelStrip channels={context.videoChannels} />
     </div>
   );
