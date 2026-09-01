@@ -9,6 +9,34 @@ Standing rules for every session in this repo. These override anything else.
 1. **Never run `git push --force`.** Ever.
 2. **Show full diffs before committing.** Per-file commits. **No pushes without
    explicit approval from Jason.**
+
+   **2a. Before any commit that includes a rename, run `git status --porcelain`
+   unfiltered.** No `grep`, no `head`, no pipe of any kind. Read every line, and
+   read BOTH status columns on every touched file - not just the renamed one.
+
+   This has now nearly shipped wrong twice, and both times the cause was the
+   same: **`git mv` stages the rename the instant it runs.** Any edit made to
+   the file afterwards is a separate, unstaged change sitting on top of an
+   already-staged rename.
+
+   That file then shows as `RM` - `R` staged in column 1, `M` unstaged in
+   column 2. It looks committed-ready and is not. The first occurrence swept six
+   renames into a commit labelled for something else; the second moved draft 26
+   into `migrations/` and would have taken its stale `Status: NOT RUN` header
+   with it, because the header edit came after the `git mv`.
+
+   Why filtering specifically defeats this: a check like
+   `git status --short | grep -v "^[MARD]"` keys on column 1, sees the `R`, and
+   drops the line - hiding the very case it exists to catch. A filter written to
+   surface leftovers will hide a half-staged rename every time.
+
+   The tell in the diff: `git diff --cached -M` reporting **`similarity index
+   100%`** on a file you know you also edited means the edit is NOT in the
+   commit. A rename plus a content change should read `R0xx`, never `R100`.
+
+   Fix is always the same - `git add` the renamed path at its NEW location, then
+   re-read the unfiltered status before committing.
+
 3. **No schema changes without SQL first.** The Supabase schema is live
    (project `cyyxhhwuyeyvewqrhewt`). If a change is genuinely needed, draft the
    SQL into `supabase/drafts/` and stop - Jason runs it in the Supabase SQL
