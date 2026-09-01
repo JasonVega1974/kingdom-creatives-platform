@@ -846,48 +846,39 @@ The first is the intended direction; `unstable_cache` is legacy in Next 16.
 
 ---
 
-## FF-30 - decision B2 (devotionals source) deliberately deferred
+## FF-30 - RESOLVED - decision B2 (devotionals source) deliberately deferred
 
-**File:** `docs/BUILD_BRIEF_ADDENDUM_01.md` section D, decision B2
-**Raised:** 2026-08-28
-**Deferred by:** Jason, deliberately. **Revisit:** after the pastor has used the
-portal for a few weeks.
+**RESOLVED 2026-09-01. Devotionals are live, syndicated from YourLife CC.**
 
-Not forgotten and not blocked - deferred on purpose, because the deciding
-evidence does not exist yet.
+The deferral was waiting on a decision nobody had made: who writes them. The
+answer is that Church for Truckers does not - the 365 devotionals are ported
+from the YourLife CC project (`app/js/faith.js`), the same source as the worship
+playlist. Not pastor-authored, and the page no longer pretends otherwise.
 
-**The decision.** `/devotionals` is either pastor-authored per church, or
-syndicated from YourLife CC. ADDENDUM_01 lists both and picks neither.
+`/devotionals` now shows today's reading with the archive behind it:
+`lib/devotionals.ts` (the entries, server-only), `lib/devotional-day.ts` (the
+rotation), `components/site/devotionals.tsx` (the render).
 
-**Why waiting is right.** The answer depends on whether the pastor is
-comfortable writing content in the portal, which is unknowable until he has
-used it. Guessing now risks building the wrong one - and both are real work, not
-a flag to flip.
+**Two things this surfaced that are NOT resolved:**
 
-**What each option costs, so the revisit starts from facts:**
+1. **Only 60 of the 365 ever appear as "today's".** The rotation is a
+   line-for-line port of YourLife's `getDailyDevotionalIdx`, which shuffles
+   positions 1..59 and indexes with `dayOfYear % 60` - so it can only ever
+   return 0..59. Verified by running both implementations over four years of
+   dates: 0 mismatches, and exactly 60 distinct indices reachable. Entries
+   60-364 are reachable in the archive but never surface daily. That looks like
+   an oversight in the SOURCE; it was copied deliberately so the two sites stay
+   in step. Worth raising with whoever owns the YourLife content.
 
-| | Pastor-authored | YourLife CC syndication |
-|---|---|---|
-| SQL | Run `supabase/drafts/05_devotionals.sql` | None - no table |
-| Portal | New "Devotionals" tab: list, editor, publish | None |
-| Public site | Index + `/devotionals/[id]` from the table | Index + detail from a cached feed |
-| Ongoing | Pastor writes every entry | Feed shape is someone else's to change |
-| Registry | `devotionals` sections stay content-editable | Sections become `auto: true` |
+2. **The seeded hero copy is now wrong.** It reads "New ones most weekdays,
+   straight from the team" - they are syndicated, not from the team, and all 365
+   already exist. That text is pastor-editable in the portal, so it is a content
+   fix rather than a code one, but it should not be left saying something untrue.
 
-**What Phase B does in the meantime.** Steps 1-5 are built; devotionals is left
-out entirely. No table, no tab, no feed reader.
-
-`/devotionals` still resolves, because draft 04 seeded a `church_sections` row
-for it. The `[slug]` route renders the page shell - header, nav, hero, footer -
-with an empty state where the list will go. That is deliberate: the page must
-not 404, because the nav links to it and a 404 would read as a broken site
-rather than a section still to come.
-
-**The trap to avoid on revisit.** Do not let "it renders fine" become the
-decision. The empty state is a placeholder, not an answer. When the pastor has
-enough portal history to judge, pick an option from the table above and build it.
-
----
+**Also note:** the day boundary is the SERVER's. `new Date()` runs in UTC on
+Vercel while the YourLife app evaluates it in the reader's local zone, so a
+visitor west of UTC can see tomorrow's devotional on the website before the app
+agrees. Same class of thing as FF-38.
 
 ## FF-31 - events and sermons have no public read policy
 

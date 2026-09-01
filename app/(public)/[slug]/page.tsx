@@ -137,6 +137,8 @@ export default async function PublicPage({
           collections={collectionsWithFeed}
           channels={sermonChannels(links)}
           activeChannel={one("channel")}
+          devotionalDay={one("day")}
+          devotionalPage={one("page")}
         />
       </main>
 

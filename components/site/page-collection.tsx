@@ -1,6 +1,9 @@
 import Link from "next/link";
 
 import { SermonList, StaffGrid } from "@/components/site/collections";
+import { DevotionalArchive, DevotionalReading } from "@/components/site/devotionals";
+import { dailyDevotionalIndex } from "@/lib/devotional-day";
+import { DEVOTIONALS } from "@/lib/devotionals";
 import type { SermonChannel } from "@/lib/sermon-feed";
 import type { Collections } from "@/lib/collections";
 import { sectionContent, type SectionRow } from "@/lib/sections";
@@ -46,6 +49,8 @@ export function PageCollection({
   collections,
   channels = [],
   activeChannel = null,
+  devotionalDay = null,
+  devotionalPage = null,
 }: {
   pageSlug: string;
   sections: SectionRow[];
@@ -54,6 +59,10 @@ export function PageCollection({
   channels?: SermonChannel[];
   /** ?channel= from the URL, or null for "everything". */
   activeChannel?: string | null;
+  /** ?day= on /devotionals - 1-based. Null means today's. */
+  devotionalDay?: string | null;
+  /** ?page= on /devotionals - 1-based archive page. */
+  devotionalPage?: string | null;
 }) {
   if (pageSlug === "team") {
     const { empty } = heroContent(sections);
@@ -89,6 +98,39 @@ export function PageCollection({
           sermons={shown}
           empty={empty ?? "No sermons posted yet."}
           watchLabel={watch_label ?? "Watch"}
+        />
+      </Band>
+    );
+  }
+
+  if (pageSlug === "devotionals") {
+    const { featured_label, read_label } = heroContent(sections);
+
+    /*
+     * Which devotional to show. ?day= is 1-based and attacker-controlled, so it
+     * is parsed and range-checked; anything outside 1..365 falls back to
+     * today's rather than erroring. Same rule as the Bible reader's chapter.
+     */
+    const requested = Number.parseInt(devotionalDay ?? "", 10);
+    const index =
+      Number.isFinite(requested) && requested >= 1 && requested <= DEVOTIONALS.length
+        ? requested - 1
+        : dailyDevotionalIndex();
+
+    const page = Number.parseInt(devotionalPage ?? "", 10);
+
+    return (
+      <Band>
+        <DevotionalReading
+          devotional={DEVOTIONALS[index]}
+          label={devotionalDay ? undefined : (featured_label ?? "Today's devotional")}
+          dayNumber={index + 1}
+        />
+        <DevotionalArchive
+          entries={DEVOTIONALS}
+          page={Number.isFinite(page) ? page : 1}
+          activeIndex={index}
+          readLabel={read_label ?? "Read"}
         />
       </Band>
     );

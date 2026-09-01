@@ -736,3 +736,102 @@
 .kc-site .worship-card .play-ring .disc svg {width:20px;height:20px}
 
 .kc-site .worship-card .card-body h3 {margin-bottom:4px}
+
+/* ------------------------------------------------------------
+ * 13. Devotionals.
+ *
+ * Reuses the scripture page frame from section 8 rather than inventing a second
+ * reading surface - a devotional and a Bible chapter are the same act, and they
+ * should look like it. Only the parts a devotional has and a chapter does not
+ * are new: the pulled-out verse, the Reflect and Prayer blocks, and the archive
+ * list.
+ * ------------------------------------------------------------ */
+
+.kc-site .devotional .scripture-sub {margin-top:6px;font-size:15px}
+
+/* The verse, set apart from the reflection on it. */
+.kc-site .devotional-scripture {
+  margin: 0 0 22px;
+  padding: 16px 20px;
+  border-left: 3px solid var(--kc-brand);
+  background: var(--kc-brand-wash);
+  border-radius: 0 var(--kc-radius) var(--kc-radius) 0;
+  font-size: 17px;
+  line-height: 1.6;
+  font-style: italic;
+  color: var(--kc-ink);
+}
+
+.kc-site .devotional-scripture cite {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--kc-font-utility);
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--kc-ink-soft);
+}
+
+.kc-site .devotional-block {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--kc-line);
+}
+
+.kc-site .devotional-label {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--kc-font-utility);
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--kc-brand);
+}
+
+.kc-site .devotional-block p {font-size:16.5px;line-height:1.7;color:var(--kc-ink-soft)}
+
+/* The archive. A list, not cards - 24 titles should scan quickly. */
+.kc-site .devotional-list {list-style:none;margin:0;padding:0;display:grid;gap:6px}
+
+.kc-site .devotional-item {
+  display: grid;
+  grid-template-columns: 42px 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--kc-line);
+  border-radius: var(--kc-radius);
+  background: var(--kc-surface);
+  text-decoration: none;
+  color: var(--kc-ink);
+  transition: border-color .16s ease, transform .16s ease, background .16s ease;
+}
+
+.kc-site .devotional-item:hover {border-color:var(--kc-brand);transform:translateX(3px)}
+.kc-site .devotional-item.is-current {border-color:var(--kc-brand);background:var(--kc-brand-wash)}
+
+.kc-site .devotional-num {font-family:var(--kc-font-utility);font-size:12px;color:var(--kc-ink-soft)}
+.kc-site .devotional-title {font-weight:600}
+.kc-site .devotional-ref {font-size:13.5px;color:var(--kc-ink-soft)}
+.kc-site .devotional-go {font-family:var(--kc-font-utility);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--kc-brand)}
+
+.kc-site .devotional-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.kc-site .devotional-pager .chip {text-decoration:none}
+.kc-site .devotional-pagecount {font-family:var(--kc-font-utility);font-size:12px;color:var(--kc-ink-soft)}
+
+@media (max-width: 700px) {
+  .kc-site .devotional-item {grid-template-columns:32px 1fr;gap:10px}
+  .kc-site .devotional-ref, .kc-site .devotional-go {grid-column:2}
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kc-site .devotional-item {transition:none !important;transform:none !important}
+}
