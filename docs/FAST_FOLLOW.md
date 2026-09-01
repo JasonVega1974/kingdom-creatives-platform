@@ -1629,3 +1629,80 @@ Sized here so the gap is known. That is FF-45's remaining scope.
 it ships** - both that the key exists, and that its stored shape matches the
 declared kind. A field name that looks obviously right (`headline` for a
 heading) is exactly the one that does not get checked.
+
+---
+
+## FF-49 - the updateTag no-op is platform-wide, not two files
+
+**File:** `lib/portal/collection-write.ts` (`publishChange`), `lib/collections.ts`,
+`lib/links.ts`, `lib/sections.ts`, `lib/church.ts`, and the eleven portal
+actions files that call `publish()` or `publishChange()`
+**Raised:** 2026-09-01, while diagnosing "I edited an event and the site did not
+change" (which turned out to be unrelated - the events were simply not
+published)
+**Must fix by:** with FF-29. They are one fix, not two.
+
+### What this adds to FF-29
+
+FF-29 is correct and its analysis holds exactly. It just scoped the problem to
+`publish()`, two actions files and `getChurchSite()`. The same no-op is
+everywhere:
+
+**Four cache modules, all `unstable_cache` with `tags: [churchTag(slug)]`:**
+
+| Module | Cached reads |
+|---|---|
+| `lib/collections.ts` | staff, groups, events, sermons, videos, announcements, prayer, ministries |
+| `lib/church.ts` | the church + theme |
+| `lib/links.ts` | church_links |
+| `lib/sections.ts` | page sections |
+
+**Eleven actions files invalidate them,** through one of two helpers that both
+call `updateTag`:
+
+- `publishChange()` in `lib/portal/collection-write.ts` - announcements, events,
+  groups, ministries, photos, prayer, details/links
+- `publish()` - details, sermons, team, website
+
+So every public read on the site is behind a tag that nothing invalidates, and
+every portal write pairs a dead `updateTag` with the `revalidatePath("/",
+"layout")` that is actually doing the work.
+
+### Still not a live bug, and here is the evidence
+
+Checked on production 2026-09-01: the home page returned `X-Vercel-Cache: MISS`,
+`Age: 0` - freshly rendered. `revalidatePath("/", "layout")` covers every route
+these caches feed, so read-your-own-writes works today.
+
+The exposure is bounded and worth stating precisely: `revalidate: 60` means the
+worst case if `revalidatePath` ever fails to reach an entry is 60 seconds of
+stale content, not indefinite staleness. That is why this has never been
+noticed.
+
+### Why it is worth fixing anyway
+
+1. **CLAUDE.md section 2 states the wrong rule as architecture** - "Portal
+   writes use `updateTag`, not `revalidateTag`". That is false while the cache
+   layer is `unstable_cache`, and it is written where a future session will read
+   it as settled.
+2. **The dead call looks load-bearing.** Someone tidying `publishChange()` will
+   delete the `revalidatePath` as the redundant one - it is the line that looks
+   like a blunt instrument next to a precise tag call. That silently breaks
+   read-your-own-writes across every tab at once.
+3. **It cost real diagnostic time.** The event-not-updating report above was
+   investigated partly down this path before the actual cause (`published =
+   false`) turned up. A known-dead call in the write path is a standing false
+   suspect for every staleness report.
+
+### The fix is still FF-29's, applied wider
+
+Same two coherent end states, and the choice has not changed - migrate to
+`use cache` + `cacheTag()`, which makes `updateTag` correct and matches what
+CLAUDE.md already claims, or drop `updateTag`, keep `revalidatePath`, and
+correct CLAUDE.md. `unstable_cache` is legacy in Next 16, so the first is the
+intended direction.
+
+What this entry changes is the size of the job: it is four cache modules and
+two helpers, not one function. Doing it piecemeal would leave the codebase in a
+state where `updateTag` is correct in some paths and dead in others, which is
+worse than either end state.
