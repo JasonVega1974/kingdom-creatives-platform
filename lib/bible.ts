@@ -142,9 +142,27 @@ const esvProvider: BibleProvider = {
   },
 
   async fetchPassage(book, chapter) {
-    const key = process.env.ESV_API_KEY;
+    /*
+     * Tolerate the key being pasted WITH its header prefix.
+     *
+     * Crossway's own docs show the header as `Authorization: Token <key>`, so
+     * copying the whole string into ESV_API_KEY is the natural mistake - it is
+     * the form the documentation puts in front of you. Left alone it builds
+     * `Authorization: Token Token abc...`, which is a 401, which falls back to
+     * bible-api, which renders a perfectly good page in the WRONG TRANSLATION.
+     * Nobody would look twice at it.
+     *
+     * Stripping the prefix costs one regex and turns that silent failure into
+     * a working page. Whitespace goes too - a trailing newline from a
+     * copy-paste is the same class of mistake.
+     *
+     * The word boundary matters: a key that merely STARTS with the letters
+     * `Token` must survive intact, so only the standalone word is removed.
+     */
+    const key = process.env.ESV_API_KEY?.replace(/^\s*Token\b[\s:]*/i, "").trim();
     // isConfigured() gates selection, but a provider must not assume it was
     // asked politely - this is also reachable if PROVIDERS is called directly.
+    // An empty string after stripping counts as absent.
     if (!key) return null;
 
     /*
