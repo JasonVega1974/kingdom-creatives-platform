@@ -1255,13 +1255,6 @@
   display: block;
 }
 
-.kc-site .hero-shot .plate {
-  position: absolute;
-  right: max(24px, calc(50vw - 560px + 24px));
-  bottom: 28px;
-  width: min(380px, 42vw);
-  background: rgba(22, 13, 7, .84);
-}
 
 .kc-site .hero-bar {
   background: linear-gradient(165deg, var(--kc-brand-night), #471B08);
@@ -1271,24 +1264,63 @@
 .kc-site .hero-bar .hero-ctas {display: flex; gap: 14px; flex-wrap: wrap}
 
 @media (prefers-reduced-motion: no-preference) {
-  .kc-site .hero-photo .plate    {animation: kc-enter .7s .25s both cubic-bezier(.2,.7,.3,1)}
   .kc-site .hero-bar .hero-ctas  {animation: kc-enter .55s .15s both cubic-bezier(.2,.7,.3,1)}
+  .kc-site .times-strip          {animation: kc-enter .55s .28s both cubic-bezier(.2,.7,.3,1)}
 }
 
-@media (max-width: 820px) {
-  /* The plate stops floating and stacks under the photo - overlaid on a phone
-     it would cover most of the image it decorates. */
-  .kc-site .hero-shot .plate {
-    position: static;
-    width: auto;
-    margin: 0;
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
-  .kc-site .hero-photo .plate,
-  .kc-site .hero-bar .hero-ctas {animation: none !important}
+  .kc-site .hero-bar .hero-ctas,
+  .kc-site .times-strip {animation: none !important}
+}
+
+/* ---- 16f. Service times as a horizontal strip on the CTA bar ----
+   (2026-09-01: the floating plate covered the truck.) One row with the CTAs:
+   actions left, times right, wrapping cleanly when narrow. Ground is the
+   solid night gradient, so the contrast is the sermon-band math: gold times
+   6.3:1, day labels 8.6:1, values 12:1 at the lightest stop. */
+.kc-site .hero-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px 28px;
+  flex-wrap: wrap;
+}
+
+.kc-site .times-strip {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 0;
+  font-family: var(--kc-font-utility);
+  font-size: 12.5px;
+}
+
+.kc-site .ts-item {display: inline-flex; align-items: baseline; gap: 7px; white-space: nowrap}
+
+/* the pipe: pseudo-content, so the accessible structure stays a plain list */
+.kc-site .ts-item + .ts-item::before {
+  content: "|";
+  color: rgba(255, 255, 255, .3);
+  margin: 0 14px;
+}
+
+.kc-site .ts-day {
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: #E4C4AC;
+}
+
+.kc-site .ts-time {
+  font-weight: 600;
+  color: var(--kc-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.kc-site .ts-label {color: #F7EBE1; font-family: var(--kc-font-display); font-size: 13.5px}
+
+@media (max-width: 640px) {
+  .kc-site .ts-item {white-space: normal}
+  .kc-site .ts-item + .ts-item::before {margin: 0 10px}
 }

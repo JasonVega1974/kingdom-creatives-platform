@@ -254,10 +254,10 @@ function HomeHero({
 
   const plate =
     services.length > 0 ? (
-      /* The Driver's Log glass plate. Same data, same aria; the live dot
-         lights only when a row has streaming: true. Over the photo it carries
-         its OWN ground - rgba(night,.84), worst case #3B342F over pure white,
-         gold times 5.4:1, day labels 7.4:1 - because the big scrim is gone. */
+      /* The Driver's Log glass plate - NO-IMAGE FALLBACK ONLY since the
+         2026-09-01 revision. A church without a banner still gets the stacked
+         plate in the night-band hero; the image path shows the photo clean and
+         puts the times on the CTA bar below (see timesStrip). */
       <div className="plate" role="table" aria-label="Service times">
         <div className="plate-head">
           <span>{logbook_title ?? "Service times"}</span>
@@ -272,6 +272,26 @@ function HomeHero({
               {slot.label ?? ""}
             </span>
           </div>
+        ))}
+      </div>
+    ) : null;
+
+  /*
+   * The horizontal service-times strip for the CTA bar. Same data as the
+   * plate, laid flat: DAY TIME label | DAY TIME label. The pipe separators are
+   * CSS pseudo-content; the real structure is a list, so screen readers get
+   * items, not punctuation.
+   */
+  const timesStrip =
+    services.length > 0 ? (
+      <div className="times-strip" role="list" aria-label="Service times">
+        {services.map((slot, index) => (
+          <span key={index} role="listitem" className="ts-item">
+            {slot.streaming ? <span className="live-dot" aria-hidden="true" /> : null}
+            <span className="ts-day">{slot.day ?? ""}</span>
+            <span className="ts-time">{slot.time ?? ""}</span>
+            <span className="ts-label">{slot.label ?? ""}</span>
+          </span>
         ))}
       </div>
     ) : null;
@@ -294,15 +314,19 @@ function HomeHero({
       <div className="hero hero-photo">
         <h1 className="sr-only">{headline ?? context.church.name ?? context.church.slug}</h1>
 
+        {/* The photo, fully visible - the floating plate was covering the
+            truck. Times moved to the bar below (2026-09-01). */}
         <div className="hero-shot">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={image_desktop} alt="" />
-          {plate}
         </div>
 
-        {ctas.length > 0 ? (
+        {ctas.length > 0 || timesStrip ? (
           <div className="hero-bar">
-            <div className="wrap hero-ctas">{ctaLinks(ctas, true)}</div>
+            <div className="wrap hero-bar-row">
+              {ctas.length > 0 ? <div className="hero-ctas">{ctaLinks(ctas, true)}</div> : null}
+              {timesStrip}
+            </div>
           </div>
         ) : null}
       </div>
