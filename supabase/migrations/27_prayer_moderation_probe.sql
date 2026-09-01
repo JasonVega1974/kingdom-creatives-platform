@@ -1,7 +1,21 @@
 /* ============================================================
    DRAFT 27 - prove the prayer wall shows approved and NOTHING else
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  RUN 2026-09-01 by Jason. PASSED.
+
+            Section 2 returned exactly the expected row:
+              approved_visible = 1
+              pending_visible  = 0
+              private_visible  = 0
+              archived_visible = 0
+
+            approved_visible = 1 is the control - it is what proves the probe
+            could have failed. Section 3 returned probe_rows_left = 0, and an
+            independent owner read afterwards confirmed one row in the table
+            (a real pending request) and no probe rows.
+
+            So 'private' and 'archived' are invisible to anon, which is the
+            guarantee the Prayer Wall's "Keep private" action depends on.
    Requires: nothing. Read-only in effect - section 2 rolls back.
 
    WHY THIS EXISTS

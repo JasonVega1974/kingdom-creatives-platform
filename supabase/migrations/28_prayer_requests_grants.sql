@@ -1,7 +1,27 @@
 /* ============================================================
    DRAFT 28 - revoke the prayer_requests write grants nothing uses
    Project: cyyxhhwuyeyvewqrhewt
-   Status:  NOT RUN. Jason reviews and runs manually.
+   Status:  RUN 2026-09-01 by Jason. APPLIED.
+
+            Section 2 committed. Verified afterwards from outside the script,
+            as anon against a uuid that does not exist so no row could be
+            touched either way:
+
+              UPDATE -> 42501 permission denied for table prayer_requests
+              DELETE -> 42501 permission denied for table prayer_requests
+
+            Before the revoke both returned 204 with zero rows - RLS filtering
+            silently. The change from silent filter to hard privilege denial is
+            what proves the revoke took.
+
+            Section 3b raised 42501 "new row violates row-level security policy"
+            on the final block, which is the PASS condition - see the note
+            there. That error also proves the anon INSERT grant survived: a lost
+            grant fails with "permission denied for table" BEFORE any policy is
+            evaluated, so reaching the RLS check at all means the public prayer
+            form still works and the FF-34 hole is still shut.
+
+            Final state - anon: INSERT, SELECT. authenticated: unchanged.
    Requires: nothing. Independent of draft 27 and of the Prayer Wall tab.
 
    >>> RUN SECTION 1 FIRST AND READ IT. Sections 2-3 assume what it shows. <<<
@@ -137,5 +157,15 @@ select c.id, 'PROBE preapproved - MUST BE REFUSED', 'Probe', 'approved'
   from public.churches c
  where c.slug = 'church-for-truckers';
 
-reset role;
+/* No `reset role` here, unlike the block above, and the difference is
+   deliberate. This insert is EXPECTED to raise 42501, which aborts the
+   transaction - and an aborted transaction rejects every further command
+   except COMMIT and ROLLBACK with:
+
+     25P02  current transaction is aborted, commands ignored until end of
+            transaction block
+
+   So a `reset role` on this path could never run; it would only add a second,
+   confusing error after the one that means success. `rollback` is enough:
+   `set local role` is scoped to the transaction and reverts on its own. */
 rollback;
