@@ -108,25 +108,15 @@ export const NAV: NavGroup[] = [
   {
     label: "Church office",
     items: [
-      {
-        href: "/portal/giving",
-        label: "Giving",
-        icon: "\u{1F49B}",
-        built: false,
-        /*
-         * Blurb narrowed 2026-08-28. It used to promise "and what has come in",
-         * which cannot be delivered: the prototype's gift list is a Stripe
-         * feature by its own words, gifts.stripe_session_id says the same in
-         * the schema, and FF-32 decided Tithe.ly - which does not push into our
-         * database. Draft 25 confirmed gifts is empty with no data source.
-         *
-         * The giving LINK is editable today, in Church Details. This tab stays
-         * listed because built-in giving is a real Phase E possibility, but it
-         * must not advertise a report nothing can fill.
-         */
-        blurb:
-          "Built-in giving, if you ever want donations handled on your own site. Your giving link is in Church Details.",
-      },
+      // "Giving" tab removed 2026-09-02. There was never a second thing for it
+      // to do beyond what Church Details' Links panel already does - editing
+      // the giving link - and FF-32 closed the door on the one thing that
+      // would have earned it its own screen (a built-in gift list; Tithe.ly
+      // is the decided answer, and Tithe.ly does not push data into this
+      // database for a report to read). See components/portal/links-panel.tsx
+      // for where the giving link and the Tithe.ly dashboard link-out live
+      // now. If built-in giving becomes a real Phase E feature, it earns a
+      // tab back then - not before.
       {
         href: "/portal/documents",
         label: "Documents",

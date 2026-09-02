@@ -91,16 +91,6 @@ export default async function DetailsPage() {
         />
 
         <LinksPanel links={links} />
-        <section className="rounded-[var(--kc-radius)] border border-dashed border-[var(--kc-line)] p-5">
-          <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
-            Social, video and giving links
-          </h2>
-          <p className="mt-1 text-sm text-[var(--kc-ink-soft)]">
-            Coming next. This is where your YouTube channels, Facebook group and
-            Give button will live - each one addable more than once, so a second
-            channel is a normal thing rather than a rebuild.
-          </p>
-        </section>
 
         <section className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-paper-dim)] p-5">
           <h2 className="text-sm font-semibold">Your website address</h2>

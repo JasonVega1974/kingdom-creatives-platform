@@ -36,6 +36,14 @@ import { TEAM_IDLE } from "@/lib/portal/form-state";
  *
  * Only the giving and video kinds have a "use this one" choice. A church has
  * one Give button; it may have several social accounts and show them all.
+ *
+ * The Giving group also links out to Tithe.ly's own admin dashboard for
+ * transaction history and export - researched 2026-09-02: Tithe.ly's API is
+ * request-gated and its documented Transactions resource is for creating
+ * donations, not reading giving history, so a reports view built against it
+ * cannot be promised. Tithe.ly already has one; pointing to it is the honest
+ * answer. lib/portal/nav.ts's separate "Giving" tab stub was removed the same
+ * day - this panel is where that link now lives.
  */
 
 export type LinkRow = {
@@ -104,6 +112,21 @@ function LinkGroup({
     <div>
       <h3 className="font-semibold">{kind.label}</h3>
       <p className="mt-1 mb-3 text-sm text-[var(--kc-ink-soft)]">{kind.blurb}</p>
+
+      {kind.value === "giving" ? (
+        <p className="mb-3 text-sm text-[var(--kc-ink-soft)]">
+          Need your transaction history, or to export gifts?{" "}
+          <a
+            href="https://app.tithely.com"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-[var(--kc-brand)] underline"
+          >
+            Open your Tithe.ly dashboard
+          </a>{" "}
+          - giving reports live there, not here.
+        </p>
+      ) : null}
 
       {links.length === 0 ? (
         <p className="mb-3 rounded-[var(--kc-radius)] border border-dashed border-[var(--kc-line)] px-4 py-5 text-center text-sm text-[var(--kc-ink-soft)]">
