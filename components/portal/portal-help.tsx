@@ -13,18 +13,27 @@ import {
 
 /**
  * ============================================================
- * PORTAL HELP - the bubble, the callout, and the panel
+ * PORTAL HELP - the trigger, the callout, and the panel
  * ============================================================
  *
- * One client component owns all the help state, mounted once in the portal
- * layout: the floating "?" bubble, the first-visit callout that offers the
- * tour, the search-and-browse panel, and the running tour. HelpMark is
- * deliberately NOT part of this tree - marks are self-contained so tabs can
- * use them with a single import.
+ * One client component owns all the help state, rendered inline in the
+ * topbar between the signed-in line and "View my website": the "?" trigger,
+ * the first-visit callout that offers the tour, the search-and-browse panel,
+ * and the running tour. HelpMark is deliberately NOT part of this tree -
+ * marks are self-contained so tabs can use them with a single import.
  *
- * POSITION: bottom-left on desktop, as designed. On mobile the sidebar's
- * Menu button already owns bottom-left, so the bubble sits bottom-right
- * there - two floating buttons in one corner would cover each other.
+ * POSITION: in the header, not floating. The first build floated it
+ * bottom-left, where it sat on top of the sidebar and covered the Events
+ * item - a help button that hides a nav item is a joke at its own expense.
+ *
+ * The callout and panel hang below the header, aligned to the viewport's
+ * RIGHT edge rather than to the trigger. Anchoring to the trigger fails on
+ * a phone: at 375px the "?" sits mid-bar (View my website and Sign out
+ * follow it), and a 280px card right-aligned to it would run off the left
+ * edge of the screen - measured, not guessed. So the top comes from the
+ * trigger's measured rect (tracking scroll and resize, the same way the
+ * tour tracks its targets) and the right edge comes from the viewport,
+ * which is on-screen by construction at every width.
  *
  * FIRST VISIT: localStorage only ("kc-help-intro-seen"). Per-device, so a
  * pastor on a new phone sees the offer once more - acceptable, arguably
@@ -33,11 +42,11 @@ import {
  * render agree (no hydration mismatch) and the callout simply appears a
  * frame later on a first visit.
  *
- * The gentle bounce that draws the eye to the bubble exists only while the
+ * The gentle bounce that draws the eye to the trigger exists only while the
  * callout is showing, and only for people who have not asked the OS for
  * reduced motion - the keyframes in globals.css are wrapped in a
- * prefers-reduced-motion guard, so for everyone else the bubble simply sits
- * still.
+ * prefers-reduced-motion guard, so for everyone else the trigger simply
+ * sits still.
  */
 
 const INTRO_KEY = "kc-help-intro-seen";
@@ -47,6 +56,28 @@ export function PortalHelp() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [tourRunning, setTourRunning] = useState(false);
   const [showCallout, setShowCallout] = useState(false);
+  const [dropTop, setDropTop] = useState<number | null>(null);
+  const wrapRef = useRef<HTMLSpanElement>(null);
+
+  /* Where the callout/panel start vertically: just under the trigger,
+     re-measured on scroll and resize while either is showing. */
+  useEffect(() => {
+    if (!panelOpen && !showCallout) return;
+
+    function update() {
+      const rect = wrapRef.current?.getBoundingClientRect();
+      if (rect) setDropTop(Math.round(rect.bottom + 8));
+    }
+
+    const raf = requestAnimationFrame(update);
+    window.addEventListener("resize", update);
+    document.addEventListener("scroll", update, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", update);
+      document.removeEventListener("scroll", update, true);
+    };
+  }, [panelOpen, showCallout]);
 
   useEffect(() => {
     // Deferred a tick so the first client render matches the server render
@@ -55,11 +86,33 @@ export function PortalHelp() {
       try {
         if (!localStorage.getItem(INTRO_KEY)) setShowCallout(true);
       } catch {
-        /* Storage blocked (private mode etc.) - skip the callout, keep the bubble. */
+        /* Storage blocked (private mode etc.) - skip the callout, keep the trigger. */
       }
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  /* Close the panel on Esc or a press outside the whole help unit. The ref
+     sits on the wrapper - trigger included - so clicking the trigger while
+     the panel is open reaches its own toggle instead of being treated as
+     "outside" and closed-then-reopened in the same gesture. */
+  useEffect(() => {
+    if (!panelOpen) return;
+
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setPanelOpen(false);
+    }
+    function onDown(event: MouseEvent) {
+      if (!wrapRef.current?.contains(event.target as Node)) setPanelOpen(false);
+    }
+
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [panelOpen]);
 
   function markIntroSeen() {
     setShowCallout(false);
@@ -77,12 +130,30 @@ export function PortalHelp() {
   }
 
   return (
-    <>
+    <span ref={wrapRef} className="relative inline-flex">
+      <button
+        type="button"
+        data-tour="help-bubble"
+        aria-label="Help and tutorial"
+        aria-expanded={panelOpen}
+        onClick={() => {
+          markIntroSeen();
+          setPanelOpen((value) => !value);
+        }}
+        className={
+          "flex h-8 w-8 items-center justify-center rounded-full border border-[var(--kc-line)] text-sm font-bold text-[var(--kc-brand-deep)] hover:border-[var(--kc-brand)] hover:bg-[var(--kc-brand-wash)]" +
+          (showCallout ? " kc-help-bounce" : "")
+        }
+      >
+        ?
+      </button>
+
       {showCallout && !tourRunning ? (
         <div
           role="dialog"
           aria-label="Welcome offer"
-          className="fixed right-4 bottom-20 z-50 w-[min(280px,calc(100vw-32px))] rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-4 shadow-xl md:right-auto md:bottom-24 md:left-5"
+          style={{ top: dropTop ?? 64 }}
+          className="fixed right-4 z-50 w-[min(280px,calc(100vw-32px))] rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-4 shadow-xl"
         >
           <p className="font-semibold">New here?</p>
           <p className="mt-1 text-sm text-[var(--kc-ink-soft)]">
@@ -107,33 +178,12 @@ export function PortalHelp() {
         </div>
       ) : null}
 
-      <button
-        type="button"
-        data-tour="help-bubble"
-        aria-label="Help and tutorial"
-        aria-expanded={panelOpen}
-        onClick={() => {
-          markIntroSeen();
-          setPanelOpen((value) => !value);
-        }}
-        className={
-          "fixed right-4 bottom-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--kc-brand)] text-xl font-bold text-[var(--kc-brand-contrast)] shadow-lg md:right-auto md:bottom-5 md:left-5" +
-          (showCallout ? " kc-help-bounce" : "")
-        }
-      >
-        ?
-      </button>
-
       {panelOpen ? (
-        <HelpPanel
-          pathname={pathname}
-          onClose={() => setPanelOpen(false)}
-          onStartTour={startTour}
-        />
+        <HelpPanel pathname={pathname} top={dropTop ?? 64} onStartTour={startTour} />
       ) : null}
 
       {tourRunning ? <WelcomeTour onExit={() => setTourRunning(false)} /> : null}
-    </>
+    </span>
   );
 }
 
@@ -141,31 +191,15 @@ export function PortalHelp() {
 
 function HelpPanel({
   pathname,
-  onClose,
+  top,
   onStartTour,
 }: {
   pathname: string;
-  onClose: () => void;
+  top: number;
   onStartTour: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [reading, setReading] = useState<HelpTopic | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    function onDown(event: MouseEvent) {
-      if (!panelRef.current?.contains(event.target as Node)) onClose();
-    }
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onDown);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onDown);
-    };
-  }, [onClose]);
 
   const results = query.trim() ? searchTopics(query) : null;
   const here = topicsForTab(pathname);
@@ -181,10 +215,10 @@ function HelpPanel({
 
   return (
     <div
-      ref={panelRef}
       role="dialog"
       aria-label="Help"
-      className="fixed right-4 bottom-20 z-50 flex max-h-[min(560px,70vh)] w-[min(340px,calc(100vw-32px))] flex-col rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] shadow-xl md:right-auto md:bottom-24 md:left-5"
+      style={{ top, maxHeight: `calc(100vh - ${top + 16}px)` }}
+      className="fixed right-4 z-50 flex w-[min(340px,calc(100vw-32px))] flex-col rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] shadow-xl"
     >
       {reading ? (
         <div className="overflow-y-auto p-5">

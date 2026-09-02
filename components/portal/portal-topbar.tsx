@@ -1,10 +1,16 @@
 import { signOut } from "@/app/(portal)/portal/actions";
+import { PortalHelp } from "@/components/portal/portal-help";
 
 /**
- * Portal top bar: where you are, where your website is, and how to leave.
+ * Portal top bar: where you are, where your website is, and how to leave -
+ * and where to get help. PortalHelp (a Client Component) renders the "?"
+ * trigger inline here, before "View my website"; its callout and panel
+ * anchor to it, so the whole help unit lives with the header rather than
+ * floating over content, where the first build covered a sidebar item.
  *
- * A Server Component - the sign-out button posts to a Server Action, so there
- * is no client bundle for it and no session handling in the browser.
+ * Still a Server Component itself - the sign-out button posts to a Server
+ * Action, so none of THIS file ships to the browser; only the help child
+ * does.
  */
 export function PortalTopbar({
   churchName,
@@ -21,6 +27,8 @@ export function PortalTopbar({
         Signed in{email ? ` as ${email}` : ""} - editing{" "}
         <span className="font-semibold text-[var(--kc-ink)]">{churchName}</span>
       </p>
+
+      <PortalHelp />
 
       <a
         href={siteUrl}

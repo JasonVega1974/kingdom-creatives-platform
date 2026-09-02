@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { Metadata } from "next";
 
-import { PortalHelp } from "@/components/portal/portal-help";
 import { PortalNav } from "@/components/portal/portal-nav";
 import { PortalTopbar } from "@/components/portal/portal-topbar";
 import { getPortalSession } from "@/lib/portal/auth";
@@ -59,10 +58,6 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         />
         <main className="min-w-0 flex-1 px-5 py-7 md:px-9 md:py-10">{children}</main>
       </div>
-
-      {/* The help bubble, panel and welcome tour. Signed-in chrome only - the
-          login screen gets no tour of tabs it cannot open. */}
-      <PortalHelp />
     </div>
   );
 }
