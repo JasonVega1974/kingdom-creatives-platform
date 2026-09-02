@@ -104,6 +104,7 @@ async function handleGenerate(request: Request): Promise<Response> {
     console.log("[portal] generate POST: no portal session");
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
+  console.log(`[portal] generate POST: auth ok, church ${session.site.church.slug}`);
 
   if (!anthropicConfigured()) {
     console.log("[portal] generate POST: ANTHROPIC_API_KEY absent from this deployment");
@@ -115,8 +116,10 @@ async function handleGenerate(request: Request): Promise<Response> {
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) {
+    console.log("[portal] generate POST: body could not be parsed");
     return NextResponse.json({ error: "That request could not be read." }, { status: 400 });
   }
+  console.log("[portal] generate POST: body parsed");
 
   const text = (key: string, max: number) => String(body[key] ?? "").trim().slice(0, max);
   const flag = (key: string) => Boolean(body[key]);
@@ -150,6 +153,8 @@ async function handleGenerate(request: Request): Promise<Response> {
       { status: 429 },
     );
   }
+
+  console.log(`[portal] generate POST: cap ok (${count ?? 0} used today), logging generation`);
 
   // Log the generation BEFORE calling the API - see the header comment.
   // .select("id") per FF-27: an insert RLS refuses looks like success

@@ -127,8 +127,35 @@ export function SermonBuilder({ remainingToday }: { remainingToday: number }) {
       });
 
       if (!response.ok || !response.body) {
-        const data = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? "Generation failed. Try again in a moment.");
+        /*
+         * TEMPORARY DIAGNOSTIC, 2026-09-03. Read the body as TEXT before
+         * trying to parse it, because what it is not is the whole point: a
+         * JSON body is our own error and names its cause; an HTML body is
+         * the platform's, which means the function never ran. The previous
+         * version called .json().catch(() => null) and threw a generic
+         * fallback, so a platform failure and a real error looked identical
+         * on screen - which is why this took three rounds to corner.
+         */
+        const raw = await response.text().catch(() => "");
+        const contentType = response.headers.get("content-type") ?? "none";
+        console.error(
+          `[sermon-builder] generate failed: HTTP ${response.status}, content-type ${contentType}`,
+          raw.slice(0, 600),
+        );
+
+        let message: string;
+        try {
+          message =
+            (JSON.parse(raw) as { error?: string }).error ??
+            `Generation failed (HTTP ${response.status}).`;
+        } catch {
+          // Not JSON - surface the status and a snippet so the screen says
+          // as much as the console does.
+          message =
+            `Generation failed (HTTP ${response.status}, ${contentType}). ` +
+            (raw ? raw.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) : "Empty response body.");
+        }
+        throw new Error(message);
       }
 
       const reader = response.body.getReader();
