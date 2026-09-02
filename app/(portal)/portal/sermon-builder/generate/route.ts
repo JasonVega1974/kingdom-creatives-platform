@@ -45,38 +45,6 @@ import { createClient } from "@/lib/supabase/server";
  */
 export const maxDuration = 300;
 
-/**
- * TEMPORARY DIAGNOSTIC, added 2026-09-03. Remove once generation works.
- *
- * A GET that touches nothing - no auth, no database, no Anthropic. It exists
- * to answer one question the Vercel logs could not: does this module load
- * and this function run at all?
- *
- *   curl -i https://churchfortruckers.org/portal/sermon-builder/generate
- *
- *   200 with {"alive":true}  the module loads and the function runs, so a
- *                            502 on POST is happening INSIDE the handler -
- *                            and the log line below will say where
- *   502 / 500 / no response  the module itself fails to load, and no
- *                            console.log placed inside POST could ever have
- *                            fired. The fault is an import or the platform,
- *                            not the handler body
- *
- * keyPresent/keyLength report the env var's SHAPE only, never its value -
- * enough to tell "missing", "empty string", and "truncated on paste" apart
- * without putting a credential in a response body or a log.
- */
-export async function GET(): Promise<Response> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  console.log("[portal] generate route GET probe reached");
-  return NextResponse.json({
-    alive: true,
-    keyPresent: Boolean(key),
-    keyLength: key?.length ?? 0,
-    keyPrefixOk: key?.startsWith("sk-ant-") ?? false,
-  });
-}
-
 export async function POST(request: Request): Promise<Response> {
   // FIRST LINE, before anything that can fail. If this does not appear in
   // the Vercel logs, the handler never ran.
