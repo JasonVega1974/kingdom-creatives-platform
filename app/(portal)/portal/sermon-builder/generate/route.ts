@@ -37,13 +37,76 @@ import { createClient } from "@/lib/supabase/server";
  * a 300KB notes field to the API.
  */
 
+/**
+ * A sermon takes 60-90 seconds to write. Streaming means the first bytes
+ * arrive within a few seconds, so a gateway timeout was never the likely
+ * failure - but leaving the ceiling implicit is how it becomes one later,
+ * on a longer sermon or a slower day. Stated rather than inherited.
+ */
+export const maxDuration = 300;
+
+/**
+ * TEMPORARY DIAGNOSTIC, added 2026-09-03. Remove once generation works.
+ *
+ * A GET that touches nothing - no auth, no database, no Anthropic. It exists
+ * to answer one question the Vercel logs could not: does this module load
+ * and this function run at all?
+ *
+ *   curl -i https://churchfortruckers.org/portal/sermon-builder/generate
+ *
+ *   200 with {"alive":true}  the module loads and the function runs, so a
+ *                            502 on POST is happening INSIDE the handler -
+ *                            and the log line below will say where
+ *   502 / 500 / no response  the module itself fails to load, and no
+ *                            console.log placed inside POST could ever have
+ *                            fired. The fault is an import or the platform,
+ *                            not the handler body
+ *
+ * keyPresent/keyLength report the env var's SHAPE only, never its value -
+ * enough to tell "missing", "empty string", and "truncated on paste" apart
+ * without putting a credential in a response body or a log.
+ */
+export async function GET(): Promise<Response> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  console.log("[portal] generate route GET probe reached");
+  return NextResponse.json({
+    alive: true,
+    keyPresent: Boolean(key),
+    keyLength: key?.length ?? 0,
+    keyPrefixOk: key?.startsWith("sk-ant-") ?? false,
+  });
+}
+
 export async function POST(request: Request): Promise<Response> {
+  // FIRST LINE, before anything that can fail. If this does not appear in
+  // the Vercel logs, the handler never ran.
+  console.log("[portal] generate POST entered");
+
+  try {
+    return await handleGenerate(request);
+  } catch (error) {
+    // The original try/catch wrapped only the Anthropic call, so a throw in
+    // the session lookup, the cap count or the log insert became an opaque
+    // platform 502 with nothing written down. Now every path reports.
+    console.error(
+      `[portal] generate POST crashed before streaming: ${(error as Error)?.stack ?? String(error)}`,
+    );
+    return NextResponse.json(
+      { error: "Generation failed unexpectedly. Try again in a moment." },
+      { status: 500 },
+    );
+  }
+}
+
+async function handleGenerate(request: Request): Promise<Response> {
   const session = await getPortalSession();
   if (!session) {
+    console.log("[portal] generate POST: no portal session");
     return NextResponse.json({ error: "Not signed in." }, { status: 401 });
   }
 
   if (!anthropicConfigured()) {
+    console.log("[portal] generate POST: ANTHROPIC_API_KEY absent from this deployment");
     return NextResponse.json(
       { error: "Sermon generation is not set up yet. Please contact Kingdom Creatives." },
       { status: 503 },
@@ -122,12 +185,14 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   try {
+    console.log("[portal] generate POST: calling Anthropic");
     // 5000 tokens, not the original's 3000 - a 3000-word sermon is ~4000
     // tokens and the old cap could truncate its own closing prayer.
     const stream = await streamClaude(prompt, {
       system: SERMON_SYSTEM_PROMPT,
       maxTokens: 5000,
     });
+    console.log("[portal] generate POST: Anthropic accepted, streaming");
 
     return new Response(stream, {
       headers: {
