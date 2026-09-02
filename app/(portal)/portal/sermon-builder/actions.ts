@@ -133,6 +133,19 @@ export async function finishSermonGeneration(input: {
   try {
     return await runFinish(input);
   } catch (error) {
+    /*
+     * Next signals redirect() and notFound() by THROWING, so a blanket
+     * catch swallows them: requirePortalUser() on an expired session would
+     * stop redirecting to the login screen and return a save error
+     * instead, stranding the pastor on a page that cannot work. Re-thrown
+     * so control flow still reaches Next. A bug I introduced with this
+     * catch block, not a diagnosed cause of the current failure.
+     */
+    const digest = (error as { digest?: unknown })?.digest;
+    if (typeof digest === "string" && (digest.startsWith("NEXT_REDIRECT") || digest === "NEXT_NOT_FOUND")) {
+      throw error;
+    }
+
     console.error(
       `[portal] finishSermonGeneration crashed: ${(error as Error)?.stack ?? String(error)}`,
     );

@@ -179,6 +179,11 @@ export function SermonBuilder({ remainingToday }: { remainingToday: number }) {
       setSections(pendingSections);
       setTitle(payload.title.trim());
 
+      console.log(
+        `[sermon-builder] streaming done, ${markdown.length} chars. Saving with add-ons:`,
+        addons,
+      );
+
       const result = await finishSermonGeneration({
         markdown,
         title: payload.title,
@@ -189,6 +194,16 @@ export function SermonBuilder({ remainingToday }: { remainingToday: number }) {
         style: payload.style,
         addons,
       });
+
+      /*
+       * TEMPORARY DIAGNOSTIC, 2026-09-03. The save fails with an error whose
+       * detail production strips, and the Vercel logs are not always to
+       * hand. This puts the action's own answer in the browser console -
+       * whether it returned at all, whether it saved, the sermon id, and
+       * each section's outcome - so one generation attempt is enough to see
+       * what happened. Remove once saving is reliable.
+       */
+      console.log("[sermon-builder] finishSermonGeneration returned:", result);
 
       if (!result.ok) throw new Error(result.error);
 
