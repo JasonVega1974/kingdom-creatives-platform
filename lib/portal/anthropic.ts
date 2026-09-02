@@ -20,6 +20,19 @@ import "server-only";
  * noticeably weaker at holding a ten-part outline across 2,500 words. At
  * roughly $0.20 per full generation the 10/day cap bounds worst-case spend
  * near $2/church/day.
+ *
+ * NO `temperature` PARAMETER, AND DO NOT ADD ONE BACK. The WordPress
+ * original sent temperature 0.6 and that value was ported here with the
+ * rest of its tuning - which made every single generation fail in
+ * production with:
+ *
+ *   400 invalid_request_error: `temperature` is deprecated for this model.
+ *
+ * Confirmed by replaying the exact request body against the live API on
+ * 2026-09-03: identical request minus `temperature` succeeds on both the
+ * streaming and non-streaming paths. The parameter is not optional-but-
+ * ignored on this model, it is rejected outright, so re-adding it does not
+ * make output more varied - it takes the feature down.
  */
 
 const API_URL = "https://api.anthropic.com/v1/messages";
@@ -50,7 +63,6 @@ export async function callClaude(
     body: JSON.stringify({
       model: MODEL,
       max_tokens: options.maxTokens,
-      temperature: 0.6,
       system: options.system,
       messages: [{ role: "user", content: prompt }],
     }),
@@ -58,7 +70,7 @@ export async function callClaude(
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`Anthropic ${response.status}: ${body.slice(0, 300)}`);
+    throw new Error(`Anthropic ${response.status}: ${body.slice(0, 1200)}`);
   }
 
   const data = (await response.json()) as {
@@ -86,7 +98,6 @@ export async function streamClaude(
     body: JSON.stringify({
       model: MODEL,
       max_tokens: options.maxTokens,
-      temperature: 0.6,
       system: options.system,
       messages: [{ role: "user", content: prompt }],
       stream: true,
@@ -95,7 +106,7 @@ export async function streamClaude(
 
   if (!response.ok || !response.body) {
     const body = await response.text().catch(() => "");
-    throw new Error(`Anthropic ${response.status}: ${body.slice(0, 300)}`);
+    throw new Error(`Anthropic ${response.status}: ${body.slice(0, 1200)}`);
   }
 
   const upstream = response.body;
