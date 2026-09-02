@@ -6,6 +6,7 @@ import { requirePortalUser } from "@/lib/portal/auth";
 import { fieldToText } from "@/lib/portal/field-values";
 import { PAGES, describeUnknownSection, findPage, findSection } from "@/lib/portal/sections";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Edit My Website" };
 
@@ -104,9 +105,12 @@ export default async function WebsitePage({
 function Shell({ pageSlug, children }: { pageSlug: string; children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Edit My Website
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Edit My Website
+        </h1>
+        <HelpMark topic="website.editing" />
+      </div>
       <p className="mt-2 text-[var(--kc-ink-soft)]">
         Every part of your website is a card below. Flip a switch to show or hide
         it. Click to change the words. Use the arrows to reorder.

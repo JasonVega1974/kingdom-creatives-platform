@@ -9,6 +9,7 @@ import {
   saveServiceTimes,
 } from "@/app/(portal)/portal/details/actions";
 import { DETAILS_IDLE, type DetailsState } from "@/lib/portal/form-state";
+import { HelpMark } from "@/components/portal/help-mark";
 import { MediaPicker, type LibraryItem } from "@/components/portal/media-picker";
 import type { ServiceTime } from "@/lib/church";
 
@@ -18,17 +19,23 @@ const FIELD =
 function Card({
   title,
   hint,
+  helpTopic,
   children,
 }: {
   title: string;
   hint: string;
+  /** Optional "?" beside the title, opening a help registry topic. */
+  helpTopic?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-5">
-      <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
-        {title}
-      </h2>
+      <div className="flex items-center gap-2">
+        <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
+          {title}
+        </h2>
+        {helpTopic ? <HelpMark topic={helpTopic} /> : null}
+      </div>
       <p className="mt-1 mb-5 text-sm text-[var(--kc-ink-soft)]">{hint}</p>
       {children}
     </section>
@@ -106,6 +113,7 @@ export function IdentityForm({
   return (
     <Card
       title="Church details"
+      helpTopic="details.identity"
       hint="Your name, and how people reach you. This appears in your header, your footer and on your contact page."
     >
       <form action={action} className="space-y-4">
@@ -148,6 +156,7 @@ export function ServiceTimesForm({ services }: { services: ServiceTime[] }) {
   return (
     <Card
       title="Service times"
+      helpTopic="details.services"
       hint="When you meet. Add a row for each service - Sunday worship, midweek study, anything with a time."
     >
       <form action={action}>
@@ -247,6 +256,7 @@ export function BrandingForm({
   return (
     <Card
       title="Colours and logo"
+      helpTopic="details.branding"
       hint="Your brand. These colours are used across every page of your website."
     >
       <form action={action} className="space-y-4">

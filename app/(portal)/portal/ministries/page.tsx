@@ -6,6 +6,7 @@ import {
 } from "@/components/portal/ministries-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Ministries" };
 
@@ -55,9 +56,12 @@ export default async function MinistriesPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Ministries
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Ministries
+        </h1>
+        <HelpMark topic="ministries.overview" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         The organisations you support, listed on your About page. Use the arrows
         to set the order.

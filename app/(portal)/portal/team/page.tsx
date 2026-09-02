@@ -4,6 +4,7 @@ import { TeamEditor, type Person } from "@/components/portal/team-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
 import type { LibraryItem } from "@/components/portal/media-picker";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Our Team" };
 
@@ -78,9 +79,12 @@ export default async function TeamPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Our Team
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Our Team
+        </h1>
+        <HelpMark topic="team.overview" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         The people on your team page. Add someone, write a short bio, and switch
         them on when you are ready for visitors to see them.

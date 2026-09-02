@@ -6,6 +6,7 @@ import Link from "next/link";
 import { requirePortalUser } from "@/lib/portal/auth";
 import type { LibraryItem } from "@/components/portal/media-picker";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Events" };
 
@@ -134,9 +135,12 @@ function toLocalInput(value: string | null): string {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Events
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Events
+        </h1>
+        <HelpMark topic="events.overview" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         What is coming up. Your website shows upcoming events only - anything
         that has already happened drops off on its own.

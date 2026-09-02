@@ -238,6 +238,23 @@
   }
 }
 
+/* The help bubble's attention bounce - only while the first-visit callout is
+   showing (portal-help.tsx adds and removes the class), and only for people
+   who have not asked the OS for reduced motion. Everyone else gets a bubble
+   that simply sits still, which is why the keyframes live inside the guard
+   rather than being cancelled by the reduce block above - the site-wide
+   reduce rule is scoped to .kc-site and the portal is not. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes kc-help-bounce {
+    0%, 55%, 100% { transform: translateY(0); }
+    35% { transform: translateY(-7px); }
+    45% { transform: translateY(-3px); }
+  }
+  .kc-help-bounce {
+    animation: kc-help-bounce 1.8s ease-in-out 3;
+  }
+}
+
 /* A note's stored body is TipTap JSON, rendered to plain <p> tags with only
    inline style/tag marks (bold/italic/underline/color/highlight/font) - see
    lib/portal/note-extensions.ts. This just gives adjacent paragraphs some

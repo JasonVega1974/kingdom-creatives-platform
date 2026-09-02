@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { NAV } from "@/lib/portal/nav";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,18 @@ import { cn } from "@/lib/utils";
 export function PortalNav({ churchName }: { churchName: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  // The welcome tour highlights sidebar items, and on mobile they live inside
+  // this closed drawer. The tour asks for it via a CustomEvent rather than a
+  // shared context - neither component imports the other, and on desktop
+  // (sidebar static, drawer state irrelevant) the event is harmless.
+  useEffect(() => {
+    function onDrawer(event: Event) {
+      setOpen(Boolean((event as CustomEvent<{ open?: boolean }>).detail?.open));
+    }
+    window.addEventListener("kc-portal-drawer", onDrawer);
+    return () => window.removeEventListener("kc-portal-drawer", onDrawer);
+  }, []);
 
   return (
     <>
@@ -49,7 +61,10 @@ export function PortalNav({ churchName }: { churchName: string }) {
 
         {NAV.map((group) => (
           <div key={group.label} className="mb-5">
-            <p className="mb-1 px-3 text-[11px] font-semibold tracking-[0.08em] text-[var(--kc-ink-soft)] uppercase">
+            <p
+              data-tour-group={group.label}
+              className="mb-1 px-3 text-[11px] font-semibold tracking-[0.08em] text-[var(--kc-ink-soft)] uppercase"
+            >
               {group.label}
             </p>
 
@@ -63,6 +78,7 @@ export function PortalNav({ churchName }: { churchName: string }) {
                   <li key={item.href}>
                     <Link
                       href={item.href}
+                      data-tour={item.href}
                       onClick={() => setOpen(false)}
                       aria-current={active ? "page" : undefined}
                       className={cn(

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requirePortalUser } from "@/lib/portal/auth";
 import { parseServiceTimes } from "@/lib/church";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 /**
  * Portal home. A short answer to "what is my church's website doing right now".
@@ -41,9 +42,12 @@ export default async function PortalHomePage() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Welcome back
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Welcome back
+        </h1>
+        <HelpMark topic="home.overview" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         {email ? `${email} - ` : ""}
         {site.church.name ?? "Your church"}

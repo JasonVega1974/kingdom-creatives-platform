@@ -26,6 +26,7 @@ export function PortalTopbar({
         href={siteUrl}
         target="_blank"
         rel="noreferrer"
+        data-tour="view-site"
         className="text-sm font-semibold text-[var(--kc-brand-deep)] underline-offset-4 hover:underline"
       >
         View my website

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { GroupsEditor, type GroupRow } from "@/components/portal/groups-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Groups & Studies" };
 
@@ -60,9 +61,12 @@ export default async function GroupsPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Groups &amp; Studies
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Groups &amp; Studies
+        </h1>
+        <HelpMark topic="groups.overview" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         Your groups, in the order visitors will see them. Use the arrows to put
         the one you most want people to join at the top.

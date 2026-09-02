@@ -8,6 +8,7 @@ import {
   setLinkPrimary,
   updateLink,
 } from "@/app/(portal)/portal/details/links-actions";
+import { HelpMark } from "@/components/portal/help-mark";
 import {
   AddCard,
   ConfirmRemove,
@@ -78,9 +79,12 @@ const KINDS = [
 export function LinksPanel({ links }: { links: LinkRow[] }) {
   return (
     <section className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-5">
-      <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
-        Links
-      </h2>
+      <div className="flex items-center gap-2">
+        <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
+          Links
+        </h2>
+        <HelpMark topic="details.links" />
+      </div>
       <p className="mt-1 mb-5 text-sm text-[var(--kc-ink-soft)]">
         Where your Give button goes, your video channels, and your social
         accounts.

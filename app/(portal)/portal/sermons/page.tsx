@@ -8,6 +8,7 @@ import {
 import { requirePortalUser } from "@/lib/portal/auth";
 import { SERMON_STATUSES, type SermonStatus } from "@/lib/portal/form-state";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Sermon Library" };
 
@@ -88,9 +89,12 @@ export default async function SermonsPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Sermon Library
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Sermon Library
+        </h1>
+        <HelpMark topic="sermons.status" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         Every message you have preached. Add one, link its video, and switch it
         on when you are ready for it to appear on your website.

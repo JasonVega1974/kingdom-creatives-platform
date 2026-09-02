@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { PhotosManager, type MediaItem } from "@/components/portal/photos-manager";
 import { requirePortalUser } from "@/lib/portal/auth";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Photos" };
 
@@ -61,9 +62,12 @@ export default async function PhotosPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-4xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Photos
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Photos
+        </h1>
+        <HelpMark topic="photos.upload" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         Every picture you upload lives here. Add it once, then use it on an
         event, a person, or your logo - you never need to upload the same photo

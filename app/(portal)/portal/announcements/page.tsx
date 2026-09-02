@@ -6,6 +6,7 @@ import {
 } from "@/components/portal/announcements-editor";
 import { requirePortalUser } from "@/lib/portal/auth";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Announcements" };
 
@@ -56,9 +57,12 @@ export default async function AnnouncementsPage() {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
-        Announcements
-      </h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">
+          Announcements
+        </h1>
+        <HelpMark topic="announcements.expiry" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         The bulletin board on your home page. Give an announcement an end date
         and it comes down on its own.

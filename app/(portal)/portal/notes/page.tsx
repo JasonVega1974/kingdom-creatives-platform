@@ -6,6 +6,7 @@ import type { NoteType } from "@/lib/portal/form-state";
 import { noteBodyToHtml } from "@/lib/portal/note-body";
 import type { JSONContent } from "@/lib/portal/note-extensions";
 import { createClient } from "@/lib/supabase/server";
+import { HelpMark } from "@/components/portal/help-mark";
 
 export const metadata: Metadata = { title: "Notes" };
 
@@ -87,7 +88,10 @@ export default async function NotesPage() {
 function Shell({ children, churchName }: { children: React.ReactNode; churchName: string }) {
   return (
     <div className="max-w-3xl">
-      <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">Notes</h1>
+      <div className="flex items-center gap-2.5">
+        <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">Notes</h1>
+        <HelpMark topic="notes.editor" />
+      </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         Sermon prep, reminders, and anything else worth writing down for{" "}
         {churchName}. Type it, format it, attach it to a sermon or a passage -

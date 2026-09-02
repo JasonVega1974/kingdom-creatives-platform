@@ -10,6 +10,7 @@ import {
   unapprovePrayer,
 } from "@/app/(portal)/portal/prayer/actions";
 import { ConfirmRemove, EmptyList, Field, SaveRow } from "@/components/portal/editor-kit";
+import { HelpMark } from "@/components/portal/help-mark";
 import type { PrayerStatus, TeamState } from "@/lib/portal/form-state";
 import { TEAM_IDLE } from "@/lib/portal/form-state";
 
@@ -53,7 +54,7 @@ export function PrayerModerator({ requests }: { requests: PrayerRow[] }) {
   return (
     <div className="space-y-10">
       <section>
-        <Heading count={pending.length}>Needs your eye</Heading>
+        <Heading count={pending.length} help="prayer.flow">Needs your eye</Heading>
         {pending.length === 0 ? (
           <EmptyList>
             Nothing waiting. New requests from your website land here first.
@@ -68,7 +69,7 @@ export function PrayerModerator({ requests }: { requests: PrayerRow[] }) {
       </section>
 
       <section>
-        <Heading count={approved.length}>On your prayer wall</Heading>
+        <Heading count={approved.length} help="prayer.private">On your prayer wall</Heading>
         {approved.length === 0 ? (
           <EmptyList>
             Nothing on the wall yet. Approve a request above and it appears on
@@ -228,11 +229,23 @@ function Body({ item }: { item: PrayerRow }) {
   );
 }
 
-function Heading({ count, children }: { count: number; children: string }) {
+function Heading({
+  count,
+  help,
+  children,
+}: {
+  count: number;
+  /** Optional "?" beside the heading, opening a help registry topic. */
+  help?: string;
+  children: string;
+}) {
   return (
-    <h2 className="mb-4 font-[family-name:var(--kc-font-display)] text-xl font-bold">
-      {children} ({count})
-    </h2>
+    <div className="mb-4 flex items-center gap-2">
+      <h2 className="font-[family-name:var(--kc-font-display)] text-xl font-bold">
+        {children} ({count})
+      </h2>
+      {help ? <HelpMark topic={help} /> : null}
+    </div>
   );
 }
 
