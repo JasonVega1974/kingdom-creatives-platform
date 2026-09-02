@@ -2125,3 +2125,69 @@ comment warns about. When picked up: decide the canonical type list (at
 minimum add "Online"), update the seeded filter content, and extend
 EVENT_TYPES to match - in that order, so the public side can filter on the
 value before the portal can produce it.
+
+---
+
+## FF-59 - built sermons have no public full-text page
+
+**File:** `lib/sermon-feed.ts`, `components/site/collections.tsx` (SermonList)
+**Raised:** 2026-09-03, Sermon Builder scoping - decision (a), deferred by Jason
+**Must fix by:** no deadline - deliberate scope cut, not an oversight
+
+The old WordPress builder published the full sermon manuscript at a public
+/sermon/{slug} page. This platform has no sermon detail route: a built sermon
+appears on /sermons as a text card (title, series, date, passage, summary -
+the card degrades cleanly without a video), and the manuscript itself lives
+only in the portal and the PDF export. Decided 2026-09-03 to ship the builder
+that way.
+
+**What must be settled before this ships, in order:**
+
+1. **The feed-vs-built coexistence question.** The /sermons feed merges the
+   YouTube channel list with curated rows; a built sermon with no youtube_id
+   rides the merge's orphans branch as a db-only card. A detail page changes
+   what a card IS: video cards would link to a watch page or stay external,
+   text cards would link to the manuscript, and a sermon that starts built
+   and later gains a video needs one URL that survives the transition (the
+   curated row's stable id, not the yt: synthetic id). Settle that routing
+   before writing any page.
+2. The manuscript is TipTap JSON in `sermons.body_json` (draft 35), rendered
+   through the closed SERMON_EXTENSIONS schema - the render path exists in
+   the portal and is safe by construction, so the page itself is small once
+   (1) is answered.
+3. A new public read surface for body_json means a new RLS consideration and
+   a rule-4a anon probe - the published-cards probe from FF-31 does not cover
+   a column the public has never read.
+
+---
+
+## FF-60 - sermon_generations is append-only by RLS alone, not by grants
+
+**File:** `supabase/migrations/35_sermon_builder_schema.sql` section 4
+**Raised:** 2026-09-03, by draft 38's verification run
+**Must fix by:** no deadline - the property holds today, this is defence in
+depth
+
+Draft 35 granted `authenticated` only `select, insert` on
+`sermon_generations`, intending the daily generation cap to be unresettable
+at two layers: no delete grant, and no delete policy.
+
+Draft 38 section 2 proved the cap DOES hold - a member cannot delete a row it
+just wrote - but it came back "no rows returned" rather than "permission
+denied", which means the delete statement was allowed to execute and RLS
+filtered every row away. The reason: this project's default privileges had
+already granted DELETE (and presumably UPDATE) on the new table, and draft
+35's explicit grant was additive rather than restrictive. So the guarantee
+currently rests on RLS alone.
+
+That is sufficient - RLS is the layer that actually enforces it, and it was
+verified rather than assumed. But draft 18 set the precedent for tidying
+exactly this (it revoked unused INSERT/DELETE grants elsewhere), and the same
+tidy here would restore the intended belt-and-braces:
+
+```
+revoke update, delete on public.sermon_generations from authenticated, anon;
+```
+
+Worth folding into the next schema draft that touches this area rather than
+running on its own.

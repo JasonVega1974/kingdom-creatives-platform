@@ -263,6 +263,60 @@
   margin-top: 0.5em;
 }
 
+/* The sermon manuscript editor (components/portal/sermon-body-editor.tsx).
+   Tailwind's preflight zeroes headings and lists, which is right for app
+   chrome and wrong inside a document editor - a pastor needs to SEE the
+   structure the generation produced. Scoped to the editor's own class, and
+   mirrored on .kc-note-print-target so the printout matches the screen. */
+.kc-manuscript h2,
+.kc-note-print-target h2 {
+  font-size: 1.35em;
+  font-weight: 700;
+  margin: 1em 0 0.4em;
+}
+.kc-manuscript h3,
+.kc-note-print-target h3 {
+  font-size: 1.12em;
+  font-weight: 700;
+  margin: 0.9em 0 0.3em;
+}
+.kc-manuscript p + p,
+.kc-note-print-target p + p {
+  margin-top: 0.55em;
+}
+.kc-manuscript ul,
+.kc-note-print-target ul {
+  list-style: disc;
+  padding-left: 1.4em;
+  margin: 0.4em 0;
+}
+.kc-manuscript ol,
+.kc-note-print-target ol {
+  list-style: decimal;
+  padding-left: 1.4em;
+  margin: 0.4em 0;
+}
+.kc-manuscript blockquote,
+.kc-note-print-target blockquote {
+  border-left: 3px solid var(--kc-brand);
+  padding-left: 0.9em;
+  margin: 0.6em 0;
+  font-style: italic;
+}
+
+@media print {
+  /* Keep headings with the text they introduce. */
+  .kc-note-print-target h1,
+  .kc-note-print-target h2,
+  .kc-note-print-target h3 {
+    break-after: avoid;
+  }
+  .kc-note-print-target blockquote,
+  .kc-note-print-target li {
+    break-inside: avoid;
+  }
+}
+
 /*
  * Print exactly one note (components/portal/notes-editor.tsx's PrintTarget).
  * At most one .kc-note-print-target exists in the DOM at a time - it is only

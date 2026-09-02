@@ -34,8 +34,7 @@ export const NAV: NavGroup[] = [
         href: "/portal/sermon-builder",
         label: "Sermon Builder",
         icon: "\u{270D}",
-        built: false,
-        blurb: "Write a sermon with help, then save it straight to your library.",
+        built: true,
       },
       { href: "/portal/sermons", label: "Sermon Library", icon: "\u{1F4DA}", built: true },
       {

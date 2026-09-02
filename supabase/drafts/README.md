@@ -17,7 +17,10 @@ then parses the prose as SQL - the symptom is a baffling
 
 | File | What | Required for | Urgency |
 |---|---|---|---|
-| `34_notes_verify.sql` | Transactional (rolls back). Creates, edits and reads back a note as a real CFT member via mocked JWT, proving the Notes RLS policy from 33 actually authorizes the app's write pattern | Closing out the Notes tab per rule 4a | Run before calling Notes done |
+| `38_sermon_generations_verify.sql` | Transactional (both sections roll back). Replaces 36. Two sections: 1 logs a cap row and counts it; 2 logs one then fails to delete it | Closing out the Sermon Builder per the FF-27 rule | **PASSED 2026-09-03.** Section 1: member_rows 1, todays_count 1. Section 2: no rows deleted - append-only holds via RLS. Kept for re-use if the cap RLS ever changes. Surfaced FF-60 |
+| `37_generation_probe_diagnosis.sql` | Read-only, rolls back. Measured every link 36 relied on | Diagnosing 36 | **DONE - ran 2026-09-03.** Cleared the whole chain: auth.uid() resolves, churches and church_members both visible, member filter matches 1. The RLS setup was never the problem |
+| `36_sermon_generations_verify.sql` | Transactional. As a real CFT member: insert a cap-log row, count, attempt delete | Superseded by 38 | **FAILED 2026-09-03 (0/0/0), and the probe was at fault, not the database.** All three operations were CTEs in ONE statement, so they shared a snapshot: the count and delete could not see the insert. Its `deleted_rows 0` was a FALSE PASS - the assertion could not fail (FF-35's rule). **Do not run. Kept as the record.** |
+| `34_notes_verify.sql` | Transactional (rolls back). Creates, edits and reads back a note as a real CFT member via mocked JWT, proving the Notes RLS policy from 33 actually authorizes the app's write pattern | Closing out the Notes tab per rule 4a | **DONE - passed 2026-09-01** (one row back, edited title, category flipped). Kept for re-use if notes RLS ever changes |
 | `15_post_batch_verify.sql` | Read-only. Re-checks that 08/04/09/10/12 took | Nothing - diagnostics | Run any time. Already passed 2026-08-27 |
 | `07_cft_giving_url.sql` | Data only - `churches.giving_url` for CFT | Nothing | **WON'T RUN - superseded.** Decided 2026-08-28: the Give page reads `church_links`, where the real Tithe.ly link already sits from draft 10. See PORTAL_SPEC 2.3 |
 | `05_devotionals.sql` | Blocked on ADDENDUM_01 decision B2 | Phase B `/devotionals` | **DEFERRED, not blocked.** Decided 2026-08-28 to defer B2 until the pastor has used the portal. Do not run. See FF-30 |
@@ -47,6 +50,7 @@ All in `supabase/migrations/`, applied date in the file header.
 | `19_church_theme_privilege_trace.sql` | 2026-08-28 | Read-only trace. Isolated the branding failure to a missing UPDATE grant on `church_theme.church_id` |
 | `18_revoke_residual_grants.sql` | 2026-08-28 | Revoked unused INSERT/DELETE grants, and granted `update (church_id)` so the branding upsert works. Verified |
 | `33_notes.sql` | 2026-09-01 | Repurposed `pastor_notes` for the shared Notes tab: RLS owner-only -> church-member, dropped `body`/`body_iv`, added `body_json` + note fields, CHECK on `category`. Verified: 0 pre-existing rows, new columns present, one policy |
+| `35_sermon_builder_schema.sql` | 2026-09-03 | Sermon Builder schema: `sermons.body_json` added, never-used `body` dropped (gate read 0), `slide_content`/`social_posts` retyped jsonb, `sermon_generations` cap log created (append-only, insert+select policies only). All verified by section 5 |
 
 Numbering skips nothing and reuses nothing. `02` is optional and still unrun, so
 `03` was applied ahead of it; `14` was reserved for FF-24 and reassigned to FF-25

@@ -245,6 +245,42 @@ export const HELP_TOPICS: HelpTopic[] = [
     keywords: ["private", "archive", "delete", "take down", "hide", "reject"],
   },
 
+  /* ---- Sermon Builder ---- */
+  {
+    id: "builder.how",
+    tab: "/portal/sermon-builder",
+    tabLabel: "Sermon Builder",
+    title: "How the builder works",
+    body: [
+      "Fill in a title, a Bible passage, a style and any direction you want to give - themes, stories to include, points to emphasize - then Generate. The sermon is written in front of you and saves itself as a draft the moment it finishes.",
+      "The draft is yours to edit: rework the manuscript, tighten the public summary, then publish when it says what you want it to say. Nothing appears on your website until you publish.",
+      "Each church can generate 10 sermons a day; the counter resets at midnight UTC. Editing, retrying a piece, publishing and printing are never counted - only pressing Generate.",
+    ],
+    keywords: ["generate", "ai", "write", "sermon builder", "draft", "limit", "cap"],
+  },
+  {
+    id: "builder.addons",
+    tab: "/portal/sermon-builder",
+    tabLabel: "Sermon Builder",
+    title: "The add-ons",
+    body: [
+      "Alongside the sermon, the builder can create a daily devotional, small group discussion questions, a kids ministry lesson, bulletin notes, presentation slides and social media posts - tick what you want under \"Also create\" before generating.",
+      "Each piece is made separately, so if one fails the rest are unharmed - a Retry button appears for just that piece, and your sermon is already saved either way.",
+    ],
+    keywords: ["devotional", "small group", "kids", "bulletin", "slides", "social", "add-on", "retry"],
+  },
+  {
+    id: "builder.video",
+    tab: "/portal/sermon-builder",
+    tabLabel: "Sermon Builder",
+    title: "Publishing before the video exists",
+    body: [
+      "A published built sermon appears on your website's sermons page as a text card - title, passage, date and summary - with no video needed. Preach it, upload the recording later.",
+      "When the video is on YouTube, open this sermon in Sermon Library and paste the video link there. The card and the video become one entry, with your written summary kept.",
+    ],
+    keywords: ["video", "youtube", "attach", "publish", "card", "later"],
+  },
+
   /* ---- Sermon Library ---- */
   {
     id: "sermons.status",
@@ -422,8 +458,8 @@ export const TOUR_STEPS: TourStep[] = [
   {
     target: '[data-tour-group="Preach"]',
     inSidebar: true,
-    title: "Your sermons and notes",
-    body: "Sermon Library manages what is on your website's sermons page. Notes is a shared notebook for you and your team - sermon prep, reminders, anything worth writing down.",
+    title: "Preaching tools",
+    body: "Sermon Builder writes a full sermon draft from your title, passage and direction - you edit it and publish. Sermon Library manages what is on your website's sermons page. Notes is a shared notebook for you and your team.",
   },
   {
     target: '[data-tour-group="People"]',
