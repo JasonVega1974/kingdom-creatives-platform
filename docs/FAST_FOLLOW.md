@@ -2191,3 +2191,42 @@ revoke update, delete on public.sermon_generations from authenticated, anon;
 
 Worth folding into the next schema draft that touches this area rather than
 running on its own.
+
+---
+
+## FF-61 - a built sermon's manuscript cannot be reopened for editing
+
+**File:** `components/portal/sermon-builder.tsx`,
+`components/portal/sermon-library.tsx`
+**Raised:** 2026-09-03, on shipping the Sermon Builder
+**Must fix by:** before a pastor has generated more than a handful of
+sermons - this gets more annoying with every one
+
+The Sermon Builder edits the manuscript it just generated, within that one
+session: generate, edit, publish or print, all from the ready view. Navigate
+away and `body_json` becomes read-only in practice - nothing reopens it.
+
+Sermon Library edits the sermon's METADATA only (title, series, passage,
+date, video link, summary, status), which was the right scope when every
+sermon was a YouTube video with a description. A built sermon is the first
+kind that carries a manuscript, and the Library has no field for it.
+
+The gap in plain terms: a pastor generates a sermon on Tuesday, preaches a
+revised version on Sunday, and cannot put the revision anywhere. The
+manuscript is preserved but frozen.
+
+What it needs, roughly in order of size:
+
+1. A route that loads one sermon's `body_json` into the same
+   `SermonBodyEditor` the builder uses, saving through the existing
+   `saveSermonEdits` action - which already takes a `sermonId` and does not
+   care whether the caller is the builder or something else.
+2. An entry point: an "Edit manuscript" control on Sermon Library rows that
+   have a `body_json`, absent on rows that do not (a YouTube-only sermon has
+   no manuscript and should not offer to edit one).
+3. Print from there too, reusing the builder's print target - a pastor
+   reprinting Sunday's manuscript should not have to regenerate it.
+
+The add-on columns (devotional, kids lesson, small group, bulletin, slides,
+social) have the same problem and the same shape of fix; do them together or
+the tab grows two editing stories.
