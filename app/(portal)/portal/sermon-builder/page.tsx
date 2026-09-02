@@ -9,6 +9,16 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Sermon Builder" };
 
 /**
+ * Server Actions run under THIS route, not under generate/route.ts - and
+ * finishSermonGeneration fires up to seven non-streaming Anthropic calls in
+ * parallel, holding the function open for their full wall-clock with no
+ * streamed bytes to keep the connection alive. Setting the ceiling on the
+ * streaming route while leaving it implicit here is what let the sermon
+ * generate successfully and then fail on save.
+ */
+export const maxDuration = 300;
+
+/**
  * "Sermon Builder" - generate a sermon draft with help, edit it, publish it.
  *
  * The one server-side read is today's generation count, so the page can say

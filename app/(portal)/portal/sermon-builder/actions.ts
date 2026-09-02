@@ -122,6 +122,38 @@ export async function finishSermonGeneration(input: {
   style: string;
   addons: AddonKey[];
 }): Promise<FinishResult> {
+  /*
+   * Everything is inside a try. This action had NO error boundary, so any
+   * throw surfaced as "An error occurred in the Server Components render"
+   * with the detail stripped in production - a pastor watched a sermon
+   * write itself and then vanish, with nothing to act on. Same mistake the
+   * generate route made, and the same fix: catch, log the real cause, and
+   * hand the caller something it can display.
+   */
+  try {
+    return await runFinish(input);
+  } catch (error) {
+    console.error(
+      `[portal] finishSermonGeneration crashed: ${(error as Error)?.stack ?? String(error)}`,
+    );
+    return {
+      ok: false,
+      error:
+        "The sermon was written but could not be saved. Copy your text somewhere safe, then try again.",
+    };
+  }
+}
+
+async function runFinish(input: {
+  markdown: string;
+  title: string;
+  sermonDate: string;
+  book: string;
+  chapter: string;
+  verses: string;
+  style: string;
+  addons: AddonKey[];
+}): Promise<FinishResult> {
   const session = await requirePortalUser();
 
   const markdown = String(input.markdown ?? "").slice(0, 60000);
@@ -135,7 +167,9 @@ export async function finishSermonGeneration(input: {
     : "";
   const passageForPrompts = formatPassage(input.book, input.chapter, input.verses) || title;
 
+  console.log(`[portal] finish: converting ${markdown.length} chars of markdown`);
   const bodyJson = markdownToDoc(markdown);
+  console.log("[portal] finish: markdown converted, inserting draft");
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -155,11 +189,13 @@ export async function finishSermonGeneration(input: {
   const saved = judgeWrite("finishSermonGeneration", session.site.church.id, error, data);
   if (!saved.ok) return { ok: false, error: saved.error ?? "That did not save." };
   const sermonId = (data as { id: string }[])[0].id;
+  console.log(`[portal] finish: draft saved as ${sermonId}`);
 
   // Summary always runs; the add-ons are whichever were ticked. All in
   // parallel - wall clock is the slowest single call, not the sum.
   const wanted: SectionKey[] = ["summary", ...ADDON_KEYS.filter((key) => input.addons.includes(key))];
 
+  console.log(`[portal] finish: generating ${wanted.length} sections`);
   const settled = await Promise.allSettled(
     wanted.map((section) => generateSection(section, markdown, title, passageForPrompts)),
   );
@@ -195,6 +231,11 @@ export async function finishSermonGeneration(input: {
     sections.summary = "ok";
   }
 
+  console.log(
+    `[portal] finish: sections done - ${Object.entries(sections)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(", ")}`,
+  );
   const { data: updated, error: updateError } = await supabase
     .from("sermons")
     .update(updates as SermonUpdate)

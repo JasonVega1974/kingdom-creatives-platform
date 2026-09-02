@@ -55,11 +55,16 @@ function headers(): HeadersInit {
     decide whether a section is retryable; this just reports honestly. */
 export async function callClaude(
   prompt: string,
-  options: { system: string; maxTokens: number },
+  options: { system: string; maxTokens: number; timeoutMs?: number },
 ): Promise<string> {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: headers(),
+    // Bounded so one hung call cannot hold the whole save open. The add-ons
+    // run under Promise.allSettled, so a timeout here fails ONE section and
+    // leaves it a Retry button - which is the designed behaviour, and much
+    // better than every section waiting on the slowest.
+    signal: AbortSignal.timeout(options.timeoutMs ?? 120_000),
     body: JSON.stringify({
       model: MODEL,
       max_tokens: options.maxTokens,
