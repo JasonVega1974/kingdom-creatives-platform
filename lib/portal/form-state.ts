@@ -94,3 +94,34 @@ export const PRAYER_STATUSES = ["pending", "approved", "private", "archived"] as
 
 export type PrayerStatus = (typeof PRAYER_STATUSES)[number];
 
+/**
+ * The six values pastor_notes.category accepts, per the CHECK constraint
+ * added in supabase/migrations/33_notes.sql. category is the note-type field
+ * - kept and reused from the table's original design rather than adding a
+ * second column for the same fact.
+ *
+ * Here rather than in notes/actions.ts for the same "use server" export
+ * constraint as SERMON_STATUSES: both the action and the type picker import
+ * this list, so it cannot drift between what the UI offers and what the
+ * database accepts.
+ */
+export const NOTE_TYPES = [
+  "sermon_prep",
+  "general",
+  "reminder",
+  "church_admin",
+  "event_planning",
+  "other",
+] as const;
+
+export type NoteType = (typeof NOTE_TYPES)[number];
+
+export const NOTE_TYPE_LABELS: Record<NoteType, string> = {
+  sermon_prep: "Sermon prep",
+  general: "General",
+  reminder: "Reminder",
+  church_admin: "Church admin",
+  event_planning: "Event planning",
+  other: "Other",
+};
+

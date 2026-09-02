@@ -40,10 +40,14 @@ export const NAV: NavGroup[] = [
       { href: "/portal/sermons", label: "Sermon Library", icon: "\u{1F4DA}", built: true },
       {
         href: "/portal/notes",
-        label: "My Notes",
-        icon: "\u{1F512}",
-        built: false,
-        blurb: "Private notes only you can read.",
+        // Not "My Notes" - as of 2026-09-01 (supabase/drafts/33_notes.sql)
+        // this table is church-shared, not owner-private. The old label and
+        // its lock icon both implied privacy the RLS no longer grants; see
+        // the in-tab banner in components/portal/notes-editor.tsx for the
+        // same fact stated where a pastor actually reads it.
+        label: "Notes",
+        icon: "\u{1F5D2}",
+        built: true,
       },
     ],
   },

@@ -27,7 +27,11 @@ Prototypes are the spec: cft-site-orange.html (public site), cft-pastor-portal.h
         (text) exists in the meantime. B2 must be answered before the Phase B
         /devotionals route can be built.
 - [x] CFT theme seed APPLIED 2026-07-30 — supabase/migrations/03_cft_theme_seed.sql
-- [ ] Decide: pastor_notes encryption = client-side (recommended) or at-rest only
+- [x] Decided 2026-09-01: no encryption. My Notes is church-shared (any portal
+      member reads/writes any note), which is incompatible with content
+      encrypted to one owner. `body`/`body_iv` are dropped in favor of
+      `body_json` (TipTap JSON, sanitized by a closed extension allowlist
+      rather than by encryption). See `supabase/drafts/33_notes.sql`.
 - [ ] Decide B2: devotionals source (see note above) — blocks Phase B /devotionals
 
 **A3. API keys → Vercel env vars (server-side only, never client)**

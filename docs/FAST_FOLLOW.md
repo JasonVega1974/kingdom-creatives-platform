@@ -2058,3 +2058,45 @@ pages + empty states (18f82d1), reading pages incl. the field focus-ring
 contrast fix (01745f5), and the mobile sheet in the Phase 5 commit. Deferred
 knowingly: this entry's band tints, and a documented-but-unbuilt <dialog>
 pattern (nothing on the public site needs a true dialog yet).
+
+---
+
+## FF-56 - My Notes reminders are display-only, no notification
+
+**File:** `docs/PORTAL_SPEC.md` (My Notes), depends on FF-38
+**Raised:** 2026-09-01, My Notes scoping
+**Must fix by:** no deadline - explicitly deferred by Jason at scoping time
+
+My Notes lets a pastor set a reminder date on a note. This phase renders that
+as a display-only "Upcoming reminders" list inside the tab - nothing emails or
+pushes when the date arrives.
+
+Real notification needs two things this platform doesn't have yet: a scheduled
+job (cron / Vercel Cron route) to check due reminders, and - per FF-38 - a
+per-church timezone. `reminder_at` is stored as a bare UTC instant the same way
+every other portal timestamp is; firing an email against it today would land
+at the wrong local hour for any church not on UTC. Brevo is already available
+server-side (rule 6) if this is picked up, but the timezone gap has to close
+first or the email is just wrong.
+
+---
+
+## FF-57 - the section editor cannot edit list-shaped fields
+
+**File:** `lib/portal/sections.ts`, `components/portal/section editor` (Edit My
+Website)
+**Raised:** 2026-09-01, Giving tab scoping - found while checking whether
+`give.other_ways` had a portal field
+**Must fix by:** no deadline - a real gap, not urgent
+
+`FieldKind` is `text | textarea | image | url` - scalars only. Six known
+sections store a list a pastor would reasonably want to reorder or edit item-
+by-item, and none of them can be touched without SQL: `faq.items`,
+`timeline.stops`, `beliefs.items`, `expect.items`, `mile_stats.items`,
+`other_ways.items` (FF-45 named the first five; `give.other_ways` is the sixth,
+confirmed while scoping the Giving tab - its scalar fields, `eyebrow` and
+`heading`, are already editable, only the item list is not).
+
+This belongs to Edit My Website as a new `FieldKind: "list"` capability - one
+build serves all six sections - not to any single tab. Flagging it here so it
+isn't rediscovered piecemeal the next time a pastor asks to reorder a card.

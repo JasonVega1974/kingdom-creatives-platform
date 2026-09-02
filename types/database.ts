@@ -802,36 +802,51 @@ export type Database = {
       }
       pastor_notes: {
         Row: {
-          body: string | null
-          body_iv: string | null
+          body_json: Json | null
           category: string
           church_id: string
           created_at: string | null
           id: string
+          reminder_at: string | null
+          scripture_book: string | null
+          scripture_chapter: number | null
+          scripture_verse_end: number | null
+          scripture_verse_start: number | null
+          sermon_id: string | null
           tags: string[] | null
           title: string
           updated_at: string | null
           user_id: string
         }
         Insert: {
-          body?: string | null
-          body_iv?: string | null
+          body_json?: Json | null
           category?: string
           church_id: string
           created_at?: string | null
           id?: string
+          reminder_at?: string | null
+          scripture_book?: string | null
+          scripture_chapter?: number | null
+          scripture_verse_end?: number | null
+          scripture_verse_start?: number | null
+          sermon_id?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string | null
           user_id: string
         }
         Update: {
-          body?: string | null
-          body_iv?: string | null
+          body_json?: Json | null
           category?: string
           church_id?: string
           created_at?: string | null
           id?: string
+          reminder_at?: string | null
+          scripture_book?: string | null
+          scripture_chapter?: number | null
+          scripture_verse_end?: number | null
+          scripture_verse_start?: number | null
+          sermon_id?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string | null
@@ -843,6 +858,13 @@ export type Database = {
             columns: ["church_id"]
             isOneToOne: false
             referencedRelation: "churches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pastor_notes_sermon_id_fkey"
+            columns: ["sermon_id"]
+            isOneToOne: false
+            referencedRelation: "sermons"
             referencedColumns: ["id"]
           },
         ]

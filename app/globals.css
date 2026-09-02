@@ -237,3 +237,28 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* A note's stored body is TipTap JSON, rendered to plain <p> tags with only
+   inline style/tag marks (bold/italic/underline/color/highlight/font) - see
+   lib/portal/note-extensions.ts. This just gives adjacent paragraphs some
+   breathing room; the marks carry their own styling inline. */
+.kc-note-body p + p {
+  margin-top: 0.5em;
+}
+
+/*
+ * Print exactly one note (components/portal/notes-editor.tsx's PrintTarget).
+ * At most one .kc-note-print-target exists in the DOM at a time - it is only
+ * rendered while that note's Print button is active - so hiding everything
+ * else and un-hiding it is enough to scope printing to that single note,
+ * regardless of how many other notes are on the page.
+ */
+@media print {
+  body :not(.kc-note-print-target):not(.kc-note-print-target *) {
+    display: none !important;
+  }
+  .kc-note-print-target {
+    display: block !important;
+    position: static !important;
+  }
+}

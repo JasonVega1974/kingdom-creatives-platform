@@ -17,6 +17,7 @@ then parses the prose as SQL - the symptom is a baffling
 
 | File | What | Required for | Urgency |
 |---|---|---|---|
+| `34_notes_verify.sql` | Transactional (rolls back). Creates, edits and reads back a note as a real CFT member via mocked JWT, proving the Notes RLS policy from 33 actually authorizes the app's write pattern | Closing out the Notes tab per rule 4a | Run before calling Notes done |
 | `15_post_batch_verify.sql` | Read-only. Re-checks that 08/04/09/10/12 took | Nothing - diagnostics | Run any time. Already passed 2026-08-27 |
 | `07_cft_giving_url.sql` | Data only - `churches.giving_url` for CFT | Nothing | **WON'T RUN - superseded.** Decided 2026-08-28: the Give page reads `church_links`, where the real Tithe.ly link already sits from draft 10. See PORTAL_SPEC 2.3 |
 | `05_devotionals.sql` | Blocked on ADDENDUM_01 decision B2 | Phase B `/devotionals` | **DEFERRED, not blocked.** Decided 2026-08-28 to defer B2 until the pastor has used the portal. Do not run. See FF-30 |
@@ -45,6 +46,7 @@ All in `supabase/migrations/`, applied date in the file header.
 | `14_videos_published_rls.sql` | 2026-08-28 | Public `videos` policy now filters `published`. FF-25 closed |
 | `19_church_theme_privilege_trace.sql` | 2026-08-28 | Read-only trace. Isolated the branding failure to a missing UPDATE grant on `church_theme.church_id` |
 | `18_revoke_residual_grants.sql` | 2026-08-28 | Revoked unused INSERT/DELETE grants, and granted `update (church_id)` so the branding upsert works. Verified |
+| `33_notes.sql` | 2026-09-01 | Repurposed `pastor_notes` for the shared Notes tab: RLS owner-only -> church-member, dropped `body`/`body_iv`, added `body_json` + note fields, CHECK on `category`. Verified: 0 pre-existing rows, new columns present, one policy |
 
 Numbering skips nothing and reuses nothing. `02` is optional and still unrun, so
 `03` was applied ahead of it; `14` was reserved for FF-24 and reassigned to FF-25
