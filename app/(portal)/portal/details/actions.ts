@@ -196,7 +196,7 @@ export async function saveBranding(
   const accent = normalizeHex(text(formData, "color_accent"));
 
   if (!primary || !secondary || !accent) {
-    return { ok: false, error: "Colours need to look like #A1B2C3." };
+    return { ok: false, error: "Colors need to look like #A1B2C3." };
   }
 
   const supabase = await createClient();

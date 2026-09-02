@@ -128,7 +128,7 @@ function SectionCard({
             aria-expanded={open}
             className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] px-3 py-1.5 text-sm hover:bg-[var(--kc-paper-dim)]"
           >
-            {open ? "Done" : "Change words"}
+            {open ? "Done" : "Edit"}
           </button>
         )}
 

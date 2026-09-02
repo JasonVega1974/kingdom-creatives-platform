@@ -31,7 +31,7 @@ import { TEAM_IDLE } from "@/lib/portal/form-state";
  * something, and "where did that one go" is the question this design is trying
  * never to provoke.
  *
- * "Not this one" is archive, not delete. Deleting is available underneath but
+ * "Archive" is the put-aside, not delete. Deleting is available underneath but
  * is never the default - a prayer request is somebody's difficult week, and the
  * cheap action should not be the irreversible one.
  */
@@ -126,7 +126,7 @@ function PendingCard({ item }: { item: PrayerRow }) {
 
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-[var(--kc-line)] pt-4">
         <ActionButton label="Keep private" run={() => keepPrayerPrivate(item.id)} />
-        <ActionButton label="Not this one" run={() => archivePrayer(item.id)} />
+        <ActionButton label="Archive" run={() => archivePrayer(item.id)} />
         <ConfirmRemove
           itemName="this prayer request"
           note="This deletes it for good. Archiving keeps it without publishing it."

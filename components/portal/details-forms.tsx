@@ -112,7 +112,7 @@ export function IdentityForm({
 
   return (
     <Card
-      title="Church details"
+      title="Name & contact"
       helpTopic="details.identity"
       hint="Your name, and how people reach you. This appears in your header, your footer and on your contact page."
     >
@@ -255,16 +255,16 @@ export function BrandingForm({
 
   return (
     <Card
-      title="Colours and logo"
+      title="Colors and logo"
       helpTopic="details.branding"
-      hint="Your brand. These colours are used across every page of your website."
+      hint="Your brand. These colors are used across every page of your website."
     >
       <form action={action} className="space-y-4">
-        <ColorField name="color_primary" label="Main colour" defaultValue={primary} />
-        <ColorField name="color_secondary" label="Second colour" defaultValue={secondary} />
+        <ColorField name="color_primary" label="Main color" defaultValue={primary} />
+        <ColorField name="color_secondary" label="Second color" defaultValue={secondary} />
         <ColorField
           name="color_accent"
-          label="Text on your main colour"
+          label="Text on your main color"
           defaultValue={accent}
         />
         <MediaPicker
@@ -304,7 +304,7 @@ function ColorField({
           type="color"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          aria-label={`${label} colour picker`}
+          aria-label={`${label} color picker`}
           className="h-10 w-14 shrink-0 rounded border border-[var(--kc-line)] bg-[var(--kc-surface)] p-1"
         />
         <input

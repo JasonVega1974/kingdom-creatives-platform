@@ -2100,3 +2100,28 @@ confirmed while scoping the Giving tab - its scalar fields, `eyebrow` and
 This belongs to Edit My Website as a new `FieldKind: "list"` capability - one
 build serves all six sections - not to any single tab. Flagging it here so it
 isn't rediscovered piecemeal the next time a pastor asks to reorder a card.
+
+---
+
+## FF-58 - the event type picker offers two types, and untyped events sit outside every filter
+
+**File:** `components/portal/events-editor.tsx` (EVENT_TYPES), plus the seeded
+public filter strip on `/events`
+**Raised:** 2026-09-02, portal clarity audit (finding 5, deliberately skipped
+in that commit)
+**Must fix by:** no deadline - a real gap, not urgent
+
+The portal's event type picker offers only "In person" and "Retreat" (plus
+"No type"), because those are the values the public events page's filter
+strip was seeded with, and a type outside that list would leave an event
+unreachable from the filters while published. Two consequences a pastor will
+eventually hit: there is no "Online" option for a streamed or Zoom event, and
+an event left as "No type" appears only under the implicit "everything" view,
+never under any filter chip.
+
+Not a label fix. The picker and the seeded public filter strip have to change
+together, or the new type is exactly the unreachable case the picker's own
+comment warns about. When picked up: decide the canonical type list (at
+minimum add "Online"), update the seeded filter content, and extend
+EVENT_TYPES to match - in that order, so the public side can filter on the
+value before the portal can produce it.

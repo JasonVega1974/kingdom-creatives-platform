@@ -74,7 +74,7 @@ export const HELP_TOPICS: HelpTopic[] = [
     tabLabel: "Edit My Website",
     title: "How editing works here",
     body: [
-      "Every page of your website is made of sections, listed here in the order visitors see them. Open a section with \"Change words\" to edit what it says.",
+      "Every page of your website is made of sections, listed here in the order visitors see them. Open a section with \"Edit\" to change what it says.",
       "There is no save button for the words - your changes save by themselves about a second after you stop typing, and they are live on your website straight away. \"Saved and live on the website\" at the bottom of the card confirms each save.",
       "The arrows move a section up or down the page. The \"Show on my website\" checkbox takes a section off your website without losing what it says - untick it and the words wait here until you want them back.",
     ],
@@ -239,7 +239,7 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: "Keep private, archive, or delete?",
     body: [
       "\"Keep private\" is for a request someone would want read and prayed over but not posted - a diagnosis, a family matter. It is a real choice, not a rejection.",
-      "\"Not this one\" archives a request: dealt with, kept for the record, never published. Delete is underneath for the rare request that should not be kept at all - it cannot be undone.",
+      "\"Archive\" sets a request aside: dealt with, kept for the record, never published. Delete is underneath for the rare request that should not be kept at all - it cannot be undone.",
       "\"Take it down\" on a published request returns it to the unread pile - the undo for publishing.",
     ],
     keywords: ["private", "archive", "delete", "take down", "hide", "reject"],

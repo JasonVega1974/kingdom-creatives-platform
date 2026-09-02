@@ -63,7 +63,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         <HelpMark topic="ministries.overview" />
       </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
-        The organisations you support, listed on your About page. Use the arrows
+        The organizations you support, listed on your About page. Use the arrows
         to set the order.
       </p>
 

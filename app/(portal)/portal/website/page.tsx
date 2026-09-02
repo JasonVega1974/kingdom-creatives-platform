@@ -113,7 +113,7 @@ function Shell({ pageSlug, children }: { pageSlug: string; children: React.React
       </div>
       <p className="mt-2 text-[var(--kc-ink-soft)]">
         Every part of your website is a card below. Flip a switch to show or hide
-        it. Click to change the words. Use the arrows to reorder.
+        it. Click Edit to change the words and photos. Use the arrows to reorder.
       </p>
       <p className="mt-2 mb-7 inline-block rounded-[var(--kc-radius)] bg-[var(--kc-brand-wash)] px-3 py-1.5 text-sm">
         You cannot break anything. Every change can be undone.
@@ -121,7 +121,10 @@ function Shell({ pageSlug, children }: { pageSlug: string; children: React.React
 
       {/* A plain form + links: changing page is navigation, not state, so it
           survives a refresh and can be linked to. */}
-      <nav className="mb-7 flex flex-wrap gap-1.5" aria-label="Which page">
+      <p className="mb-1.5 text-[11px] font-semibold tracking-[0.08em] text-[var(--kc-ink-soft)] uppercase">
+        Pick a page
+      </p>
+      <nav className="mb-7 flex flex-wrap gap-1.5" aria-label="Pick a page">
         {PAGES.map((p) => (
           <a
             key={p.slug}
