@@ -94,6 +94,66 @@ function sectionSpec(
   }
 }
 
+const str = (value: unknown): string => (typeof value === "string" ? value : "");
+
+/**
+ * Force a JSON section into the shape the UI renders, or throw.
+ *
+ * The client does `values.slides.map(...)` and reads `values.social.facebook`
+ * directly. Casting parseJsonBlock's `unknown` to those types told the
+ * compiler a shape nobody had checked: one answer of {"slides":[...]} instead
+ * of a bare array turns that .map into a TypeError during render - the
+ * component crashes AFTER the sermon has already saved, which looks like the
+ * save failing.
+ *
+ * Throwing here instead routes a malformed answer into the outcome the
+ * design already has for it: Promise.allSettled marks that one section
+ * "failed" and the pastor gets a Retry button, with everything else intact.
+ * The common wrapper is unwrapped rather than rejected - the content is
+ * fine, only its envelope is wrong.
+ */
+function coerceSection(section: SectionKey, value: unknown): unknown {
+  if (section === "slides") {
+    const raw = Array.isArray(value)
+      ? value
+      : (value as { slides?: unknown; deck?: unknown })?.slides ??
+        (value as { deck?: unknown })?.deck;
+
+    if (!Array.isArray(raw)) throw new Error("slides: expected an array of slides");
+
+    const deck = raw
+      .filter((slide): slide is Record<string, unknown> => Boolean(slide) && typeof slide === "object")
+      .map((slide) => ({
+        title: str(slide.title),
+        bullets: Array.isArray(slide.bullets) ? slide.bullets.map(str).filter(Boolean) : [],
+        ...(str(slide.scripture) ? { scripture: str(slide.scripture) } : {}),
+      }))
+      .filter((slide) => slide.title || slide.bullets.length > 0);
+
+    if (deck.length === 0) throw new Error("slides: no usable slides in the answer");
+    return deck;
+  }
+
+  if (section === "social") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new Error("social: expected an object of platform posts");
+    }
+    const o = value as Record<string, unknown>;
+    const set = {
+      facebook: str(o.facebook),
+      instagram: str(o.instagram),
+      x: str(o.x ?? o.twitter),
+      sms: str(o.sms ?? o.text),
+    };
+    if (!set.facebook && !set.instagram && !set.x && !set.sms) {
+      throw new Error("social: no usable posts in the answer");
+    }
+    return set;
+  }
+
+  return value;
+}
+
 async function generateSection(
   section: SectionKey,
   sermonText: string,
@@ -105,7 +165,8 @@ async function generateSection(
     system: SERMON_SYSTEM_PROMPT,
     maxTokens: spec.maxTokens,
   });
-  return { column: spec.column, value: spec.json ? parseJsonBlock(text) : text };
+  const value = spec.json ? coerceSection(section, parseJsonBlock(text)) : text;
+  return { column: spec.column, value };
 }
 
 /**

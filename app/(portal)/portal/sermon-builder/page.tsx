@@ -29,15 +29,44 @@ export const maxDuration = 300;
 export default async function SermonBuilderPage() {
   const session = await requirePortalUser();
 
-  const supabase = await createClient();
-  const utcDayStart = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`;
-  const { count } = await supabase
-    .from("sermon_generations")
-    .select("id", { count: "exact", head: true })
-    .eq("church_id", session.site.church.id)
-    .gte("created_at", utcDayStart);
+  /*
+   * THIS PAGE RE-RENDERS AFTER EVERY SERVER ACTION, and that is why the
+   * count is wrapped rather than awaited bare.
+   *
+   * Next re-renders a route's Server Components as part of the response to
+   * an action called from it. So this query does not run once on
+   * navigation - it runs again after the sermon is saved, and again after
+   * every subsequent save or publish. An unguarded throw there does not
+   * look like a failed query; it surfaces as "An error occurred in the
+   * Server Components render" with the detail stripped in production,
+   * AFTER the work already succeeded - which reads as "the save broke"
+   * when the save was fine.
+   *
+   * The count is a courtesy number. generate/route.ts re-checks the cap
+   * authoritatively on every generation, so falling back to "all slots
+   * available" here is a display inaccuracy at worst and never a way past
+   * the limit.
+   */
+  let remaining = GENERATION_CAP_PER_DAY;
+  try {
+    const supabase = await createClient();
+    const utcDayStart = `${new Date().toISOString().slice(0, 10)}T00:00:00Z`;
+    const { count, error } = await supabase
+      .from("sermon_generations")
+      .select("id", { count: "exact", head: true })
+      .eq("church_id", session.site.church.id)
+      .gte("created_at", utcDayStart);
 
-  const remaining = Math.max(0, GENERATION_CAP_PER_DAY - (count ?? 0));
+    if (error) {
+      console.error(`[portal] builder cap count failed: ${error.message}`);
+    } else {
+      remaining = Math.max(0, GENERATION_CAP_PER_DAY - (count ?? 0));
+    }
+  } catch (error) {
+    console.error(
+      `[portal] builder cap count threw: ${(error as Error)?.stack ?? String(error)}`,
+    );
+  }
 
   return (
     <div className="max-w-4xl">

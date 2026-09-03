@@ -655,7 +655,10 @@ function AddonPanels({
         ) : null,
       )}
 
-      {values.slides ? (
+      {/* Array.isArray, not a truthiness check: the action validates the
+          shape now, but a row written before that guard existed could still
+          be an object, and a crash here would land after a successful save. */}
+      {Array.isArray(values.slides) && values.slides.length > 0 ? (
         <details className="rounded-[var(--kc-radius)] border border-[var(--kc-line)] bg-[var(--kc-surface)] p-4">
           <summary className="cursor-pointer font-semibold">
             Presentation Slides ({values.slides.length})
