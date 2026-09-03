@@ -90,7 +90,10 @@ function Shell({ children, churchName }: { children: React.ReactNode; churchName
     <div className="max-w-3xl">
       <div className="flex items-center gap-2.5">
         <h1 className="font-[family-name:var(--kc-font-display)] text-3xl font-bold">Notes</h1>
-        <HelpMark topic="notes.editor" />
+        {/* The page-level mark answers "what is this tab", matching every
+            other page. Formatting, types, scripture and the rest are one
+            click away in the help panel's "On this page" list. */}
+        <HelpMark topic="notes.overview" />
       </div>
       <p className="mt-2 mb-7 text-[var(--kc-ink-soft)]">
         Sermon prep, reminders, and anything else worth writing down for{" "}

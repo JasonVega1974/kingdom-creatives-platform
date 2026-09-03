@@ -250,24 +250,75 @@ export const HELP_TOPICS: HelpTopic[] = [
     id: "builder.how",
     tab: "/portal/sermon-builder",
     tabLabel: "Sermon Builder",
-    title: "How the builder works",
+    title: "What the Sermon Builder is for",
     body: [
-      "Fill in a title, a Bible passage, a style and any direction you want to give - themes, stories to include, points to emphasize - then Generate. The sermon is written in front of you and saves itself as a draft the moment it finishes.",
-      "The draft is yours to edit: rework the manuscript, tighten the public summary, then publish when it says what you want it to say. Nothing appears on your website until you publish.",
-      "Each church can generate 10 sermons a day; the counter resets at midnight UTC. Editing, retrying a piece, publishing and printing are never counted - only pressing Generate.",
+      "It writes a full first draft - usually 2000 to 3000 words - from what you tell it: a passage, a style, and the direction you want the message to take. Think of it as a study partner who types fast, not as the preacher. The words become yours when you edit them.",
+      "It is most useful on the weeks when the passage is chosen and the shape is not, or when you know what you want to say and the blank page is the obstacle. It is least useful when you already have the sermon in your head - then it is faster to write it yourself.",
+      "The sermon is written in front of you and saves itself as a draft the moment it finishes. Nothing appears on your website until you publish it.",
     ],
-    keywords: ["generate", "ai", "write", "sermon builder", "draft", "limit", "cap"],
+    keywords: ["generate", "ai", "write", "sermon builder", "draft", "what is", "when to use"],
+  },
+  {
+    id: "builder.form",
+    tab: "/portal/sermon-builder",
+    tabLabel: "Sermon Builder",
+    title: "Filling in the form",
+    body: [
+      "Title is the only thing required, and a working title is fine - you can change it after you read the draft. Service date sets the sermon's date; leave it blank and you can add it later.",
+      "The passage is picked book, then chapter, then verses (\"1-10\", or leave blank for the whole chapter). The chapter list only offers chapters the book actually has.",
+      "Style changes how the sermon is built - expository walks the text verse by verse, topical follows a theme, narrative leans on story, and the rest are named for who or what they are for.",
+      "\"Guidance and notes\" is the box that makes the difference. It is where you say what this congregation is walking through, a story you want included, a point to press hard, or one to avoid. The more you put here, the less generic the draft.",
+    ],
+    keywords: ["title", "date", "passage", "book", "chapter", "verses", "style", "notes", "guidance", "form"],
+  },
+  {
+    id: "builder.includes",
+    tab: "/portal/sermon-builder",
+    tabLabel: "Sermon Builder",
+    title: "\"What the sermon includes\"",
+    body: [
+      "These six tick boxes change what goes into the sermon itself, before it is written. They are not filters applied afterwards - untick one and that section is never asked for.",
+      "Include Scripture text prints the passage into the manuscript so you are not reading from two places. Life applications adds the \"so what does this mean on Monday\" section. Illustrations adds stories and word pictures. Relevant quotes brings in outside voices. Call to action ends by asking for a response.",
+      "Appropriate humor is off by default, deliberately - humor lands differently in every room, and yours is the judgement that should decide it.",
+    ],
+    keywords: ["include", "toggles", "scripture", "applications", "humor", "illustrations", "quotes", "call to action"],
   },
   {
     id: "builder.addons",
     tab: "/portal/sermon-builder",
     tabLabel: "Sermon Builder",
-    title: "The add-ons",
+    title: "\"Also create\" - the add-ons",
     body: [
-      "Alongside the sermon, the builder can create a daily devotional, small group discussion questions, a kids ministry lesson, bulletin notes, presentation slides and social media posts - tick what you want under \"Also create\" before generating.",
-      "Each piece is made separately, so if one fails the rest are unharmed - a Retry button appears for just that piece, and your sermon is already saved either way.",
+      "Tick these before generating and the builder writes the week's other pieces from the same sermon, so they say the same thing:",
+      "Daily Devotional - a short reading (300-500 words) on the passage, with a reflection, a prayer and a question. Small Group Discussion - five to seven questions for a group that heard the sermon. Kids Ministry Lesson - a plan for ages 4 to 12: objective, story, key verse, activity, craft or song, prayer. Bulletin Notes - a short write-up for the printed bulletin.",
+      "Presentation Slides - eight to twelve slides with short bullets, one per main point and one per key scripture, ready to type into your slide software. Social Media Posts - one post each for Facebook, Instagram, X and a text blast, written to the right length for each.",
+      "Each piece is made separately, so if one fails the rest are unharmed: a Retry button appears for just that piece, and your sermon is already saved either way.",
     ],
-    keywords: ["devotional", "small group", "kids", "bulletin", "slides", "social", "add-on", "retry"],
+    keywords: ["devotional", "small group", "kids", "bulletin", "slides", "social", "add-on", "retry", "also create"],
+  },
+  {
+    id: "builder.limit",
+    tab: "/portal/sermon-builder",
+    tabLabel: "Sermon Builder",
+    title: "The daily limit",
+    body: [
+      "Each church can generate 10 sermons a day. The count resets at midnight UTC, and the number left today is shown next to the Generate button.",
+      "Only pressing Generate counts. Editing a draft, retrying a single add-on, publishing, and printing are all free and unlimited - so there is no reason to hold back on reworking a sermon you already have.",
+      "If you run out, nothing is lost: every draft you generated is saved and waiting in Sermon Library.",
+    ],
+    keywords: ["limit", "cap", "10", "generations", "left", "resets", "midnight", "used up"],
+  },
+  {
+    id: "builder.editing",
+    tab: "/portal/sermon-builder",
+    tabLabel: "Sermon Builder",
+    title: "Editing the manuscript - read this before you leave the page",
+    body: [
+      "The full manuscript is edited here, on this page, in the session where it was generated. Rework it, fix the summary, print it, publish it - all from the panel that appears once the sermon is written.",
+      "Once you navigate away, the manuscript is saved but there is not yet a screen that reopens it for editing. Sermon Library manages a sermon's details - title, passage, date, video link, summary - and does not show the manuscript itself.",
+      "So finish your edits before you leave, or print a copy. We know this is the wrong way round and a way to reopen a manuscript is planned; until then, treat leaving this page as the point of no return for the text.",
+    ],
+    keywords: ["edit", "manuscript", "reopen", "leave", "lost", "library", "later", "again"],
   },
   {
     id: "builder.video",
@@ -306,6 +357,51 @@ export const HELP_TOPICS: HelpTopic[] = [
   },
 
   /* ---- Notes ---- */
+  {
+    id: "notes.overview",
+    tab: "/portal/notes",
+    tabLabel: "Notes",
+    title: "What Notes is for",
+    body: [
+      "A notebook that lives with your website instead of in a drawer. Sermon prep, the thing you promised to follow up on, what needs saying at the next board meeting, the outline of an event - anything worth writing down where you will find it again.",
+      "A note can carry a type, a Bible passage, a link to one of your sermons and a reminder date, so it can be found by any of those later rather than only by scrolling.",
+      "Nothing here ever appears on your public website. Notes are for you and your team.",
+    ],
+    keywords: ["notes", "notebook", "what is", "write", "jot", "keep", "remember"],
+  },
+  {
+    id: "notes.types",
+    tab: "/portal/notes",
+    tabLabel: "Notes",
+    title: "Note types",
+    body: [
+      "The Type dropdown labels what a note is, so a long list stays findable. The choices are Sermon prep, General, Reminder, Church admin, Event planning, and Other.",
+      "Nothing behaves differently based on the type - it does not change formatting or who can see it. It is there so that six months from now you can tell at a glance which notes were sermon work and which were the building committee.",
+    ],
+    keywords: ["type", "category", "sermon prep", "reminder", "church admin", "event planning", "general"],
+  },
+  {
+    id: "notes.scripture",
+    tab: "/portal/notes",
+    tabLabel: "Notes",
+    title: "Adding a passage to a note",
+    body: [
+      "Pick a book, then a chapter, then optionally a verse or a range - the chapter list only offers chapters the book actually has, so you cannot pick Philemon 4.",
+      "The passage shows on the note so you can find it by reference later. Leave the book on \"No reference\" for a note that is not about a passage.",
+    ],
+    keywords: ["scripture", "passage", "bible", "book", "chapter", "verse", "reference"],
+  },
+  {
+    id: "notes.sermon",
+    tab: "/portal/notes",
+    tabLabel: "Notes",
+    title: "Attaching a note to a sermon",
+    body: [
+      "\"Attach to a sermon\" links a note to one of the sermons in your Sermon Library, so prep notes stay with the message they belong to.",
+      "The list shows sermons you have added to your library. A video that is only on your YouTube channel is not there yet - add it to Sermon Library first and it becomes attachable.",
+    ],
+    keywords: ["attach", "sermon", "link", "prep", "library"],
+  },
   {
     id: "notes.shared",
     tab: "/portal/notes",
@@ -456,10 +552,23 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Prayer requests from your website land here first. Nothing shows publicly until you approve it.",
   },
   {
-    target: '[data-tour-group="Preach"]',
+    /*
+     * Two stops where there was one. The Preach group covers three tools
+     * that do genuinely different jobs, and a single card describing all
+     * three was a list rather than an introduction - the builder in
+     * particular is the biggest thing in the portal and was getting one
+     * clause.
+     */
+    target: '[data-tour="/portal/sermon-builder"]',
     inSidebar: true,
-    title: "Preaching tools",
-    body: "Sermon Builder writes a full sermon draft from your title, passage and direction - you edit it and publish. Sermon Library manages what is on your website's sermons page. Notes is a shared notebook for you and your team.",
+    title: "Sermon Builder",
+    body: "Give it a passage, a style and your own direction, and it writes a full first draft you edit and make yours. Ten a day, and nothing reaches your website until you publish it.",
+  },
+  {
+    target: '[data-tour="/portal/notes"]',
+    inSidebar: true,
+    title: "Sermon Library and Notes",
+    body: "Sermon Library is every message on your website - add a video, write a summary, take one down. Notes is a shared notebook for sermon prep and reminders, visible to everyone with portal access at your church.",
   },
   {
     target: '[data-tour-group="People"]',

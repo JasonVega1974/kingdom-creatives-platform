@@ -9,6 +9,7 @@ import {
   saveSermonEdits,
 } from "@/app/(portal)/portal/sermon-builder/actions";
 import { Field, SelectField, TextArea } from "@/components/portal/editor-kit";
+import { HelpMark } from "@/components/portal/help-mark";
 import { SermonBodyEditor } from "@/components/portal/sermon-body-editor";
 import { BOOKS } from "@/lib/bible-books";
 import {
@@ -293,7 +294,10 @@ export function SermonBuilder({ remainingToday }: { remainingToday: number }) {
 
           <div className="space-y-5">
             <fieldset>
-              <legend className="mb-2 text-sm font-semibold">What the sermon includes</legend>
+              <legend className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                What the sermon includes
+                <HelpMark topic="builder.includes" />
+              </legend>
               <div className="space-y-1.5">
                 {INCLUDE_OPTIONS.map((option) => (
                   <label key={option.key} className="flex items-center gap-2 text-sm">
@@ -310,7 +314,10 @@ export function SermonBuilder({ remainingToday }: { remainingToday: number }) {
             </fieldset>
 
             <fieldset>
-              <legend className="mb-2 text-sm font-semibold">Also create</legend>
+              <legend className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                Also create
+                <HelpMark topic="builder.addons" />
+              </legend>
               <div className="space-y-1.5">
                 {SERMON_ADDONS.map((addon) => (
                   <label key={addon.key} className="flex items-center gap-2 text-sm">
