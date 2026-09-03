@@ -43,3 +43,8 @@ next-env.d.ts
 
 # Supabase CLI local state (written by npm run types)
 supabase/.temp/
+
+# Claude Code - per-machine tool permissions. Machine-local, never shared.
+# .claude/skills/ IS committed: the onboarding runbook's trip-wires belong
+# with the repo, not on one laptop.
+.claude/settings.local.json
