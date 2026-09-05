@@ -389,7 +389,12 @@ function heroImageCandidates(stored: string): { src: string; srcSet: string } {
     }
   })();
 
-  const widths = [640, 828, 1200, 1920, 2560, 3840];
+  /* Every width here must be in next.config's allowed list (the deviceSizes
+     defaults - no override is configured): 640/750/828/1080/1200/1920/2048/
+     3840. A width outside it (2560 was) makes /_next/image return 400, and a
+     browser that picked that candidate renders a broken hero - which is how
+     2560-wide screens got a blank banner. */
+  const widths = [640, 828, 1200, 1920, 2048, 3840];
   const at = (w: number) => `/_next/image?url=${encodeURIComponent(raw)}&w=${w}&q=75`;
 
   return {
