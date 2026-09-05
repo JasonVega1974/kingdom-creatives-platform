@@ -1246,12 +1246,15 @@
   background: var(--kc-brand-night);
 }
 
+/* No max-height / object-fit crop here: CFT's banner carries baked-in text
+   from the logo at the top edge to the street address at the bottom edge, so
+   any vertical crop amputates copy. The old 660px cap + cover cut the
+   "Farmington, MO 63640" line off the bottom on every viewport wider than
+   ~1630px - including a maximized 1920x1080 window. Natural aspect at full
+   width is the only rendering that shows whatever a tenant baked in. */
 .kc-site .hero-shot img {
   width: 100%;
   height: auto;
-  max-height: 660px;
-  object-fit: cover;
-  object-position: center;
   display: block;
 }
 
